@@ -16,7 +16,12 @@ public sealed partial class AddressBarViewModel(INavigator navigator) : ViewMode
     private static readonly string[] VirtualLocations =
         [Locations.Computer, Locations.Recent, Locations.Trash, Locations.Network];
 
+    private const int MaxSuggestions = 50;
+
     private string _location = Locations.Computer;
+    private CancellationTokenSource? _suggestCts;
+    private bool _suppressSuggestions;
+    private int _selectedIndex = -1;
 
     /// <summary>Used to pick the breadcrumb root. Refreshed by the shell whenever the Computer page is built.</summary>
     internal IReadOnlyList<Volume> Volumes { get; set; } = [];
@@ -36,7 +41,24 @@ public sealed partial class AddressBarViewModel(INavigator navigator) : ViewMode
 
     public bool HasEditError => EditError is not null;
 
-    partial void OnEditTextChanged(string value) => EditError = null;
+    /// <summary>Folders matching what's typed, e.g. "~/.lo" → "~/.local".</summary>
+    [ObservableProperty]
+    public partial IReadOnlyList<AddressSuggestionViewModel> Suggestions { get; set; } = [];
+
+    [ObservableProperty]
+    public partial bool IsSuggestionsOpen { get; set; }
+
+    private AddressSuggestionViewModel? SelectedSuggestion =>
+        _selectedIndex >= 0 && _selectedIndex < Suggestions.Count ? Suggestions[_selectedIndex] : null;
+
+    partial void OnEditTextChanged(string value)
+    {
+        EditError = null;
+
+        // Only typing suggests: filling the box with the current path on BeginEdit doesn't
+        if (!_suppressSuggestions && IsEditing)
+            _ = UpdateSuggestionsAsync(value);
+    }
 
     /// <summary>Called by the shell after every navigation.</summary>
     public void Update(string location)
@@ -44,14 +66,19 @@ public sealed partial class AddressBarViewModel(INavigator navigator) : ViewMode
         _location = location;
         IsEditing = false;
         EditError = null;
+        CloseSuggestions();
         Segments = Build(location);
     }
 
     [RelayCommand]
     public void BeginEdit()
     {
+        _suppressSuggestions = true;
         EditText = _location;
+        _suppressSuggestions = false;
+
         EditError = null;
+        CloseSuggestions();
         IsEditing = true;
     }
 
@@ -60,6 +87,7 @@ public sealed partial class AddressBarViewModel(INavigator navigator) : ViewMode
     {
         IsEditing = false;
         EditError = null;
+        CloseSuggestions();
     }
 
     [RelayCommand]
@@ -72,7 +100,146 @@ public sealed partial class AddressBarViewModel(INavigator navigator) : ViewMode
         }
 
         IsEditing = false;
+        CloseSuggestions();
         navigator.Navigate(target);
+    }
+
+    /// <summary>Up/Down. Index -1 means "back in the text box", like Explorer. Returns the new index.</summary>
+    public int MoveSelection(int delta)
+    {
+        if (Suggestions.Count == 0)
+            return -1;
+
+        var next = _selectedIndex + delta;
+        if (next < -1)
+            next = Suggestions.Count - 1;
+        else if (next >= Suggestions.Count)
+            next = -1;
+
+        if (SelectedSuggestion is { } previous)
+            previous.IsSelected = false;
+
+        _selectedIndex = next;
+
+        if (SelectedSuggestion is { } current)
+            current.IsSelected = true;
+
+        return next;
+    }
+
+    /// <summary>
+    /// Tab: puts the selected (or first) suggestion into the box with a trailing "/",
+    /// so the next level is suggested right away. False if there is nothing to complete.
+    /// </summary>
+    public bool CompleteSuggestion()
+    {
+        if (!IsSuggestionsOpen || (SelectedSuggestion ?? Suggestions.FirstOrDefault()) is not { } suggestion)
+            return false;
+
+        EditText = suggestion.Text + "/";
+        return true;
+    }
+
+    /// <summary>Enter: opens the suggestion picked with the arrows. False if none is picked.</summary>
+    public bool OpenSelectedSuggestion()
+    {
+        if (!IsSuggestionsOpen || SelectedSuggestion is not { } suggestion)
+            return false;
+
+        OpenSuggestion(suggestion);
+        return true;
+    }
+
+    public void CloseSuggestions()
+    {
+        _suggestCts?.Cancel();
+        _suggestCts = null;
+        _selectedIndex = -1;
+        IsSuggestionsOpen = false;
+        Suggestions = [];
+    }
+
+    protected override void OnDispose()
+    {
+        _suggestCts?.Cancel();
+        base.OnDispose();
+    }
+
+    private void OpenSuggestion(AddressSuggestionViewModel suggestion)
+    {
+        IsEditing = false;
+        CloseSuggestions();
+        navigator.Navigate(suggestion.FullPath);
+    }
+
+    private async Task UpdateSuggestionsAsync(string text)
+    {
+        _suggestCts?.Cancel();
+        var cts = _suggestCts = new CancellationTokenSource();
+        var token = cts.Token;
+
+        // "~/.lo" → folder "~/" (typed as is, kept in the suggestion text) + name prefix ".lo"
+        var slash = text.LastIndexOf('/');
+        var typedFolder = slash < 0 ? string.Empty : text[..(slash + 1)];
+        var prefix = text[(slash + 1)..];
+
+        if (Locations.IsVirtual(text) || (typedFolder.Length == 0 && prefix.Length == 0)
+            || TryGetFullPath(typedFolder.Length == 0 ? "." : typedFolder) is not { } folder)
+        {
+            CloseSuggestions();
+            return;
+        }
+
+        try
+        {
+            // Short pause: a fast typist doesn't trigger a directory read per key
+            await Task.Delay(60, token);
+            var names = await Task.Run(() => FindFolders(folder, prefix, token), token);
+
+            if (token.IsCancellationRequested || !IsEditing)
+                return;
+
+            _selectedIndex = -1;
+            Suggestions = names
+                .Select(name => new AddressSuggestionViewModel(
+                    typedFolder + name, IOPath.Combine(folder, name), OpenSuggestion))
+                .ToList();
+            IsSuggestionsOpen = Suggestions.Count > 0;
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private static IReadOnlyList<string> FindFolders(string folder, string prefix, CancellationToken token)
+    {
+        var options = new EnumerationOptions
+        {
+            // Dot folders only when asked for: "~/." lists them, "~/" doesn't
+            AttributesToSkip = prefix.StartsWith('.') ? 0 : FileAttributes.Hidden | FileAttributes.System,
+        };
+
+        try
+        {
+            var result = new List<string>();
+            foreach (var directory in new DirectoryInfo(folder).EnumerateDirectories("*", options))
+            {
+                token.ThrowIfCancellationRequested();
+                if (directory.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    result.Add(directory.Name);
+            }
+
+            // Exact-case matches first ("Doc" → Documents before docs), then alphabetical
+            return result
+                .OrderByDescending(name => name.StartsWith(prefix, StringComparison.Ordinal))
+                .ThenBy(name => name, StringComparer.CurrentCultureIgnoreCase)
+                .Take(MaxSuggestions)
+                .ToList();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            return [];
+        }
     }
 
     /// <summary>Accepts absolute paths, ~, paths relative to the current folder and virtual locations.</summary>
@@ -85,6 +252,12 @@ public sealed partial class AddressBarViewModel(INavigator navigator) : ViewMode
         if (Locations.IsVirtual(text))
             return VirtualLocations.FirstOrDefault(v => string.Equals(v, text, StringComparison.OrdinalIgnoreCase));
 
+        return TryGetFullPath(text) is { } full && Directory.Exists(full) ? full : null;
+    }
+
+    /// <summary>Expands ~ and resolves relative paths against the current folder (home on virtual pages).</summary>
+    private string? TryGetFullPath(string text)
+    {
         var home = SystemLocations.HomeDirectory;
         if (text == "~")
             text = home;
@@ -94,8 +267,7 @@ public sealed partial class AddressBarViewModel(INavigator navigator) : ViewMode
         try
         {
             var basePath = Locations.IsVirtual(_location) ? home : _location;
-            var full = IOPath.GetFullPath(text, basePath);
-            return Directory.Exists(full) ? full : null;
+            return IOPath.GetFullPath(text, basePath);
         }
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException or IOException)
         {
@@ -300,4 +472,26 @@ public sealed class AddressChildViewModel(AddressTarget target, bool isActive, A
     public bool IsActive { get; } = isActive;
 
     public IRelayCommand OpenCommand { get; } = new RelayCommand(() => open(target.Location));
+}
+
+/// <summary>One autocomplete row.</summary>
+public sealed partial class AddressSuggestionViewModel : ObservableObject
+{
+    public AddressSuggestionViewModel(string text, string fullPath, Action<AddressSuggestionViewModel> open)
+    {
+        Text = text;
+        FullPath = fullPath;
+        OpenCommand = new RelayCommand(() => open(this));
+    }
+
+    /// <summary>What goes into the box, in the form the user typed it ("~/.local", not "/home/igorb/.local").</summary>
+    public string Text { get; }
+
+    public string FullPath { get; }
+
+    /// <summary>Picked with the arrow keys.</summary>
+    [ObservableProperty]
+    public partial bool IsSelected { get; set; }
+
+    public IRelayCommand OpenCommand { get; }
 }

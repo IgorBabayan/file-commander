@@ -15,8 +15,8 @@ public partial class AddressBar : UserControl
         InitializeComponent();
 
         Bar.PointerPressed += OnBarPointerPressed;
-        // handledEventsToo: TextBox may consume Enter/Escape itself
-        Input.AddHandler(KeyDownEvent, OnInputKeyDown, RoutingStrategies.Bubble, handledEventsToo: true);
+        // Tunnel: runs before the TextBox's own handling of Up/Down/Tab/Enter
+        Input.AddHandler(KeyDownEvent, OnInputKeyDown, RoutingStrategies.Tunnel);
         Input.LostFocus += OnInputLostFocus;
     }
 
@@ -61,21 +61,59 @@ public partial class AddressBar : UserControl
 
     private void OnInputKeyDown(object? sender, KeyEventArgs e)
     {
+        if (_viewModel is not { } vm)
+            return;
+
         switch (e.Key)
         {
-            case Key.Enter:
-                _viewModel?.CommitEdit();
+            case Key.Down when vm.IsSuggestionsOpen:
+            case Key.Up when vm.IsSuggestionsOpen:
+                var index = vm.MoveSelection(e.Key == Key.Down ? 1 : -1);
+                if (index >= 0)
+                    SuggestionList.ContainerFromIndex(index)?.BringIntoView();
                 e.Handled = true;
                 break;
+
+            case Key.Tab:
+                if (vm.CompleteSuggestion())
+                    MoveCaretToEnd();
+                // Handled either way: Tab moving focus away would cancel the edit
+                e.Handled = true;
+                break;
+
+            case Key.Enter:
+                if (!vm.OpenSelectedSuggestion())
+                    vm.CommitEdit();
+                e.Handled = true;
+                break;
+
             case Key.Escape:
-                _viewModel?.CancelEdit();
+                // First Escape closes the suggestions, the second one leaves edit mode
+                if (vm.IsSuggestionsOpen)
+                    vm.CloseSuggestions();
+                else
+                    vm.CancelEdit();
                 e.Handled = true;
                 break;
         }
     }
 
+    private void MoveCaretToEnd()
+    {
+        // After the binding has pushed the completed text into the box
+        Dispatcher.UIThread.Post(() =>
+        {
+            Input.ClearSelection();
+            Input.CaretIndex = Input.Text?.Length ?? 0;
+        });
+    }
+
     private void OnInputLostFocus(object? sender, RoutedEventArgs e)
     {
+        // A click on a suggestion: its command finishes the edit itself
+        if (SuggestionList.IsPointerOver)
+            return;
+
         if (_viewModel is { IsEditing: true })
             _viewModel.CancelEdit();
     }

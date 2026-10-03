@@ -115,6 +115,36 @@
             <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
         </Style>
 
+        <!-- ===== Autocomplete ===== -->
+        <Style Selector="Border.suggestions">
+            <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="4" />
+            <Setter Property="BoxShadow" Value="0 6 18 0 #66000000" />
+        </Style>
+        <Style Selector="Button.suggestion">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="Cursor" Value="Arrow" />
+        </Style>
+        <Style Selector="Button.suggestion.selected">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+        </Style>
+        <Style Selector="Button.suggestion:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.suggestion:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+
         <!-- ===== Path editor: no box of its own, the bar is the box ===== -->
         <Style Selector="TextBox.address-input">
             <Setter Property="Background" Value="Transparent" />
@@ -243,6 +273,39 @@
                      Text="{Binding EditText}"
                      IsVisible="{Binding IsEditing}"
                      VerticalAlignment="Stretch" />
+
+            <!-- Not light-dismiss: it closes when editing ends. Rows aren't focusable, so a click
+                 doesn't steal focus from the text box (which would cancel the edit). -->
+            <Popup IsOpen="{Binding IsSuggestionsOpen}"
+                   PlacementTarget="{Binding #Bar}"
+                   Placement="BottomEdgeAlignedLeft"
+                   VerticalOffset="4">
+                <Border Classes="suggestions" Width="{Binding #Bar.Bounds.Width}">
+                    <ScrollViewer MaxHeight="320" HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl x:Name="SuggestionList" ItemsSource="{Binding Suggestions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="shell:AddressSuggestionViewModel">
+                                    <Button Classes="suggestion"
+                                            Classes.selected="{Binding IsSelected}"
+                                            Focusable="False"
+                                            Command="{Binding OpenCommand}"
+                                            ToolTip.Tip="{Binding FullPath}">
+                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                            <avalonia:MaterialIcon Kind="FolderOutline"
+                                                                   Width="16" Height="16"
+                                                                   Foreground="{DynamicResource FcAccentBrush}" />
+                                            <TextBlock Text="{Binding Text}"
+                                                       FontSize="13"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </Popup>
         </Panel>
     </Border>
 </UserControl>
