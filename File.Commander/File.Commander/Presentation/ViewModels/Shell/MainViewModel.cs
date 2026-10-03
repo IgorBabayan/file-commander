@@ -1,9 +1,11 @@
 using CommunityToolkit.Mvvm.Input;
 using File.Commander.Application.Path;
+using File.Commander.Application.Settings;
 using File.Commander.Presentation.Services;
 using File.Commander.Presentation.ViewModels.Browser;
 using File.Commander.Presentation.ViewModels.Computer;
 using File.Commander.Presentation.ViewModels.Pages;
+using File.Commander.Presentation.ViewModels.Settings;
 using Material.Icons;
 
 namespace File.Commander.Presentation.ViewModels.Shell;
@@ -17,6 +19,11 @@ public partial class MainViewModel : ViewModelBase, INavigator
     private FileSortMode _sortMode = FileSortMode.NameAscending;
     private bool _showHiddenFiles;
     private readonly FileColumnsViewModel _columns = new();
+    private readonly IDialogService _dialogService;
+    private readonly ISettingsService _settings;
+
+    // What the shell currently runs with; compared on every save to apply only what changed
+    private AppSettings _appliedSettings;
 
     public SidebarViewModel Sidebar { get; }
 
@@ -111,8 +118,16 @@ public partial class MainViewModel : ViewModelBase, INavigator
         get => _showHiddenFiles;
         set
         {
-            if (SetProperty(ref _showHiddenFiles, value) && IsFolderPage)
+            if (!SetProperty(ref _showHiddenFiles, value))
+                return;
+
+            if (IsFolderPage)
                 Refresh();
+
+            // Ctrl+H and the sort menu change the stored setting too, so Settings and the next start agree
+            var current = _settings.Current;
+            if (current.Basic.ShowHiddenFiles != value)
+                _ = SaveSettingsAsync(current with { Basic = current.Basic with { ShowHiddenFiles = value } });
         }
     }
 
@@ -123,15 +138,27 @@ public partial class MainViewModel : ViewModelBase, INavigator
     public bool IsNotHyprland => !DesktopEnvironmentHelper.IsHyprland();
 #pragma warning restore CA1822
 
-    public MainViewModel()
+    public MainViewModel(IDialogService dialogService, ISettingsService settings)
     {
-        Sidebar = new SidebarViewModel(SystemLocations.GetUserDirectories(), SystemLocations.GetVolumes());
+        _dialogService = dialogService;
+        _settings = settings;
+        _appliedSettings = settings.Current;
+
+        // Before the first page is created, so it already uses them
+        _showHiddenFiles = _appliedSettings.Basic.ShowHiddenFiles;
+        _viewMode = ToViewMode(_appliedSettings.Workspace.DefaultView);
+
+        Sidebar = new SidebarViewModel(SystemLocations.GetUserDirectories(), SystemLocations.GetVolumes(),
+            _appliedSettings.Sidebar);
         Sidebar.NavigationRequested += (_, location) => Navigate(location);
         AddressBar = new AddressBarViewModel(this);
 
-        _currentPage = CreatePage(Locations.Computer);
-        Sidebar.Select(Locations.Computer);
-        AddressBar.Update(Locations.Computer);
+        var start = StartLocationOf(_appliedSettings.Basic.StartLocation);
+        _currentPage = CreatePage(start);
+        Sidebar.Select(start);
+        AddressBar.Update(start);
+
+        _settings.Changed += OnSettingsChanged;
     }
 
     /// <summary>What the content area shows. Replaced (and the old one disposed) on every navigation.</summary>
@@ -209,13 +236,85 @@ public partial class MainViewModel : ViewModelBase, INavigator
     }
 
     [RelayCommand]
-    public async Task Settings(CancellationToken cancellationToken = default)
+    private async Task Settings()
     {
-        /*var result = await _dialogService.ShowDialogAsync<SettingsViewModel, bool>(_settingsViewModel);*/
+        // A fresh one per opening: it reads the stored settings when created
+        using var settings = new SettingsViewModel(_settings);
+        await _dialogService.ShowDialogAsync<SettingsViewModel, bool>(settings);
     }
+
+    /// <summary>Settings are saved as they change; this applies each save to the running window.</summary>
+    private void OnSettingsChanged(object? sender, AppSettings settings)
+    {
+        var previous = _appliedSettings;
+        _appliedSettings = settings;
+
+        var (basic, wasBasic) = (settings.Basic, previous.Basic);
+        var reload = false;
+
+        // The field, not the property: the property would save the setting back and reload on its own
+        if (basic.ShowHiddenFiles != wasBasic.ShowHiddenFiles
+            && SetProperty(ref _showHiddenFiles, basic.ShowHiddenFiles, nameof(ShowHiddenFiles)))
+            reload |= IsFolderPage;
+
+        // Fixed for a folder page, so the page is rebuilt
+        if (basic.ShowFileExtensions != wasBasic.ShowFileExtensions
+            || basic.MixFilesAndFolders != wasBasic.MixFilesAndFolders
+            || basic.OpenFile != wasBasic.OpenFile)
+            reload |= IsFolderPage;
+
+        if (settings.Workspace.HideSystemDisk != previous.Workspace.HideSystemDisk)
+            reload |= CurrentPage is ComputerViewModel;
+
+        // Only a change of the default itself: Ctrl+1/2/3 choices survive unrelated saves
+        if (settings.Workspace.DefaultView != previous.Workspace.DefaultView)
+            ViewMode = ToViewMode(settings.Workspace.DefaultView);
+
+        if (settings.Sidebar != previous.Sidebar)
+        {
+            Sidebar.Apply(settings.Sidebar);
+            Sidebar.Select(CurrentPage.Location);
+        }
+
+        if (reload)
+            Refresh();
+    }
+
+    private async Task SaveSettingsAsync(AppSettings settings)
+    {
+        try
+        {
+            await _settings.SaveAsync(settings);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Trace.WriteLine($"Can't save settings: {ex.Message}");
+        }
+    }
+
+    private FolderOptions CurrentFolderOptions() => new(
+        ShowHidden: ShowHiddenFiles,
+        ShowExtensions: _appliedSettings.Basic.ShowFileExtensions,
+        MixFilesAndFolders: _appliedSettings.Basic.MixFilesAndFolders,
+        OpenOnSingleClick: _appliedSettings.Basic.OpenFile == OpenFileMode.Click);
+
+    private static DirectoryViewMode ToViewMode(FolderViewMode mode) => mode switch
+    {
+        FolderViewMode.Grid => DirectoryViewMode.Grid,
+        FolderViewMode.Tree => DirectoryViewMode.Tree,
+        _ => DirectoryViewMode.List,
+    };
+
+    private static string StartLocationOf(StartLocation start) => start switch
+    {
+        StartLocation.Home => SystemLocations.HomeDirectory,
+        StartLocation.Recent => Locations.Recent,
+        _ => Locations.Computer,
+    };
 
     protected override void OnDispose()
     {
+        _settings.Changed -= OnSettingsChanged;
         CurrentPage.Dispose();
         base.OnDispose();
     }
@@ -248,7 +347,12 @@ public partial class MainViewModel : ViewModelBase, INavigator
                 // Re-query so mounted/unmounted drives and free space are current
                 var volumes = SystemLocations.GetVolumes();
                 AddressBar.Volumes = volumes;
-                return new ComputerViewModel(SystemLocations.GetUserDirectories(), volumes, this);
+
+                // Hidden from the page only: the address bar still needs it to name paths under "/"
+                var shown = _appliedSettings.Workspace.HideSystemDisk
+                    ? volumes.Where(v => v.Kind != VolumeKind.System).ToList()
+                    : volumes;
+                return new ComputerViewModel(SystemLocations.GetUserDirectories(), shown, this);
             }
             case Locations.Recent:
                 return new PlaceholderPageViewModel(location, "Recent", MaterialIconKind.ClockOutline);
@@ -258,7 +362,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
                 return new PlaceholderPageViewModel(location, "Network", MaterialIconKind.LanConnect);
         }
 
-        var directory = new DirectoryViewModel(location, ViewMode, SortMode, ShowHiddenFiles, _columns, this);
+        var directory = new DirectoryViewModel(location, ViewMode, SortMode, CurrentFolderOptions(), _columns, this);
         _ = directory.LoadAsync(); // never throws, reports errors through Error
         return directory;
     }

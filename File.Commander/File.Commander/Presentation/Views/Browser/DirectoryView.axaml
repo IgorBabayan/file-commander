@@ -230,7 +230,7 @@
                             <TextBlock DockPanel.Dock="Right" Classes="meta cell col-modified" Text="{Binding ModifiedText}" />
                             <TextBlock DockPanel.Dock="Right" Classes="meta cell col-type" Text="{Binding TypeText}" />
                             <TextBlock DockPanel.Dock="Right" Classes="meta cell col-size" Text="{Binding SizeText}" />
-                            <TextBlock Text="{Binding Name}"
+                            <TextBlock Text="{Binding DisplayName}"
                                        FontSize="14"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis" />
@@ -259,7 +259,7 @@
                                                    Kind="{Binding Icon}"
                                                    Width="48" Height="48"
                                                    HorizontalAlignment="Center" />
-                            <TextBlock Text="{Binding Name}"
+                            <TextBlock Text="{Binding DisplayName}"
                                        FontSize="13"
                                        TextAlignment="Center"
                                        TextWrapping="Wrap"

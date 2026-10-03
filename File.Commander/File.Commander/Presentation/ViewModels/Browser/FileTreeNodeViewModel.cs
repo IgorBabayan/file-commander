@@ -10,19 +10,19 @@ namespace File.Commander.Presentation.ViewModels.Browser;
 public sealed partial class FileTreeNodeViewModel : ObservableObject
 {
     private readonly Func<IComparer<FileEntryViewModel>>? _comparer;
-    private readonly bool _showHidden;
+    private readonly FolderOptions _options;
     private readonly CancellationToken _cancellationToken;
     private bool _loadStarted;
 
     /// <param name="comparer">The page's current order, read whenever children are loaded.</param>
-    /// <param name="showHidden">Whether subfolders list dot files. Fixed for the page: toggling it reloads the page.</param>
+    /// <param name="options">How subfolders are read and shown. Fixed for the page: changing it reloads the page.</param>
     public FileTreeNodeViewModel(FileEntryViewModel entry, Func<IComparer<FileEntryViewModel>> comparer,
-        bool showHidden, CancellationToken cancellationToken)
+        FolderOptions options, CancellationToken cancellationToken)
     {
         Entry = entry;
-        Name = entry.Name;
+        Name = entry.DisplayName;
         _comparer = comparer;
-        _showHidden = showHidden;
+        _options = options;
         _cancellationToken = cancellationToken;
 
         // A placeholder child makes the expander show before the folder is read
@@ -87,7 +87,7 @@ public sealed partial class FileTreeNodeViewModel : ObservableObject
         {
             var path = Entry!.FullPath;
             var comparer = _comparer!();
-            var entries = await Task.Run(() => DirectoryViewModel.ReadEntries(path, comparer, _showHidden, token), token);
+            var entries = await Task.Run(() => DirectoryViewModel.ReadEntries(path, comparer, _options, token), token);
 
             // The order may have changed while the folder was being read
             if (_comparer() is var current && !ReferenceEquals(current, comparer))
@@ -95,7 +95,7 @@ public sealed partial class FileTreeNodeViewModel : ObservableObject
 
             Children = entries.Count == 0
                 ? [Placeholder("Empty")]
-                : entries.Select(e => new FileTreeNodeViewModel(e, _comparer, _showHidden, token)).ToList();
+                : entries.Select(e => new FileTreeNodeViewModel(e, _comparer, _options, token)).ToList();
         }
         catch (OperationCanceledException)
         {

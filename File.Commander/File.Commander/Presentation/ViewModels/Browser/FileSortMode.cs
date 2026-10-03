@@ -24,17 +24,21 @@ public enum FileSortMode
 
 public static class FileSorting
 {
-    // One instance per mode, so callers can tell by reference whether the order changed
-    private static readonly Dictionary<FileSortMode, IComparer<FileEntryViewModel>> Comparers =
-        Enum.GetValues<FileSortMode>().ToDictionary(mode => mode, Create);
+    // One instance per mode and folder placement, so callers can tell by reference whether the order changed
+    private static readonly Dictionary<(FileSortMode, bool), IComparer<FileEntryViewModel>> Comparers =
+        Enum.GetValues<FileSortMode>()
+            .SelectMany(mode => new[] { (mode, false), (mode, true) })
+            .ToDictionary(key => key, key => Create(key.Item1, key.Item2));
 
-    public static IComparer<FileEntryViewModel> For(FileSortMode mode) => Comparers[mode];
+    /// <param name="mixFilesAndFolders">False: folders come first, whatever the order.</param>
+    public static IComparer<FileEntryViewModel> For(FileSortMode mode, bool mixFilesAndFolders = false)
+        => Comparers[(mode, mixFilesAndFolders)];
 
-    private static IComparer<FileEntryViewModel> Create(FileSortMode mode) =>
+    private static IComparer<FileEntryViewModel> Create(FileSortMode mode, bool mixFilesAndFolders) =>
         Comparer<FileEntryViewModel>.Create((a, b) =>
         {
-            // Folders always come first, whatever the order
-            if (a.IsDirectory != b.IsDirectory)
+            // Folders come first, whatever the order, unless the user mixes them in
+            if (!mixFilesAndFolders && a.IsDirectory != b.IsDirectory)
                 return a.IsDirectory ? -1 : 1;
 
             var result = mode switch

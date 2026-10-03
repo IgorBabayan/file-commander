@@ -1,0 +1,352 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:File.Commander.Presentation.ViewModels.Settings"
+        xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
+        x:Class="File.Commander.Presentation.Views.Settings.SettingsWindow"
+        x:DataType="vm:SettingsViewModel"
+        Title="Settings — File Commander"
+        SystemDecorations="None"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        RequestedThemeVariant="Dark">
+    <!-- DialogService sizes this window to cover the owner; the card is centered on a dimmed backdrop -->
+
+    <Window.Resources>
+        <!-- Check boxes in the palette's accent instead of the system accent -->
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillChecked" Color="{StaticResource Blue}" />
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPointerOver" Color="{StaticResource Lavender}" />
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPressed" Color="{StaticResource Sapphire}" />
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeChecked" Color="{StaticResource Blue}" />
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPointerOver" Color="{StaticResource Lavender}" />
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPressed" Color="{StaticResource Sapphire}" />
+        <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundChecked" Color="{StaticResource Crust}" />
+        <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPointerOver" Color="{StaticResource Crust}" />
+        <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPressed" Color="{StaticResource Crust}" />
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{StaticResource BaseBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource Surface0Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BoxShadow" Value="0 12 40 0 #66000000" />
+        </Style>
+
+        <!-- ===== Navigation ===== -->
+        <Style Selector="ListBox.settings-nav">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="8,0,8,12" />
+        </Style>
+        <Style Selector="ListBox.settings-nav ListBoxItem">
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Margin" Value="0,1" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        </Style>
+        <Style Selector="ListBox.settings-nav ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style Selector="ListBox.settings-nav ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource Surface0Brush}" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        </Style>
+        <Style Selector="ListBox.settings-nav ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource BlueBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource CrustBrush}" />
+        </Style>
+        <Style Selector="ListBox.settings-nav ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource LavenderBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource CrustBrush}" />
+        </Style>
+
+        <Style Selector="TextBlock.nav-group">
+            <Setter Property="FontSize" Value="20" />
+        </Style>
+        <Style Selector="TextBlock.nav-section">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Margin" Value="18,0,0,0" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="Foreground" Value="{StaticResource Subtext1Brush}" />
+        </Style>
+        <Style Selector="ListBoxItem:selected TextBlock.nav-section">
+            <Setter Property="Foreground" Value="{StaticResource CrustBrush}" />
+        </Style>
+
+        <!-- ===== Content ===== -->
+        <Style Selector="TextBlock.group-title">
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Margin" Value="0,28,0,0" />
+        </Style>
+        <Style Selector="TextBlock.group-title.first">
+            <Setter Property="Margin" Value="0" />
+        </Style>
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Foreground" Value="{StaticResource Subtext1Brush}" />
+            <Setter Property="Margin" Value="2,18,0,8" />
+        </Style>
+        <Style Selector="StackPanel.section">
+            <Setter Property="Spacing" Value="2" />
+        </Style>
+        <Style Selector="Border.setting-row">
+            <Setter Property="Background" Value="{StaticResource Surface0Brush}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="MinHeight" Value="40" />
+        </Style>
+        <Style Selector="TextBlock.setting-label">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        </Style>
+        <Style Selector="CheckBox.setting">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        </Style>
+        <Style Selector="ComboBox.setting">
+            <Setter Property="Width" Value="260" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="{StaticResource Surface1Brush}" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.save-error">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{StaticResource RedBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+    </Window.Styles>
+
+    <Panel>
+        <!-- Clicking the dimmed area closes the window -->
+        <Border Background="#8C11111B" PointerPressed="OnBackdropPressed" />
+
+        <Border Classes="card" MaxWidth="780" MaxHeight="600" Margin="32">
+            <Grid ColumnDefinitions="210,*" RowDefinitions="44,*">
+                <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto" Margin="0,0,8,0">
+                    <TextBlock Grid.Column="0"
+                               Classes="save-error"
+                               Text="{Binding SaveError}"
+                               IsVisible="{Binding HasSaveError}" />
+                    <Button Grid.Column="1"
+                            Classes="window-button close"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Close (Esc)"
+                            Click="OnCloseClick">
+                        <avalonia:MaterialIcon Kind="WindowClose" />
+                    </Button>
+                </Grid>
+
+                <!-- ================= Navigation ================= -->
+                <ListBox x:Name="Navigation"
+                         Grid.Row="1" Grid.Column="0"
+                         Classes="settings-nav"
+                         ItemsSource="{Binding NavItems}"
+                         SelectedItem="{Binding SelectedNavItem}"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.DataTemplates>
+                        <DataTemplate DataType="vm:SettingsNavGroup">
+                            <TextBlock Classes="nav-group" Text="{Binding Title}" />
+                        </DataTemplate>
+                        <DataTemplate DataType="vm:SettingsNavSection">
+                            <TextBlock Classes="nav-section" Text="{Binding Title}" ToolTip.Tip="{Binding Title}" />
+                        </DataTemplate>
+                    </ListBox.DataTemplates>
+                </ListBox>
+
+                <!-- ================= Content ================= -->
+                <!-- Every heading's Tag is the Key of its navigation entry -->
+                <Border Grid.Row="1" Grid.Column="1"
+                        Background="{StaticResource MantleBrush}"
+                        CornerRadius="10"
+                        Margin="0,0,12,12"
+                        ClipToBounds="True">
+                    <ScrollViewer x:Name="ContentScroll" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel x:Name="ContentHost" Margin="24,16,24,24">
+
+                            <!-- ===== Basic ===== -->
+                            <TextBlock Classes="group-title first" Text="Basic" Tag="basic" />
+
+                            <TextBlock Classes="section-title" Text="Open behavior" Tag="open-behavior" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting"
+                                              Content="Always open folder in new window"
+                                              IsChecked="{Binding AlwaysOpenFolderInNewWindow}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="setting-label" Text="Open file:" />
+                                        <ComboBox Grid.Column="1" Classes="setting"
+                                                  ItemsSource="{Binding OpenFileOptions}"
+                                                  SelectedItem="{Binding OpenFile}" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="New window and tab" Tag="new-window-tab" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="setting-label" Text="Open from default window:" />
+                                        <ComboBox Grid.Column="1" Classes="setting"
+                                                  ItemsSource="{Binding StartLocationOptions}"
+                                                  SelectedItem="{Binding StartLocation}" />
+                                    </Grid>
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="setting-label" Text="Open in new tab:" />
+                                        <ComboBox Grid.Column="1" Classes="setting"
+                                                  ItemsSource="{Binding NewTabOptions}"
+                                                  SelectedItem="{Binding NewTabLocation}" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Files and folders" Tag="files-folders" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Show hidden files"
+                                              IsChecked="{Binding ShowHiddenFiles}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Show file extensions"
+                                              IsChecked="{Binding ShowFileExtensions}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Mix sorting of files and folders"
+                                              IsChecked="{Binding MixFilesAndFolders}" />
+                                </Border>
+                            </StackPanel>
+
+                            <!-- ===== Sidebar ===== -->
+                            <TextBlock Classes="group-title" Text="Sidebar" Tag="sidebar" />
+
+                            <TextBlock Classes="section-title" Text="Items on sidebar" Tag="sidebar-items" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Recent" IsChecked="{Binding ShowRecent}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Home" IsChecked="{Binding ShowHome}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="User folders (Desktop, Documents, Downloads…)"
+                                              IsChecked="{Binding ShowUserFolders}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Trash" IsChecked="{Binding ShowTrash}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Computer" IsChecked="{Binding ShowComputer}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Partitions" IsChecked="{Binding ShowPartitions}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Network" IsChecked="{Binding ShowNetwork}" />
+                                </Border>
+                            </StackPanel>
+
+                            <!-- ===== Workspace ===== -->
+                            <TextBlock Classes="group-title" Text="Workspace" Tag="workspace" />
+
+                            <TextBlock Classes="section-title" Text="View" Tag="view" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="setting-label" Text="Default view:" />
+                                        <ComboBox Grid.Column="1" Classes="setting"
+                                                  ItemsSource="{Binding ViewOptions}"
+                                                  SelectedItem="{Binding DefaultView}" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Thumbnail preview" Tag="thumbnails" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Images" IsChecked="{Binding PreviewImages}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Videos" IsChecked="{Binding PreviewVideos}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Text files" IsChecked="{Binding PreviewText}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Documents (PDF, office files)"
+                                              IsChecked="{Binding PreviewDocuments}" />
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Computer display" Tag="computer-display" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Hide the system disk"
+                                              IsChecked="{Binding HideSystemDisk}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Show the file system on disk icons"
+                                              IsChecked="{Binding ShowFileSystemOnDisks}" />
+                                </Border>
+                            </StackPanel>
+
+                            <!-- ===== Advanced ===== -->
+                            <TextBlock Classes="group-title" Text="Advanced" Tag="advanced" />
+
+                            <TextBlock Classes="section-title" Text="Search" Tag="search" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Full-text search (indexes file contents)"
+                                              IsChecked="{Binding FullTextSearch}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Index external drives"
+                                              IsChecked="{Binding IndexExternalDrives}" />
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Mount" Tag="mount" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Mount drives when they're plugged in"
+                                              IsChecked="{Binding AutoMount}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Open the drive after it's mounted"
+                                              IsChecked="{Binding OpenAfterAutoMount}"
+                                              IsEnabled="{Binding AutoMount}" />
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Dialog" Tag="dialog" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Ask before deleting files permanently"
+                                              IsChecked="{Binding ConfirmPermanentDelete}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Show progress for copy and move"
+                                              IsChecked="{Binding ShowOperationProgress}" />
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+        </Border>
+    </Panel>
+</Window>

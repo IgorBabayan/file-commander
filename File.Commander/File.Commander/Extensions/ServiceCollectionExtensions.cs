@@ -1,3 +1,5 @@
+using File.Commander.Application.Settings;
+using File.Commander.Presentation.Views.Settings;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace File.Commander.Extensions;
@@ -54,17 +56,18 @@ static class ServiceCollectionExtensions
 
         public IServiceCollection RegisterServices()
         {
-            return services.AddSingleton<IDialogService, DialogService>();
+            return services
+                .AddSingleton<IDialogService, DialogService>()
+                .AddSingleton<ISettingsService>(_ => new SettingsService(SettingsService.DefaultPath))
+                // Transient: a closed window can't be shown again
+                .AddTransient<SettingsWindow>();
         }
         
         private static AppSettings LoadStartupSettings()
         {
             try
             {
-                /*var pathFinder = new PathFinder(PlatformPathResolverFactory.Create());
-                return new SettingsStorage().Load(pathFinder.GetConfigPath());*/
-                //! TODO: fix
-                return new AppSettings();
+                return SettingsService.Load(SettingsService.DefaultPath);
             }
             catch (Exception ex)
             {

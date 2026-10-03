@@ -6,13 +6,14 @@ namespace File.Commander.Presentation.ViewModels.Browser;
 
 public sealed class FileEntryViewModel
 {
-    private FileEntryViewModel(FileSystemInfo info, Details details)
+    private FileEntryViewModel(FileSystemInfo info, Details details, bool showExtension)
     {
         Name = info.Name;
         FullPath = info.FullName;
         IsDirectory = info is DirectoryInfo;
         IsSymlink = details.LinkTarget is not null;
         IsHidden = Name.StartsWith('.');
+        DisplayName = showExtension || info is DirectoryInfo ? Name : WithoutExtension(Name);
 
         var (icon, kind) = Describe(Name, IsDirectory);
         Icon = icon;
@@ -27,7 +28,11 @@ public sealed class FileEntryViewModel
         PermissionsText = FormatMode(details.Mode, IsDirectory, IsSymlink);
     }
 
+    /// <summary>The name on disk. Used for sorting.</summary>
     public string Name { get; }
+
+    /// <summary>What the views show: <see cref="Name"/>, without the extension when extensions are hidden.</summary>
+    public string DisplayName { get; }
 
     public string FullPath { get; }
 
@@ -62,7 +67,17 @@ public sealed class FileEntryViewModel
     /// <summary>ls-style mode, e.g. "drwxr-xr-x". Empty where the mode can't be read.</summary>
     public string PermissionsText { get; }
 
-    public static FileEntryViewModel From(FileSystemInfo info) => new(info, Details.Read(info));
+    /// <param name="showExtension">False: <see cref="DisplayName"/> drops the extension of files.</param>
+    public static FileEntryViewModel From(FileSystemInfo info, bool showExtension = true)
+        => new(info, Details.Read(info), showExtension);
+
+    private static string WithoutExtension(string name)
+    {
+        var extension = IOPath.GetExtension(name);
+
+        // ".bashrc" is a name, not an extension
+        return extension.Length <= 1 || extension.Length == name.Length ? name : name[..^extension.Length];
+    }
 
     /// <summary>Everything that can fail to read. Each value is read on its own, so one failure doesn't hide the rest.</summary>
     private readonly record struct Details(

@@ -16,18 +16,18 @@ public sealed partial class DirectoryViewModel : PageViewModel
     private static readonly EnumerationOptions WithHidden = new() { IgnoreInaccessible = false, AttributesToSkip = 0 };
 
     private readonly INavigator _navigator;
-    private readonly bool _showHidden;
+    private readonly FolderOptions _options;
     private readonly CancellationTokenSource _cts = new();
 
     // The entries TreeRoots was built from: switching views keeps the expanded folders
     private IReadOnlyList<FileEntryViewModel>? _treeSource;
 
-    /// <param name="showHidden">Whether dot files are listed. Fixed for the page: the shell reloads it when this changes.</param>
-    public DirectoryViewModel(string path, DirectoryViewMode viewMode, FileSortMode sortMode, bool showHidden,
+    /// <param name="options">How entries are read and shown. Fixed for the page: the shell reloads it when they change.</param>
+    public DirectoryViewModel(string path, DirectoryViewMode viewMode, FileSortMode sortMode, FolderOptions options,
         FileColumnsViewModel columns, INavigator navigator)
     {
         _navigator = navigator;
-        _showHidden = showHidden;
+        _options = options;
         Columns = columns;
         Location = Locations.Normalize(path);
         Title = Location == "/" ? "/" : IOPath.GetFileName(Location);
@@ -41,6 +41,9 @@ public sealed partial class DirectoryViewModel : PageViewModel
 
     /// <summary>Shared with the shell and every other folder page.</summary>
     public FileColumnsViewModel Columns { get; }
+
+    /// <summary>Settings → Open file: Click. The view opens entries on a click instead of a double click.</summary>
+    public bool OpenOnSingleClick => _options.OpenOnSingleClick;
 
     /// <summary>Set by the shell when the user picks another layout.</summary>
     [ObservableProperty]
@@ -102,12 +105,12 @@ public sealed partial class DirectoryViewModel : PageViewModel
         try
         {
             var path = Location;
-            var comparer = FileSorting.For(SortMode);
-            var showHidden = _showHidden;
-            var entries = await Task.Run(() => ReadEntries(path, comparer, showHidden, token), token);
+            var comparer = CurrentComparer();
+            var options = _options;
+            var entries = await Task.Run(() => ReadEntries(path, comparer, options, token), token);
 
             // The order may have changed while the folder was being read
-            if (FileSorting.For(SortMode) is var current && !ReferenceEquals(current, comparer))
+            if (CurrentComparer() is var current && !ReferenceEquals(current, comparer))
                 entries = entries.Order(current).ToList();
 
             if (!token.IsCancellationRequested)
@@ -163,7 +166,7 @@ public sealed partial class DirectoryViewModel : PageViewModel
 
     partial void OnSortModeChanged(FileSortMode value)
     {
-        var comparer = FileSorting.For(value);
+        var comparer = FileSorting.For(value, _options.MixFilesAndFolders);
         var sorted = Entries.Order(comparer).ToList();
 
         // Reorder the tree in place rather than rebuilding it, so expanded folders stay expanded
@@ -182,10 +185,10 @@ public sealed partial class DirectoryViewModel : PageViewModel
             return;
 
         _treeSource = Entries;
-        TreeRoots = Entries.Select(e => new FileTreeNodeViewModel(e, CurrentComparer, _showHidden, _cts.Token)).ToList();
+        TreeRoots = Entries.Select(e => new FileTreeNodeViewModel(e, CurrentComparer, _options, _cts.Token)).ToList();
     }
 
-    private IComparer<FileEntryViewModel> CurrentComparer() => FileSorting.For(SortMode);
+    private IComparer<FileEntryViewModel> CurrentComparer() => FileSorting.For(SortMode, _options.MixFilesAndFolders);
 
     protected override void OnDispose()
     {
@@ -196,17 +199,17 @@ public sealed partial class DirectoryViewModel : PageViewModel
 
     /// <summary>Also used by the tree view to read subfolders.</summary>
     internal static IReadOnlyList<FileEntryViewModel> ReadEntries(string path, IComparer<FileEntryViewModel> comparer,
-        bool showHidden, CancellationToken token)
+        FolderOptions options, CancellationToken token)
     {
         var directory = new DirectoryInfo(path);
         if (!directory.Exists)
             throw new DirectoryNotFoundException(path);
 
         var result = new List<FileEntryViewModel>();
-        foreach (var info in directory.EnumerateFileSystemInfos("*", showHidden ? WithHidden : WithoutHidden))
+        foreach (var info in directory.EnumerateFileSystemInfos("*", options.ShowHidden ? WithHidden : WithoutHidden))
         {
             token.ThrowIfCancellationRequested();
-            result.Add(FileEntryViewModel.From(info));
+            result.Add(FileEntryViewModel.From(info, options.ShowExtensions));
         }
 
         result.Sort(comparer);

@@ -1,4 +1,7 @@
 using Avalonia.Controls;
+using File.Commander.Presentation.ViewModels.Settings;
+using File.Commander.Presentation.Views.Settings;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace File.Commander.Application.IDialogService;
 
@@ -15,8 +18,8 @@ class DialogService : IDialogService
         var owner = Utils.GetTopWindow();
         Window dialog = viewModel switch
         {
-            /*ConfirmDialogViewModel => _serviceProvider.GetRequiredService<ConfirmDialogWindow>(),
             SettingsViewModel => _serviceProvider.GetRequiredService<SettingsWindow>(),
+            /*ConfirmDialogViewModel => _serviceProvider.GetRequiredService<ConfirmDialogWindow>(),
             ImportFolderViewModel => _serviceProvider.GetRequiredService<ImportFolderWindow>(),
             PluginSettingsDialogViewModel => _serviceProvider.GetRequiredService<PluginSettingsDialogWindow>(),*/
 
