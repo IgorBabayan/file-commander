@@ -25,15 +25,8 @@ public partial class SidebarViewModel : ViewModelBase
             new SidebarItem("Home", MaterialIconKind.HomeOutline, SystemLocations.HomeDirectory),
         };
  
-        entries.AddRange(directories
-            .Where(d => d.Kind != UserDirectoryKind.Downloads)
-            .Select(ToItem));
- 
+        entries.AddRange(directories.Select(ToItem));
         entries.Add(new SidebarItem("Trash", MaterialIconKind.TrashCanOutline, TRASH_LOCATION));
- 
-        entries.AddRange(directories
-            .Where(d => d.Kind == UserDirectoryKind.Downloads)
-            .Select(ToItem));
  
         entries.Add(new SidebarHeader("Partitions"));
         entries.Add(computer);
