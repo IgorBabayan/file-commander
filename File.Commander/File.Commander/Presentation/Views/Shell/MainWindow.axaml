@@ -295,19 +295,14 @@
                         <avalonia:MaterialIcon Kind="Monitor" Width="18" Height="18" />
                     </Button>
 
-                    <!-- Address bar: breadcrumbs, click the empty part (or Ctrl+L) to type a path -->
+                    <!-- Address bar: breadcrumbs, click the empty part (or Ctrl+L) to type a path.
+                         F5 still refreshes; the view switcher took the refresh button's place. -->
                     <Grid Grid.Column="3"
                           ColumnDefinitions="*,Auto"
                           Margin="12,0,16,0"
                           VerticalAlignment="Center">
                         <shellViews:AddressBar Grid.Column="0" DataContext="{Binding AddressBar}" />
-                        <Button Grid.Column="1"
-                                Classes="window-button"
-                                Margin="6,0,0,0"
-                                ToolTip.Tip="Refresh (F5)"
-                                Command="{Binding RefreshCommand}">
-                            <avalonia:MaterialIcon Kind="Refresh" />
-                        </Button>
+                        <shellViews:ViewModeSwitcher Grid.Column="1" Margin="10,0,0,0" />
                     </Grid>
 
                     <StackPanel Grid.Column="4"

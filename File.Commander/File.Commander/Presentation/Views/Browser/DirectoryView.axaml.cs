@@ -12,9 +12,17 @@ public partial class DirectoryView : UserControl
     {
         InitializeComponent();
 
-        FileList.DoubleTapped += OnEntryDoubleTapped;
-        // handledEventsToo: ListBox may consume Enter itself
-        FileList.AddHandler(KeyDownEvent, OnListKeyDown, RoutingStrategies.Bubble, handledEventsToo: true);
+        // List and grid show the same entries, so they share the handlers
+        foreach (var list in new[] { FileList, GridList })
+        {
+            list.DoubleTapped += OnEntryDoubleTapped;
+            // handledEventsToo: ListBox may consume Enter itself
+            list.AddHandler(KeyDownEvent, OnListKeyDown, RoutingStrategies.Bubble, handledEventsToo: true);
+        }
+
+        FileTree.DoubleTapped += OnTreeDoubleTapped;
+        // handledEventsToo: TreeView may consume Enter itself
+        FileTree.AddHandler(KeyDownEvent, OnTreeKeyDown, RoutingStrategies.Bubble, handledEventsToo: true);
     }
 
     private void OnEntryDoubleTapped(object? sender, TappedEventArgs e)
@@ -30,6 +38,27 @@ public partial class DirectoryView : UserControl
             return;
 
         if (DataContext is DirectoryViewModel { SelectedEntry: { } entry } vm)
+        {
+            vm.OpenCommand.Execute(entry);
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>Opens files only: a double-click on a folder expands it (TreeViewItem does that itself).</summary>
+    private void OnTreeDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is DirectoryViewModel vm
+            && (e.Source as StyledElement)?.DataContext is FileTreeNodeViewModel { Entry: { IsDirectory: false } entry })
+            vm.OpenCommand.Execute(entry);
+    }
+
+    /// <summary>Enter opens a file or goes into a folder, as in the list.</summary>
+    private void OnTreeKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter || e.KeyModifiers != KeyModifiers.None)
+            return;
+
+        if (DataContext is DirectoryViewModel vm && FileTree.SelectedItem is FileTreeNodeViewModel { Entry: { } entry })
         {
             vm.OpenCommand.Execute(entry);
             e.Handled = true;

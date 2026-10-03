@@ -30,6 +30,9 @@
         <DependentUpon>MainWindow.axaml</DependentUpon>
         <SubType>Code</SubType>
       </Compile>
+      <Compile Update="Presentation\Views\Shell\ViewModeSwitcher.axaml.cs">
+        <DependentUpon>ViewModeSwitcher.axaml</DependentUpon>
+      </Compile>
     </ItemGroup>
 
     <ItemGroup>

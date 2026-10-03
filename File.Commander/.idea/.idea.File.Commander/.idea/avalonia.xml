@@ -7,6 +7,7 @@
         <entry key="File.Commander/Presentation/Styles/Button.axaml" value="File.Commander/File.Commander.csproj" />
         <entry key="File.Commander/Presentation/Styles/TextBlock.axaml" value="File.Commander/File.Commander.csproj" />
         <entry key="File.Commander/Presentation/Styles/Theme.axaml" value="File.Commander/File.Commander.csproj" />
+        <entry key="File.Commander/Presentation/Views/Browser/DirectoryView.axaml" value="File.Commander/File.Commander.csproj" />
         <entry key="File.Commander/Presentation/Views/MainWindow.axaml" value="File.Commander/File.Commander.csproj" />
         <entry key="File.Commander/Presentation/Views/Shell/MainWindow.axaml" value="File.Commander/File.Commander.csproj" />
         <entry key="File.Commander/Views/MainWindow.axaml" value="File.Commander/File.Commander.csproj" />

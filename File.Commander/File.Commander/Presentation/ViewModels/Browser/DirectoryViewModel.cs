@@ -15,20 +15,45 @@ public sealed partial class DirectoryViewModel : PageViewModel
     private readonly INavigator _navigator;
     private readonly CancellationTokenSource _cts = new();
 
-    public DirectoryViewModel(string path, INavigator navigator)
+    // The entries TreeRoots was built from: switching views keeps the expanded folders
+    private IReadOnlyList<FileEntryViewModel>? _treeSource;
+
+    public DirectoryViewModel(string path, DirectoryViewMode viewMode, INavigator navigator)
     {
         _navigator = navigator;
         Location = Locations.Normalize(path);
         Title = Location == "/" ? "/" : IOPath.GetFileName(Location);
+        ViewMode = viewMode;
     }
 
     public override string Location { get; }
 
     public override string Title { get; }
 
+    /// <summary>Set by the shell when the user picks another layout.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(StatusText), nameof(IsEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsGridView), nameof(IsListView), nameof(IsTreeView), nameof(GridEntries))]
+    public partial DirectoryViewMode ViewMode { get; set; }
+
+    public bool IsGridView => ViewMode == DirectoryViewMode.Grid;
+
+    public bool IsListView => ViewMode == DirectoryViewMode.List;
+
+    public bool IsTreeView => ViewMode == DirectoryViewMode.Tree;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StatusText), nameof(IsEmpty), nameof(GridEntries))]
     public partial IReadOnlyList<FileEntryViewModel> Entries { get; set; } = [];
+
+    /// <summary>
+    /// <see cref="Entries"/> while the grid is shown, empty otherwise: its WrapPanel doesn't
+    /// virtualize, so a hidden grid would still create a tile for every entry.
+    /// </summary>
+    public IReadOnlyList<FileEntryViewModel> GridEntries => IsGridView ? Entries : [];
+
+    /// <summary>Top level of the tree view. Built only while the tree is shown.</summary>
+    [ObservableProperty]
+    public partial IReadOnlyList<FileTreeNodeViewModel> TreeRoots { get; set; } = [];
 
     [ObservableProperty]
     public partial FileEntryViewModel? SelectedEntry { get; set; }
@@ -109,6 +134,19 @@ public sealed partial class DirectoryViewModel : PageViewModel
         }
     }
 
+    partial void OnViewModeChanged(DirectoryViewMode value) => EnsureTree();
+
+    partial void OnEntriesChanged(IReadOnlyList<FileEntryViewModel> value) => EnsureTree();
+
+    private void EnsureTree()
+    {
+        if (!IsTreeView || ReferenceEquals(_treeSource, Entries))
+            return;
+
+        _treeSource = Entries;
+        TreeRoots = Entries.Select(e => new FileTreeNodeViewModel(e, _cts.Token)).ToList();
+    }
+
     protected override void OnDispose()
     {
         // Navigated away: stop reading a folder nobody looks at
@@ -116,7 +154,8 @@ public sealed partial class DirectoryViewModel : PageViewModel
         base.OnDispose();
     }
 
-    private static IReadOnlyList<FileEntryViewModel> ReadEntries(string path, CancellationToken token)
+    /// <summary>Also used by the tree view to read subfolders.</summary>
+    internal static IReadOnlyList<FileEntryViewModel> ReadEntries(string path, CancellationToken token)
     {
         var directory = new DirectoryInfo(path);
         if (!directory.Exists)

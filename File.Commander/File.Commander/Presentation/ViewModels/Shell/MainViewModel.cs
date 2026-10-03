@@ -13,10 +13,35 @@ public partial class MainViewModel : ViewModelBase, INavigator
     private readonly Stack<string> _back = new();
     private readonly Stack<string> _forward = new();
     private PageViewModel _currentPage;
+    private DirectoryViewMode _viewMode = DirectoryViewMode.List;
 
     public SidebarViewModel Sidebar { get; }
 
     public AddressBarViewModel AddressBar { get; }
+
+    /// <summary>Layout of folder pages. Kept across navigation.</summary>
+    public DirectoryViewMode ViewMode
+    {
+        get => _viewMode;
+        private set
+        {
+            if (!SetProperty(ref _viewMode, value))
+                return;
+
+            OnPropertyChanged(nameof(IsGridView));
+            OnPropertyChanged(nameof(IsListView));
+            OnPropertyChanged(nameof(IsTreeView));
+
+            if (CurrentPage is DirectoryViewModel directory)
+                directory.ViewMode = value;
+        }
+    }
+
+    public bool IsGridView => ViewMode == DirectoryViewMode.Grid;
+
+    public bool IsListView => ViewMode == DirectoryViewMode.List;
+
+    public bool IsTreeView => ViewMode == DirectoryViewMode.Tree;
 
 #pragma warning disable CA1822
     public bool IsNotHyprland => !DesktopEnvironmentHelper.IsHyprland();
@@ -86,6 +111,18 @@ public partial class MainViewModel : ViewModelBase, INavigator
     [RelayCommand]
     private void Refresh() => Show(CurrentPage.Location);
 
+    [RelayCommand(CanExecute = nameof(CanChangeViewMode))]
+    private void ShowGridView() => ViewMode = DirectoryViewMode.Grid;
+
+    [RelayCommand(CanExecute = nameof(CanChangeViewMode))]
+    private void ShowListView() => ViewMode = DirectoryViewMode.List;
+
+    [RelayCommand(CanExecute = nameof(CanChangeViewMode))]
+    private void ShowTreeView() => ViewMode = DirectoryViewMode.Tree;
+
+    /// <summary>Only folder pages have a layout to switch.</summary>
+    private bool CanChangeViewMode() => CurrentPage is DirectoryViewModel;
+
     [RelayCommand]
     public async Task Settings(CancellationToken cancellationToken = default)
     {
@@ -110,6 +147,9 @@ public partial class MainViewModel : ViewModelBase, INavigator
         GoBackCommand.NotifyCanExecuteChanged();
         GoForwardCommand.NotifyCanExecuteChanged();
         GoUpCommand.NotifyCanExecuteChanged();
+        ShowGridViewCommand.NotifyCanExecuteChanged();
+        ShowListViewCommand.NotifyCanExecuteChanged();
+        ShowTreeViewCommand.NotifyCanExecuteChanged();
     }
 
     // History stores locations, not pages: going back re-reads the folder, so it's never stale
@@ -132,7 +172,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
                 return new PlaceholderPageViewModel(location, "Network", MaterialIconKind.LanConnect);
         }
 
-        var directory = new DirectoryViewModel(location, this);
+        var directory = new DirectoryViewModel(location, ViewMode, this);
         _ = directory.LoadAsync(); // never throws, reports errors through Error
         return directory;
     }

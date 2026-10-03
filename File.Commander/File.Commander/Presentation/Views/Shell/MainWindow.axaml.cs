@@ -53,7 +53,8 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Ctrl+L / Alt+D: type a path, F5: refresh, Alt+Left / Alt+Right / Alt+Up and Backspace: history and "up".
+    /// Ctrl+L / Alt+D: type a path, F5: refresh, Ctrl+1 / Ctrl+2 / Ctrl+3: grid / list / tree,
+    /// Alt+Left / Alt+Right / Alt+Up and Backspace: history and "up".
     /// </summary>
     private void OnNavigationKeyDown(object? sender, KeyEventArgs e)
     {
@@ -64,6 +65,9 @@ public partial class MainWindow : Window
         {
             (Key.L, KeyModifiers.Control) or (Key.D, KeyModifiers.Alt) => vm.AddressBar.BeginEditCommand,
             (Key.F5, KeyModifiers.None) => vm.RefreshCommand,
+            (Key.D1 or Key.NumPad1, KeyModifiers.Control) => vm.ShowGridViewCommand,
+            (Key.D2 or Key.NumPad2, KeyModifiers.Control) => vm.ShowListViewCommand,
+            (Key.D3 or Key.NumPad3, KeyModifiers.Control) => vm.ShowTreeViewCommand,
             _ => null,
         };
 
