@@ -52,7 +52,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
     public bool IsTreeView => ViewMode == DirectoryViewMode.Tree;
 
-    /// <summary>Order of folder pages. Kept across navigation.</summary>
+    /// <summary>The sort menu's order: saved in settings and used by every folder opened.</summary>
     public FileSortMode SortMode
     {
         get;
@@ -69,9 +69,16 @@ public partial class MainViewModel : ViewModelBase, INavigator
             OnPropertyChanged(nameof(IsSortedByType));
 
             if (CurrentPage is DirectoryViewModel directory)
-                directory.SortMode = value;
+                directory.Sort = FileSort.Of(value);
+
+            // Saved like ShowHiddenFiles; the check also keeps OnSettingsChanged from saving it back
+            var current = _settings.Current;
+            var basic = current.Basic!;
+            var stored = ToSortOrder(value);
+            if (basic.SortOrder != stored)
+                _ = SaveSettingsAsync(current with { Basic = basic with { SortOrder = stored } });
         }
-    } = FileSortMode.NameAscending;
+    } = FileSortMode.Type;
 
     // Bound two-way to the sort menu's radio buttons. A radio button that gets unchecked
     // (because another one was picked) writes false, which is ignored.
@@ -152,6 +159,9 @@ public partial class MainViewModel : ViewModelBase, INavigator
             _appliedSettings.Sidebar!);
         Sidebar.NavigationRequested += (_, location) => Navigate(location);
         AddressBar = new AddressBarViewModel(this);
+
+        // Before the first page: it is created with this order
+        SortMode = ToSortMode(basic.SortOrder);
 
         var start = StartLocationOf(basic.StartLocation);
         _currentPage = CreatePage(start);
@@ -235,6 +245,18 @@ public partial class MainViewModel : ViewModelBase, INavigator
             SortMode = mode;
     }
 
+    /// <summary>
+    /// A click in the sort menu. Also runs when the option already was checked, so it puts back
+    /// the menu's order in a folder that a header click re-sorted.
+    /// </summary>
+    [RelayCommand]
+    private void ApplySort(FileSortMode mode)
+    {
+        SortMode = mode;
+        if (CurrentPage is DirectoryViewModel directory)
+            directory.Sort = FileSort.Of(mode);
+    }
+
     [RelayCommand]
     private async Task Settings()
     {
@@ -270,6 +292,9 @@ public partial class MainViewModel : ViewModelBase, INavigator
         if (settings.Workspace.DefaultView != previous.Workspace.DefaultView)
             ViewMode = ToViewMode(settings.Workspace.DefaultView);
 
+        if (basic.SortOrder != wasBasic.SortOrder)
+            SortMode = ToSortMode(basic.SortOrder);
+
         if (settings.Sidebar != previous.Sidebar)
         {
             Sidebar.Apply(settings.Sidebar!);
@@ -303,6 +328,26 @@ public partial class MainViewModel : ViewModelBase, INavigator
         FolderViewMode.Grid => DirectoryViewMode.Grid,
         FolderViewMode.Tree => DirectoryViewMode.Tree,
         _ => DirectoryViewMode.List,
+    };
+
+    private static FileSortMode ToSortMode(FolderSortOrder order) => order switch
+    {
+        FolderSortOrder.NameDescending => FileSortMode.NameDescending,
+        FolderSortOrder.NewestFirst => FileSortMode.NewestFirst,
+        FolderSortOrder.OldestFirst => FileSortMode.OldestFirst,
+        FolderSortOrder.LargestFirst => FileSortMode.LargestFirst,
+        FolderSortOrder.Type => FileSortMode.Type,
+        _ => FileSortMode.NameAscending,
+    };
+
+    private static FolderSortOrder ToSortOrder(FileSortMode mode) => mode switch
+    {
+        FileSortMode.NameDescending => FolderSortOrder.NameDescending,
+        FileSortMode.NewestFirst => FolderSortOrder.NewestFirst,
+        FileSortMode.OldestFirst => FolderSortOrder.OldestFirst,
+        FileSortMode.LargestFirst => FolderSortOrder.LargestFirst,
+        FileSortMode.Type => FolderSortOrder.Type,
+        _ => FolderSortOrder.NameAscending,
     };
 
     private static string StartLocationOf(StartLocation start) => start switch
@@ -362,7 +407,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
                 return new PlaceholderPageViewModel(location, "Network", MaterialIconKind.LanConnect);
         }
 
-        var directory = new DirectoryViewModel(location, ViewMode, SortMode, CurrentFolderOptions(), _columns, this);
+        var directory = new DirectoryViewModel(location, ViewMode, FileSort.Of(SortMode), CurrentFolderOptions(), _columns, this);
         _ = directory.LoadAsync(); // never throws, reports errors through Error
         return directory;
     }

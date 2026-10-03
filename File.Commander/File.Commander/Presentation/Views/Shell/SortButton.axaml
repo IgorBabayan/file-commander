@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:shell="clr-namespace:File.Commander.Presentation.ViewModels.Shell"
+             xmlns:browser="clr-namespace:File.Commander.Presentation.ViewModels.Browser"
              xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              x:Class="File.Commander.Presentation.Views.Shell.SortButton"
              x:DataType="shell:MainViewModel">
@@ -106,17 +107,29 @@
                 <StackPanel>
                     <TextBlock Classes="menu-title" Text="Sort" />
                     <RadioButton Classes="sort-option" GroupName="file-sort" Content="A-Z"
-                                 IsChecked="{Binding IsSortedAToZ, Mode=TwoWay}" Click="OnOptionClick" />
+                                 IsChecked="{Binding IsSortedAToZ, Mode=TwoWay}" Click="OnOptionClick"
+                                 Command="{Binding ApplySortCommand}"
+                                 CommandParameter="{x:Static browser:FileSortMode.NameAscending}" />
                     <RadioButton Classes="sort-option" GroupName="file-sort" Content="Z-A"
-                                 IsChecked="{Binding IsSortedZToA, Mode=TwoWay}" Click="OnOptionClick" />
+                                 IsChecked="{Binding IsSortedZToA, Mode=TwoWay}" Click="OnOptionClick"
+                                 Command="{Binding ApplySortCommand}"
+                                 CommandParameter="{x:Static browser:FileSortMode.NameDescending}" />
                     <RadioButton Classes="sort-option" GroupName="file-sort" Content="Last Modified"
-                                 IsChecked="{Binding IsSortedNewestFirst, Mode=TwoWay}" Click="OnOptionClick" />
+                                 IsChecked="{Binding IsSortedNewestFirst, Mode=TwoWay}" Click="OnOptionClick"
+                                 Command="{Binding ApplySortCommand}"
+                                 CommandParameter="{x:Static browser:FileSortMode.NewestFirst}" />
                     <RadioButton Classes="sort-option" GroupName="file-sort" Content="First Modified"
-                                 IsChecked="{Binding IsSortedOldestFirst, Mode=TwoWay}" Click="OnOptionClick" />
+                                 IsChecked="{Binding IsSortedOldestFirst, Mode=TwoWay}" Click="OnOptionClick"
+                                 Command="{Binding ApplySortCommand}"
+                                 CommandParameter="{x:Static browser:FileSortMode.OldestFirst}" />
                     <RadioButton Classes="sort-option" GroupName="file-sort" Content="Size"
-                                 IsChecked="{Binding IsSortedBySize, Mode=TwoWay}" Click="OnOptionClick" />
+                                 IsChecked="{Binding IsSortedBySize, Mode=TwoWay}" Click="OnOptionClick"
+                                 Command="{Binding ApplySortCommand}"
+                                 CommandParameter="{x:Static browser:FileSortMode.LargestFirst}" />
                     <RadioButton Classes="sort-option" GroupName="file-sort" Content="Type"
-                                 IsChecked="{Binding IsSortedByType, Mode=TwoWay}" Click="OnOptionClick" />
+                                 IsChecked="{Binding IsSortedByType, Mode=TwoWay}" Click="OnOptionClick"
+                                 Command="{Binding ApplySortCommand}"
+                                 CommandParameter="{x:Static browser:FileSortMode.Type}" />
 
                     <Border Classes="menu-separator" />
 

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using File.Commander.Presentation.Services;
 using File.Commander.Presentation.ViewModels.Pages;
+using Material.Icons;
 
 namespace File.Commander.Presentation.ViewModels.Browser;
 
@@ -22,7 +23,7 @@ public sealed partial class DirectoryViewModel : PageViewModel
     // The entries TreeRoots was built from: switching views keeps the expanded folders
     private IReadOnlyList<FileEntryViewModel>? _treeSource;
 
-    public DirectoryViewModel(string path, DirectoryViewMode viewMode, FileSortMode sortMode, FolderOptions options,
+    public DirectoryViewModel(string path, DirectoryViewMode viewMode, FileSort sort, FolderOptions options,
         FileColumnsViewModel columns, INavigator navigator)
     {
         _navigator = navigator;
@@ -31,7 +32,7 @@ public sealed partial class DirectoryViewModel : PageViewModel
         Location = Locations.Normalize(path);
         Title = Location == "/" ? "/" : IOPath.GetFileName(Location);
         ViewMode = viewMode;
-        SortMode = sortMode;
+        Sort = sort;
     }
 
     public override string Location { get; }
@@ -55,9 +56,13 @@ public sealed partial class DirectoryViewModel : PageViewModel
 
     public bool IsTreeView => ViewMode == DirectoryViewMode.Tree;
 
-    /// <summary>Set by the shell when the user picks another order.</summary>
+    /// <summary>Set by the shell from the sort menu, or by a header click for this folder only.</summary>
     [ObservableProperty]
-    public partial FileSortMode SortMode { get; set; }
+    [NotifyPropertyChangedFor(nameof(SortArrow))]
+    public partial FileSort Sort { get; set; }
+
+    /// <summary>Drawn next to the sorted column's header.</summary>
+    public MaterialIconKind SortArrow => Sort.Descending ? MaterialIconKind.ArrowDown : MaterialIconKind.ArrowUp;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusText), nameof(IsEmpty), nameof(GridEntries))]
@@ -159,11 +164,18 @@ public sealed partial class DirectoryViewModel : PageViewModel
         }
     }
 
+    /// <summary>
+    /// A header click: sorts this folder by that column, or flips the direction. Not saved:
+    /// the next folder opened uses the sort menu's order again.
+    /// </summary>
+    [RelayCommand]
+    private void SortBy(FileSortColumn column) => Sort = Sort.ClickedOn(column);
+
     partial void OnViewModeChanged(DirectoryViewMode value) => EnsureTree();
 
     partial void OnEntriesChanged(IReadOnlyList<FileEntryViewModel> value) => EnsureTree();
 
-    partial void OnSortModeChanged(FileSortMode value)
+    partial void OnSortChanged(FileSort value)
     {
         var comparer = FileSorting.For(value, _options.MixFilesAndFolders);
         var sorted = Entries.Order(comparer).ToList();
@@ -187,7 +199,7 @@ public sealed partial class DirectoryViewModel : PageViewModel
         TreeRoots = Entries.Select(e => new FileTreeNodeViewModel(e, CurrentComparer, _options, _cts.Token)).ToList();
     }
 
-    private IComparer<FileEntryViewModel> CurrentComparer() => FileSorting.For(SortMode, _options.MixFilesAndFolders);
+    private IComparer<FileEntryViewModel> CurrentComparer() => FileSorting.For(Sort, _options.MixFilesAndFolders);
 
     protected override void OnDispose()
     {

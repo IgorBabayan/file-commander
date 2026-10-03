@@ -9,8 +9,9 @@ namespace File.Commander.Presentation.ViewModels.Browser;
 /// </summary>
 public sealed partial class FileTreeNodeViewModel : ObservableObject
 {
+    // Both null for placeholders, which never load children
     private readonly Func<IComparer<FileEntryViewModel>>? _comparer;
-    private readonly FolderOptions _options;
+    private readonly FolderOptions? _options;
     private readonly CancellationToken _cancellationToken;
     private bool _loadStarted;
 
@@ -80,12 +81,13 @@ public sealed partial class FileTreeNodeViewModel : ObservableObject
     {
         _loadStarted = true;
         var token = _cancellationToken;
+        var options = _options!;
 
         try
         {
             var path = Entry!.FullPath;
             var comparer = _comparer!();
-            var entries = await Task.Run(() => DirectoryViewModel.ReadEntries(path, comparer, _options, token), token);
+            var entries = await Task.Run(() => DirectoryViewModel.ReadEntries(path, comparer, options, token), token);
 
             // The order may have changed while the folder was being read
             if (_comparer() is var current && !ReferenceEquals(current, comparer))
@@ -93,7 +95,7 @@ public sealed partial class FileTreeNodeViewModel : ObservableObject
 
             Children = entries.Count == 0
                 ? [Placeholder("Empty")]
-                : entries.Select(e => new FileTreeNodeViewModel(e, _comparer, _options, token)).ToList();
+                : entries.Select(e => new FileTreeNodeViewModel(e, _comparer, options, token)).ToList();
         }
         catch (OperationCanceledException)
         {

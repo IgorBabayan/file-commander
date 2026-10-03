@@ -21,6 +21,9 @@ public sealed class FileEntryViewModel
 
         Size = details.Size;
         Modified = details.Modified;
+        Created = details.Created;
+        Accessed = details.Accessed;
+        Permissions = details.Mode;
         SizeText = details.Size is { } bytes ? SizeFormatter.Format(bytes) : string.Empty;
         ModifiedText = FormatDate(details.Modified);
         CreatedText = FormatDate(details.Created);
@@ -53,6 +56,15 @@ public sealed class FileEntryViewModel
 
     /// <summary>Null when it can't be read. Used for sorting.</summary>
     public DateTime? Modified { get; }
+
+    /// <summary>Null when it can't be read. Used for sorting.</summary>
+    public DateTime? Created { get; }
+
+    /// <summary>Null when it can't be read. Used for sorting.</summary>
+    public DateTime? Accessed { get; }
+
+    /// <summary>Null when it can't be read, and on Windows. Used for sorting.</summary>
+    public UnixFileMode? Permissions { get; }
 
     /// <summary>Empty for folders: their size would mean walking the whole subtree.</summary>
     public string SizeText { get; }

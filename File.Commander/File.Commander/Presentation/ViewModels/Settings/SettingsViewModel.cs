@@ -194,7 +194,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     // Starts from Current so fields this window doesn't edit (addons, log folder…) are kept
     private AppSettings Snapshot() => _settings.Current with
     {
-        Basic = new BasicSettings
+        // Copied, not rebuilt: Basic also holds the sort menu's order, which this window doesn't edit
+        Basic = _settings.Current.Basic! with
         {
             AlwaysOpenFolderInNewWindow = AlwaysOpenFolderInNewWindow,
             OpenFile = OpenFile.Value,

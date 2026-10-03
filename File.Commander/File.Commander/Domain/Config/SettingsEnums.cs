@@ -35,3 +35,15 @@ public enum FolderViewMode
     List,
     Tree
 }
+
+/// <summary>Domain copy of the browser's FileSortMode (the sort menu), so Domain doesn't depend on Presentation.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<FolderSortOrder>))]
+public enum FolderSortOrder
+{
+    NameAscending,
+    NameDescending,
+    NewestFirst,
+    OldestFirst,
+    LargestFirst,
+    Type
+}

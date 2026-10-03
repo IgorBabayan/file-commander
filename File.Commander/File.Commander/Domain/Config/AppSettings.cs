@@ -47,6 +47,9 @@ public sealed record BasicSettings
 
     /// <summary>False: folders first, whatever the order.</summary>
     public bool MixFilesAndFolders { get; init; }
+
+    /// <summary>The sort menu's order, used by every folder opened. Header clicks aren't stored.</summary>
+    public FolderSortOrder SortOrder { get; init; } = FolderSortOrder.Type;
 }
 
 /// <summary>Settings → Sidebar: which sidebar entries are shown.</summary>
