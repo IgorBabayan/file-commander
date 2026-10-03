@@ -1,4 +1,3 @@
-using System.Threading;
 using Avalonia.Controls;
 using File.Commander.PluginCatalog;
 using File.Commander.Plugins;

@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Threading;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -12,13 +11,15 @@ public partial class App : Avalonia.Application
 {
     private readonly CancellationTokenSource _pluginLifetime = new();
     private ServiceProvider? _provider;
+    private MainViewModel? _mainViewModel;
     
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
     public override void OnFrameworkInitializationCompleted()
     {
         var services = new ServiceCollection();
-        services.RegisterViewModels()
+        services.RegisterServices()
+            .RegisterViewModels()
             .RegisterPlugins();
         
         var provider = _provider = services.BuildServiceProvider();
@@ -35,7 +36,7 @@ public partial class App : Avalonia.Application
             
             desktop.MainWindow = new MainWindow
             {
-                DataContext = provider.GetRequiredService<MainViewModel>()
+                DataContext = _mainViewModel = provider.GetRequiredService<MainViewModel>()
             };
             
             StartPluginServices(provider);
@@ -46,19 +47,17 @@ public partial class App : Avalonia.Application
     
     internal void DisposeServices()
     {
-        /*if (_provider is null)
+        if (_provider is null)
             return;
 
         // Stop plugin background work first: it may still be reading journals or writing to the DB
         _pluginLifetime.Cancel();
 
         _mainViewModel?.Dispose();
-        // Stop background database work before disposing its dependencies.
-        if (_mainViewModel is not null)
-            _provider.GetRequiredService<IJournalWatchService>().Dispose();
+       
         _provider.Dispose();
-        Presentation.Converters.BiologyImageConverter.ClearCache();
-        _provider = null;*/
+        //Presentation.Converters.BiologyImageConverter.ClearCache();
+        _provider = null;
     }
     
     private void StartPluginServices(IServiceProvider provider)

@@ -3,60 +3,520 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:shell="clr-namespace:File.Commander.Presentation.ViewModels.Shell"
+        xmlns:computer="clr-namespace:File.Commander.Presentation.ViewModels.Computer"
         xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
         x:Class="File.Commander.Presentation.Views.Shell.MainWindow"
         x:DataType="shell:MainViewModel"
+        Width="1100" Height="700"
+        MinWidth="820" MinHeight="520"
+        RequestedThemeVariant="Dark"
         Icon="/Assets/logo.png"
         Title="File Commander">
-    <Border Background="{StaticResource BaseBrush}">
-        <Grid RowDefinitions="36,*,36">
+    <Window.Resources>
+        <!-- Semantic aliases over the Catppuccin Mocha palette from Theme.axaml -->
+        <SolidColorBrush x:Key="FcTitleBarBrush" Color="{StaticResource Mantle}" />
+        <SolidColorBrush x:Key="FcSidebarBrush" Color="{StaticResource Mantle}" />
+        <SolidColorBrush x:Key="FcContentBrush" Color="{StaticResource Base}" />
+        <SolidColorBrush x:Key="FcCardBrush" Color="{StaticResource Surface0}" />
+        <SolidColorBrush x:Key="FcCardHoverBrush" Color="{StaticResource Surface1}" />
+        <SolidColorBrush x:Key="FcCardPressedBrush" Color="{StaticResource Surface2}" />
+        <SolidColorBrush x:Key="FcAccentBrush" Color="{StaticResource Blue}" />
+        <SolidColorBrush x:Key="FcAccentHoverBrush" Color="{StaticResource Lavender}" />
+        <SolidColorBrush x:Key="FcAccentPressedBrush" Color="{StaticResource Sapphire}" />
+        <SolidColorBrush x:Key="FcOnAccentBrush" Color="{StaticResource Crust}" />
+        <SolidColorBrush x:Key="FcTextBrush" Color="{StaticResource Text}" />
+        <SolidColorBrush x:Key="FcSubtleTextBrush" Color="{StaticResource Subtext0}" />
+        <SolidColorBrush x:Key="FcHeaderTextBrush" Color="{StaticResource Overlay1}" />
+        <SolidColorBrush x:Key="FcDisabledTextBrush" Color="{StaticResource Overlay0}" />
+        <SolidColorBrush x:Key="FcDividerBrush" Color="{StaticResource Surface0}" />
+        <SolidColorBrush x:Key="FcTrackBrush" Color="{StaticResource Surface1}" />
+        <SolidColorBrush x:Key="FcNavGroupBrush" Color="{StaticResource Surface0}" />
+        <SolidColorBrush x:Key="FcHoverBrush" Color="{StaticResource Surface1}" />
+        <SolidColorBrush x:Key="FcPressedBrush" Color="{StaticResource Surface2}" />
+        <!-- Translucent overlays for controls that sit on both plain and accent backgrounds -->
+        <SolidColorBrush x:Key="FcOverlayHoverBrush" Color="#26000000" />
+        <SolidColorBrush x:Key="FcOverlayPressedBrush" Color="#40000000" />
+
+        <LinearGradientBrush x:Key="FcFolderBodyBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+            <GradientStop Offset="0" Color="{StaticResource Sapphire}" />
+            <GradientStop Offset="1" Color="{StaticResource Blue}" />
+        </LinearGradientBrush>
+        <SolidColorBrush x:Key="FcFolderTabBrush" Color="{StaticResource Lavender}" />
+        <SolidColorBrush x:Key="FcFolderBadgeBrush" Color="{StaticResource Base}" />
+
+        <LinearGradientBrush x:Key="FcUsageNormalBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Offset="0" Color="{StaticResource Sapphire}" />
+            <GradientStop Offset="1" Color="{StaticResource Blue}" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="FcUsageWarningBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Offset="0" Color="{StaticResource Peach}" />
+            <GradientStop Offset="1" Color="{StaticResource Yellow}" />
+        </LinearGradientBrush>
+    </Window.Resources>
+
+    <Window.Styles>
+        <!-- ===== Title bar: back / forward pill ===== -->
+        <Style Selector="Border.nav-group">
+            <Setter Property="Background" Value="{StaticResource FcNavGroupBrush}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="ClipToBounds" Value="True" />
+        </Style>
+        <Style Selector="Button.nav">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.nav:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.nav:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.nav:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{StaticResource FcDisabledTextBrush}" />
+        </Style>
+
+        <!-- ===== Title bar: blue "Computer" view button ===== -->
+        <Style Selector="Button.view-toggle">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="{StaticResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource FcOnAccentBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.view-toggle:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource FcAccentHoverBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="Button.view-toggle:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource FcAccentPressedBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource FcOnAccentBrush}" />
+        </Style>
+
+        <!-- ===== Sidebar ===== -->
+        <Style Selector="ListBox.sidebar">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="12,4,12,12" />
+        </Style>
+        <Style Selector="ListBox.sidebar ListBoxItem" x:DataType="shell:SidebarEntry">
+            <Setter Property="IsEnabled" Value="{Binding IsSelectable}" />
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Margin" Value="0,1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.sidebar ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.sidebar ListBoxItem:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.sidebar ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="ListBox.sidebar ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource FcAccentHoverBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="ListBox.sidebar ListBoxItem:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource FcAccentPressedBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource FcOnAccentBrush}" />
+        </Style>
+        <!-- Section headers are disabled items: keep them flat, no hover. -->
+        <Style Selector="ListBox.sidebar ListBoxItem:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <Style Selector="Button.eject">
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.eject:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource FcOverlayHoverBrush}" />
+            <Setter Property="Foreground" Value="{TemplateBinding Foreground}" />
+        </Style>
+        <Style Selector="Button.eject:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource FcOverlayPressedBrush}" />
+            <Setter Property="Foreground" Value="{TemplateBinding Foreground}" />
+        </Style>
+
+        <!-- ===== Content: cards ===== -->
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+            <Setter Property="Margin" Value="0,0,0,20" />
+        </Style>
+
+        <Style Selector="Button.card">
+            <Setter Property="Background" Value="{StaticResource FcCardBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Button.card:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource FcCardHoverBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.card:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource FcCardPressedBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+        </Style>
+
+        <Style Selector="Button.directory-card">
+            <Setter Property="Width" Value="106" />
+            <Setter Property="Height" Value="136" />
+            <Setter Property="Margin" Value="0,0,22,22" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.disk-card">
+            <Setter Property="Width" Value="282" />
+            <Setter Property="Height" Value="82" />
+            <Setter Property="Margin" Value="0,0,22,22" />
+            <Setter Property="Padding" Value="16,0,22,0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <!-- Drive glyph -->
+        <Style Selector="Border.disk-body">
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                    <GradientStop Offset="0" Color="{StaticResource Green}" />
+                    <GradientStop Offset="1" Color="{StaticResource Teal}" />
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+        <Style Selector="Border.disk-body.removable">
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                    <GradientStop Offset="0" Color="{StaticResource Lavender}" />
+                    <GradientStop Offset="1" Color="{StaticResource Mauve}" />
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+        <Style Selector="Border.disk-base">
+            <Setter Property="Background" Value="{StaticResource Surface1Brush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource Surface2Brush}" />
+            <Setter Property="BorderThickness" Value="1,0,1,1" />
+        </Style>
+        <Style Selector="Border.disk-base.removable">
+            <Setter Property="Background" Value="{StaticResource Surface1Brush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource MauveBrush}" />
+        </Style>
+        <Style Selector="Ellipse.disk-led">
+            <Setter Property="Fill" Value="{StaticResource GreenBrush}" />
+        </Style>
+        <Style Selector="Ellipse.disk-led.removable">
+            <Setter Property="Fill" Value="{StaticResource MauveBrush}" />
+        </Style>
+
+        <!-- Usage bar -->
+        <Style Selector="ProgressBar.usage">
+            <Setter Property="Height" Value="5" />
+            <Setter Property="MinHeight" Value="5" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Minimum" Value="0" />
+            <Setter Property="Maximum" Value="100" />
+            <Setter Property="Background" Value="{StaticResource FcTrackBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource FcUsageNormalBrush}" />
+        </Style>
+        <Style Selector="ProgressBar.usage.warning">
+            <Setter Property="Foreground" Value="{StaticResource FcUsageWarningBrush}" />
+        </Style>
+    </Window.Styles>
+
+    <Border Background="{StaticResource FcContentBrush}">
+        <Grid RowDefinitions="52,*">
+            <!-- ================= Title bar ================= -->
             <Border Grid.Row="0"
-                    Background="Transparent"
+                    Background="{StaticResource FcTitleBarBrush}"
                     PointerPressed="OnPointerPressed">
-                <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Grid.Column="0"
-                               Classes="primary"
-                               Text="File Commander"
-                               Margin="15,0,0,0"
-                               FontWeight="Bold"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center" />
-                    
-                    <StackPanel Grid.Column="1"
+                <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto" Margin="12,0,10,0">
+                    <Image Grid.Column="0"
+                           Source="/Assets/logo.png"
+                           Width="30" Height="30"
+                           Margin="0,0,16,0"
+                           VerticalAlignment="Center"
+                           RenderOptions.BitmapInterpolationMode="HighQuality" />
+
+                    <Border Grid.Column="1" Classes="nav-group" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Classes="nav" ToolTip.Tip="Back">
+                                <avalonia:MaterialIcon Kind="ChevronLeft" Width="20" Height="20" />
+                            </Button>
+                            <Button Classes="nav" ToolTip.Tip="Forward">
+                                <avalonia:MaterialIcon Kind="ChevronRight" Width="20" Height="20" />
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <Button Grid.Column="2"
+                            Classes="view-toggle"
+                            Margin="12,0,0,0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Computer">
+                        <avalonia:MaterialIcon Kind="Monitor" Width="18" Height="18" />
+                    </Button>
+
+                    <StackPanel Grid.Column="4"
                                 Orientation="Horizontal"
                                 VerticalAlignment="Center"
-                                HorizontalAlignment="Center"
-                                Spacing="5">
+                                Spacing="6">
+                        <Button Classes="window-button" ToolTip.Tip="Search">
+                            <avalonia:MaterialIcon Kind="Magnify" />
+                        </Button>
+
                         <Button Classes="window-button"
                                 ToolTip.Tip="Settings"
                                 Command="{Binding SettingsCommand}"
-                                Margin="0,0,15,0">
-                            <avalonia:MaterialIcon Kind="Settings"/>
+                                Margin="0,0,12,0">
+                            <avalonia:MaterialIcon Kind="Menu" />
                         </Button>
-                        
+
                         <Button Classes="window-button"
                                 ToolTip.Tip="Minimize window"
                                 Click="OnMinimizeClick"
                                 IsVisible="{Binding IsNotHyprland}">
-                            <avalonia:MaterialIcon Kind="WindowMinimize"/>
+                            <avalonia:MaterialIcon Kind="WindowMinimize" />
                         </Button>
-                        
+
                         <Button Classes="window-button"
                                 ToolTip.Tip="Maximize window"
                                 Click="OnMaximizeClick"
                                 IsVisible="{Binding IsNotHyprland}">
-                            <avalonia:MaterialIcon Kind="WindowMaximize"/>
+                            <avalonia:MaterialIcon Kind="WindowMaximize" />
                         </Button>
 
                         <Button Classes="window-button close"
                                 ToolTip.Tip="Close window"
                                 Click="OnCloseClick">
-                            <avalonia:MaterialIcon Kind="WindowClose"/>
+                            <avalonia:MaterialIcon Kind="WindowClose" />
                         </Button>
                     </StackPanel>
                 </Grid>
             </Border>
+
+            <!-- ================= Body ================= -->
+            <Grid Grid.Row="1" ColumnDefinitions="200,*">
+                <!-- Sidebar -->
+                <Border Grid.Column="0" Background="{StaticResource FcSidebarBrush}">
+                    <ListBox Classes="sidebar"
+                             ItemsSource="{Binding Sidebar.Entries}"
+                             SelectedItem="{Binding Sidebar.SelectedEntry}"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.DataTemplates>
+                            <DataTemplate DataType="shell:SidebarHeader">
+                                <TextBlock Text="{Binding Title}"
+                                           FontSize="14"
+                                           Foreground="{StaticResource FcHeaderTextBrush}"
+                                           VerticalAlignment="Center" />
+                            </DataTemplate>
+
+                            <DataTemplate DataType="shell:SidebarItem">
+                                <Grid ColumnDefinitions="Auto,*,Auto" ToolTip.Tip="{Binding Location}">
+                                    <avalonia:MaterialIcon Grid.Column="0"
+                                                           Kind="{Binding Icon}"
+                                                           Width="18" Height="18"
+                                                           Margin="0,0,12,0"
+                                                           VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Title}"
+                                               FontSize="14"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <Button Grid.Column="2"
+                                            Classes="eject"
+                                            IsVisible="{Binding CanEject}"
+                                            Foreground="{Binding $parent[ContentPresenter].Foreground}"
+                                            ToolTip.Tip="Eject">
+                                        <avalonia:MaterialIcon Kind="Eject" Width="14" Height="14" />
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.DataTemplates>
+                    </ListBox>
+                </Border>
+
+                <!-- Computer page -->
+                <Grid Grid.Column="1" RowDefinitions="*,Auto">
+                    <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="22,22,0,0">
+
+                            <TextBlock Classes="section-title" Text="My Directories" />
+
+                            <ItemsControl ItemsSource="{Binding Computer.Directories}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="computer:DirectoryCardViewModel">
+                                        <Button Classes="card directory-card" ToolTip.Tip="{Binding Location}">
+                                            <StackPanel Spacing="16">
+                                                <!-- Folder glyph: tab + gradient body + white badge -->
+                                                <Panel Width="58" Height="50" HorizontalAlignment="Center">
+                                                    <Border Width="24" Height="10"
+                                                            Margin="3,0,0,0"
+                                                            CornerRadius="4,4,0,0"
+                                                            HorizontalAlignment="Left"
+                                                            VerticalAlignment="Top"
+                                                            Background="{StaticResource FcFolderTabBrush}" />
+                                                    <Border Margin="0,5,0,0"
+                                                            CornerRadius="6"
+                                                            Background="{StaticResource FcFolderBodyBrush}"
+                                                            BoxShadow="0 2 6 0 #66000000">
+                                                        <Border Width="24" Height="24"
+                                                                Margin="0,4,0,0"
+                                                                CornerRadius="12"
+                                                                Background="{StaticResource FcFolderBadgeBrush}"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center">
+                                                            <avalonia:MaterialIcon Kind="{Binding Badge}"
+                                                                                   Width="14" Height="14"
+                                                                                   Foreground="{StaticResource FcAccentBrush}" />
+                                                        </Border>
+                                                    </Border>
+                                                </Panel>
+
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontSize="14"
+                                                           HorizontalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Classes="section-title" Text="Disks" Margin="0,8,0,20" />
+
+                            <ItemsControl ItemsSource="{Binding Computer.Disks}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="computer:DiskCardViewModel">
+                                        <Button Classes="card disk-card" ToolTip.Tip="{Binding MountPoint}">
+                                            <Grid ColumnDefinitions="Auto,*">
+                                                <Panel Grid.Column="0" Width="54" Height="58" VerticalAlignment="Center">
+                                                    <!-- Hard drive / USB stick -->
+                                                    <Grid Width="46"
+                                                          RowDefinitions="*,12"
+                                                          IsVisible="{Binding !IsOptical}">
+                                                        <Border Grid.Row="0"
+                                                                Classes="disk-body"
+                                                                Classes.removable="{Binding IsRemovable}"
+                                                                CornerRadius="5,5,0,0">
+                                                            <avalonia:MaterialIcon Kind="{Binding Glyph}"
+                                                                                   IsVisible="{Binding HasGlyph}"
+                                                                                   Width="24" Height="24"
+                                                                                   Foreground="{StaticResource FcOnAccentBrush}" />
+                                                        </Border>
+                                                        <Border Grid.Row="1"
+                                                                Classes="disk-base"
+                                                                Classes.removable="{Binding IsRemovable}"
+                                                                CornerRadius="0,0,5,5">
+                                                            <Grid ColumnDefinitions="Auto,*,Auto"
+                                                                  Margin="6,0"
+                                                                  VerticalAlignment="Center">
+                                                                <Ellipse Grid.Column="0"
+                                                                         Width="4" Height="4"
+                                                                         Classes="disk-led"
+                                                                         Classes.removable="{Binding IsRemovable}" />
+                                                                <Border Grid.Column="2"
+                                                                        Width="12" Height="3"
+                                                                        CornerRadius="1"
+                                                                        Background="{StaticResource Overlay0Brush}" />
+                                                            </Grid>
+                                                        </Border>
+                                                    </Grid>
+
+                                                    <!-- Optical disc -->
+                                                    <Panel Width="54" Height="54" IsVisible="{Binding IsOptical}">
+                                                        <Ellipse>
+                                                            <Ellipse.Fill>
+                                                                <ConicGradientBrush Center="50%,50%">
+                                                                    <GradientStop Offset="0.00" Color="{StaticResource Sky}" />
+                                                                    <GradientStop Offset="0.25" Color="{StaticResource Pink}" />
+                                                                    <GradientStop Offset="0.50" Color="{StaticResource Rosewater}" />
+                                                                    <GradientStop Offset="0.75" Color="{StaticResource Lavender}" />
+                                                                    <GradientStop Offset="1.00" Color="{StaticResource Sky}" />
+                                                                </ConicGradientBrush>
+                                                            </Ellipse.Fill>
+                                                        </Ellipse>
+                                                        <Ellipse Width="20" Height="20" Fill="{StaticResource Surface2Brush}" />
+                                                        <Ellipse Width="10" Height="10" Fill="{StaticResource FcCardBrush}" />
+                                                    </Panel>
+                                                </Panel>
+
+                                                <StackPanel Grid.Column="1"
+                                                            Margin="18,0,0,0"
+                                                            VerticalAlignment="Center"
+                                                            Spacing="6">
+                                                    <TextBlock Text="{Binding Name}"
+                                                               FontSize="16"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Text="{Binding UsageText}"
+                                                               FontSize="12"
+                                                               Foreground="{StaticResource FcSubtleTextBrush}" />
+                                                    <ProgressBar Classes="usage"
+                                                                 Classes.warning="{Binding IsAlmostFull}"
+                                                                 Value="{Binding UsedPercent}"
+                                                                 Margin="0,4,0,0" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Status bar -->
+                    <Border Grid.Row="1"
+                            Height="32"
+                            BorderBrush="{StaticResource FcDividerBrush}"
+                            BorderThickness="0,1,0,0">
+                        <TextBlock Text="{Binding Computer.ItemCountText}"
+                                   FontSize="12"
+                                   Foreground="{StaticResource FcSubtleTextBrush}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                </Grid>
+            </Grid>
         </Grid>
     </Border>
 </Window>

@@ -1,7 +1,3 @@
-using File.Commander.Application.Plugins;
-using File.Commander.Domain.Config;
-using File.Commander.PluginCatalog;
-using File.Commander.Presentation.ViewModels.Plugin;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace File.Commander.Extensions;
@@ -54,6 +50,11 @@ static class ServiceCollectionExtensions
                 .AddSingleton<IPluginUninstaller, PluginUninstaller>()
                 .AddSingleton<IPluginRegistry, PluginRegistry>();
             return services;
+        }
+
+        public IServiceCollection RegisterServices()
+        {
+            return services.AddSingleton<IDialogService, DialogService>();
         }
         
         private static AppSettings LoadStartupSettings()
