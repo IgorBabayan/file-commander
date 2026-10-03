@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using File.Commander.PluginCatalog;
 using File.Commander.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 

@@ -30,7 +30,6 @@ public static class FileSorting
             .SelectMany(mode => new[] { (mode, false), (mode, true) })
             .ToDictionary(key => key, key => Create(key.Item1, key.Item2));
 
-    /// <param name="mixFilesAndFolders">False: folders come first, whatever the order.</param>
     public static IComparer<FileEntryViewModel> For(FileSortMode mode, bool mixFilesAndFolders = false)
         => Comparers[(mode, mixFilesAndFolders)];
 

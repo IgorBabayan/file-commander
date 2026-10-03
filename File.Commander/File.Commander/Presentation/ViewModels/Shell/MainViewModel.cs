@@ -15,8 +15,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
     private readonly Stack<string> _back = new();
     private readonly Stack<string> _forward = new();
     private PageViewModel _currentPage;
-    private DirectoryViewMode _viewMode = DirectoryViewMode.List;
-    private FileSortMode _sortMode = FileSortMode.NameAscending;
+    private DirectoryViewMode _viewMode;
     private bool _showHiddenFiles;
     private readonly FileColumnsViewModel _columns = new();
     private readonly IDialogService _dialogService;
@@ -56,10 +55,10 @@ public partial class MainViewModel : ViewModelBase, INavigator
     /// <summary>Order of folder pages. Kept across navigation.</summary>
     public FileSortMode SortMode
     {
-        get => _sortMode;
+        get;
         private set
         {
-            if (!SetProperty(ref _sortMode, value))
+            if (!SetProperty(ref field, value))
                 return;
 
             OnPropertyChanged(nameof(IsSortedAToZ));
@@ -72,7 +71,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
             if (CurrentPage is DirectoryViewModel directory)
                 directory.SortMode = value;
         }
-    }
+    } = FileSortMode.NameAscending;
 
     // Bound two-way to the sort menu's radio buttons. A radio button that gets unchecked
     // (because another one was picked) writes false, which is ignored.
@@ -126,8 +125,9 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
             // Ctrl+H and the sort menu change the stored setting too, so Settings and the next start agree
             var current = _settings.Current;
-            if (current.Basic.ShowHiddenFiles != value)
-                _ = SaveSettingsAsync(current with { Basic = current.Basic with { ShowHiddenFiles = value } });
+            var basic = current.Basic!; 
+            if (basic.ShowHiddenFiles != value)
+                _ = SaveSettingsAsync(current with { Basic = basic with { ShowHiddenFiles = value } });
         }
     }
 
@@ -144,16 +144,16 @@ public partial class MainViewModel : ViewModelBase, INavigator
         _settings = settings;
         _appliedSettings = settings.Current;
 
-        // Before the first page is created, so it already uses them
-        _showHiddenFiles = _appliedSettings.Basic.ShowHiddenFiles;
-        _viewMode = ToViewMode(_appliedSettings.Workspace.DefaultView);
+        var basic = _appliedSettings.Basic!;
+        _showHiddenFiles = basic.ShowHiddenFiles;
+        _viewMode = ToViewMode(_appliedSettings.Workspace!.DefaultView);
 
         Sidebar = new SidebarViewModel(SystemLocations.GetUserDirectories(), SystemLocations.GetVolumes(),
-            _appliedSettings.Sidebar);
+            _appliedSettings.Sidebar!);
         Sidebar.NavigationRequested += (_, location) => Navigate(location);
         AddressBar = new AddressBarViewModel(this);
 
-        var start = StartLocationOf(_appliedSettings.Basic.StartLocation);
+        var start = StartLocationOf(basic.StartLocation);
         _currentPage = CreatePage(start);
         Sidebar.Select(start);
         AddressBar.Update(start);
@@ -253,7 +253,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
         var reload = false;
 
         // The field, not the property: the property would save the setting back and reload on its own
-        if (basic.ShowHiddenFiles != wasBasic.ShowHiddenFiles
+        if (basic!.ShowHiddenFiles != wasBasic!.ShowHiddenFiles
             && SetProperty(ref _showHiddenFiles, basic.ShowHiddenFiles, nameof(ShowHiddenFiles)))
             reload |= IsFolderPage;
 
@@ -263,7 +263,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
             || basic.OpenFile != wasBasic.OpenFile)
             reload |= IsFolderPage;
 
-        if (settings.Workspace.HideSystemDisk != previous.Workspace.HideSystemDisk)
+        if (settings.Workspace!.HideSystemDisk != previous.Workspace!.HideSystemDisk)
             reload |= CurrentPage is ComputerViewModel;
 
         // Only a change of the default itself: Ctrl+1/2/3 choices survive unrelated saves
@@ -272,7 +272,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
         if (settings.Sidebar != previous.Sidebar)
         {
-            Sidebar.Apply(settings.Sidebar);
+            Sidebar.Apply(settings.Sidebar!);
             Sidebar.Select(CurrentPage.Location);
         }
 
@@ -294,7 +294,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
     private FolderOptions CurrentFolderOptions() => new(
         ShowHidden: ShowHiddenFiles,
-        ShowExtensions: _appliedSettings.Basic.ShowFileExtensions,
+        ShowExtensions: _appliedSettings.Basic!.ShowFileExtensions,
         MixFilesAndFolders: _appliedSettings.Basic.MixFilesAndFolders,
         OpenOnSingleClick: _appliedSettings.Basic.OpenFile == OpenFileMode.Click);
 
@@ -349,7 +349,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
                 AddressBar.Volumes = volumes;
 
                 // Hidden from the page only: the address bar still needs it to name paths under "/"
-                var shown = _appliedSettings.Workspace.HideSystemDisk
+                var shown = _appliedSettings.Workspace!.HideSystemDisk
                     ? volumes.Where(v => v.Kind != VolumeKind.System).ToList()
                     : volumes;
                 return new ComputerViewModel(SystemLocations.GetUserDirectories(), shown, this);

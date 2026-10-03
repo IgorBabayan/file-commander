@@ -11,7 +11,6 @@ public partial class SidebarViewModel : ViewModelBase
     private readonly IReadOnlyList<Volume> _volumes;
     private SidebarEntry? _selectedEntry;
 
-    /// <param name="visibility">Settings → Sidebar. Change it later with <see cref="Apply"/>.</param>
     public SidebarViewModel(IReadOnlyList<UserDirectory> directories, IReadOnlyList<Volume> volumes,
         SidebarSettings visibility)
     {

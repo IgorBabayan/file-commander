@@ -22,7 +22,6 @@ public sealed partial class DirectoryViewModel : PageViewModel
     // The entries TreeRoots was built from: switching views keeps the expanded folders
     private IReadOnlyList<FileEntryViewModel>? _treeSource;
 
-    /// <param name="options">How entries are read and shown. Fixed for the page: the shell reloads it when they change.</param>
     public DirectoryViewModel(string path, DirectoryViewMode viewMode, FileSortMode sortMode, FolderOptions options,
         FileColumnsViewModel columns, INavigator navigator)
     {

@@ -8,7 +8,7 @@
         x:Class="File.Commander.Presentation.Views.Settings.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
         Title="Settings — File Commander"
-        SystemDecorations="None"
+        WindowDecorations="None"
         CanResize="False"
         ShowInTaskbar="False"
         Background="Transparent"

@@ -67,7 +67,6 @@ public sealed class FileEntryViewModel
     /// <summary>ls-style mode, e.g. "drwxr-xr-x". Empty where the mode can't be read.</summary>
     public string PermissionsText { get; }
 
-    /// <param name="showExtension">False: <see cref="DisplayName"/> drops the extension of files.</param>
     public static FileEntryViewModel From(FileSystemInfo info, bool showExtension = true)
         => new(info, Details.Read(info), showExtension);
 

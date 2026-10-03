@@ -62,7 +62,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _settings = settings;
         var current = settings.Current;
 
-        var basic = current.Basic;
+        var basic = current.Basic!;
         AlwaysOpenFolderInNewWindow = basic.AlwaysOpenFolderInNewWindow;
         OpenFile = Pick(OpenFileChoices, basic.OpenFile);
         StartLocation = Pick(StartLocationChoices, basic.StartLocation);
@@ -71,7 +71,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         ShowFileExtensions = basic.ShowFileExtensions;
         MixFilesAndFolders = basic.MixFilesAndFolders;
 
-        var sidebar = current.Sidebar;
+        var sidebar = current.Sidebar!;
         ShowRecent = sidebar.ShowRecent;
         ShowHome = sidebar.ShowHome;
         ShowUserFolders = sidebar.ShowUserFolders;
@@ -80,7 +80,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         ShowPartitions = sidebar.ShowPartitions;
         ShowNetwork = sidebar.ShowNetwork;
 
-        var workspace = current.Workspace;
+        var workspace = current.Workspace!;
         DefaultView = Pick(ViewChoices, workspace.DefaultView);
         PreviewImages = workspace.PreviewImages;
         PreviewVideos = workspace.PreviewVideos;
@@ -89,7 +89,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         HideSystemDisk = workspace.HideSystemDisk;
         ShowFileSystemOnDisks = workspace.ShowFileSystemOnDisks;
 
-        var advanced = current.Advanced;
+        var advanced = current.Advanced!;
         FullTextSearch = advanced.FullTextSearch;
         IndexExternalDrives = advanced.IndexExternalDrives;
         AutoMount = advanced.AutoMount;
@@ -136,9 +136,9 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     // ===== Basic =====
     [ObservableProperty] public partial bool AlwaysOpenFolderInNewWindow { get; set; }
-    [ObservableProperty] public partial Choice<OpenFileMode> OpenFile { get; set; } = OpenFileChoices[1];
-    [ObservableProperty] public partial Choice<StartLocation> StartLocation { get; set; } = StartLocationChoices[0];
-    [ObservableProperty] public partial Choice<NewTabLocation> NewTabLocation { get; set; } = NewTabChoices[0];
+    [ObservableProperty] public partial Choice<OpenFileMode> OpenFile { get; set; }
+    [ObservableProperty] public partial Choice<StartLocation> StartLocation { get; set; }
+    [ObservableProperty] public partial Choice<NewTabLocation> NewTabLocation { get; set; }
     [ObservableProperty] public partial bool ShowHiddenFiles { get; set; }
     [ObservableProperty] public partial bool ShowFileExtensions { get; set; }
     [ObservableProperty] public partial bool MixFilesAndFolders { get; set; }
@@ -153,7 +153,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] public partial bool ShowNetwork { get; set; }
 
     // ===== Workspace =====
-    [ObservableProperty] public partial Choice<FolderViewMode> DefaultView { get; set; } = ViewChoices[1];
+    [ObservableProperty] public partial Choice<FolderViewMode> DefaultView { get; set; }
     [ObservableProperty] public partial bool PreviewImages { get; set; }
     [ObservableProperty] public partial bool PreviewVideos { get; set; }
     [ObservableProperty] public partial bool PreviewText { get; set; }

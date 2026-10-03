@@ -1,6 +1,4 @@
 using System.Text.Json;
-using System.Threading;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace File.Commander.PluginCatalog;
 
@@ -22,8 +20,7 @@ public interface IPluginUninstaller
 internal sealed class PluginUninstaller(
     PluginCatalog catalog) : IPluginUninstaller
 {
-    public const string ManifestFile = "addon.json";
-    private const string HostMigrationsHistoryTable = "__EFMigrationsHistory";
+    private const string MANIFEST_FILE = "addon.json";
 
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
@@ -118,10 +115,10 @@ internal sealed class PluginUninstaller(
 
     private static AddonManifest? ReadManifest(string directory)
     {
-        var path = IOPath.Combine(directory, ManifestFile);
+        var path = IOPath.Combine(directory, MANIFEST_FILE);
         if (!IOFile.Exists(path))
         {
-            Trace.WriteLine($"No {ManifestFile} in '{directory}': its tables are left in the database.");
+            Trace.WriteLine($"No {MANIFEST_FILE} in '{directory}': its tables are left in the database.");
             return null;
         }
 
@@ -131,7 +128,7 @@ internal sealed class PluginUninstaller(
         }
         catch (JsonException ex)
         {
-            Trace.WriteLine($"Invalid {ManifestFile} in '{directory}': {ex.Message}");
+            Trace.WriteLine($"Invalid {MANIFEST_FILE} in '{directory}': {ex.Message}");
             return null;
         }
     }

@@ -1,4 +1,3 @@
-using System.Threading;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using File.Commander.Plugins;

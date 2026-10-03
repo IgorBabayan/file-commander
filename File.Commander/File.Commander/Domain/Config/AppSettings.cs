@@ -12,24 +12,24 @@ public record AppSettings
     public string? LogFolder { get; set; }
 
     [JsonPropertyName(nameof(Addons))]
-    public Dictionary<string, bool> Addons { get; set; } = new();
+    public Dictionary<string, bool>? Addons { get; set; } = new();
 
     [JsonPropertyName(nameof(AutoUpdate))]
     public bool AutoUpdate { get; set; }
 
     [JsonPropertyName(nameof(Basic))]
-    public BasicSettings Basic { get; set; } = new();
+    public BasicSettings? Basic { get; set; } = new();
 
     [JsonPropertyName(nameof(Sidebar))]
-    public SidebarSettings Sidebar { get; set; } = new();
+    public SidebarSettings? Sidebar { get; set; } = new();
 
     [JsonPropertyName(nameof(Workspace))]
-    public WorkspaceSettings Workspace { get; set; } = new();
+    public WorkspaceSettings? Workspace { get; set; } = new();
 
     [JsonPropertyName(nameof(Advanced))]
-    public AdvancedSettings Advanced { get; set; } = new();
+    public AdvancedSettings? Advanced { get; set; } = new();
 
-    public bool IsAddonEnabled(string key) => !Addons.TryGetValue(key, out var enabled) || enabled;
+    public bool IsAddonEnabled(string key) => !Addons!.TryGetValue(key, out var enabled) || enabled;
 }
 
 /// <summary>Settings → Basic.</summary>

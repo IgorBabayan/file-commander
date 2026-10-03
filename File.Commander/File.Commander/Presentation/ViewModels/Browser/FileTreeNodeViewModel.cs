@@ -14,8 +14,6 @@ public sealed partial class FileTreeNodeViewModel : ObservableObject
     private readonly CancellationToken _cancellationToken;
     private bool _loadStarted;
 
-    /// <param name="comparer">The page's current order, read whenever children are loaded.</param>
-    /// <param name="options">How subfolders are read and shown. Fixed for the page: changing it reloads the page.</param>
     public FileTreeNodeViewModel(FileEntryViewModel entry, Func<IComparer<FileEntryViewModel>> comparer,
         FolderOptions options, CancellationToken cancellationToken)
     {

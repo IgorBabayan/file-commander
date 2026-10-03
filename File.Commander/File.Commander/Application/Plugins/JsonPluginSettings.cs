@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Threading;
 using File.Commander.Plugins;
 
 namespace File.Commander.Application.Plugins;

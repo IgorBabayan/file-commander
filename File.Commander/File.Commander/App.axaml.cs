@@ -1,7 +1,5 @@
-using System.Threading;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using File.Commander.PluginCatalog;
 using File.Commander.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 
