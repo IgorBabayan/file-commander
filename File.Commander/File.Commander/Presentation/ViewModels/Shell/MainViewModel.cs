@@ -16,6 +16,8 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
     public SidebarViewModel Sidebar { get; }
 
+    public AddressBarViewModel AddressBar { get; }
+
 #pragma warning disable CA1822
     public bool IsNotHyprland => !DesktopEnvironmentHelper.IsHyprland();
 #pragma warning restore CA1822
@@ -24,9 +26,11 @@ public partial class MainViewModel : ViewModelBase, INavigator
     {
         Sidebar = new SidebarViewModel(SystemLocations.GetUserDirectories(), SystemLocations.GetVolumes());
         Sidebar.NavigationRequested += (_, location) => Navigate(location);
+        AddressBar = new AddressBarViewModel(this);
 
         _currentPage = CreatePage(Locations.Computer);
         Sidebar.Select(Locations.Computer);
+        AddressBar.Update(Locations.Computer);
     }
 
     /// <summary>What the content area shows. Replaced (and the old one disposed) on every navigation.</summary>
@@ -78,6 +82,10 @@ public partial class MainViewModel : ViewModelBase, INavigator
     [RelayCommand]
     private void GoComputer() => Navigate(Locations.Computer);
 
+    /// <summary>Rebuilds the current page in place, without a history entry.</summary>
+    [RelayCommand]
+    private void Refresh() => Show(CurrentPage.Location);
+
     [RelayCommand]
     public async Task Settings(CancellationToken cancellationToken = default)
     {
@@ -97,6 +105,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
         previous.Dispose();
 
         Sidebar.Select(location);
+        AddressBar.Update(location);
 
         GoBackCommand.NotifyCanExecuteChanged();
         GoForwardCommand.NotifyCanExecuteChanged();
@@ -109,8 +118,12 @@ public partial class MainViewModel : ViewModelBase, INavigator
         switch (location)
         {
             case Locations.Computer:
+            {
                 // Re-query so mounted/unmounted drives and free space are current
-                return new ComputerViewModel(SystemLocations.GetUserDirectories(), SystemLocations.GetVolumes(), this);
+                var volumes = SystemLocations.GetVolumes();
+                AddressBar.Volumes = volumes;
+                return new ComputerViewModel(SystemLocations.GetUserDirectories(), volumes, this);
+            }
             case Locations.Recent:
                 return new PlaceholderPageViewModel(location, "Recent", MaterialIconKind.ClockOutline);
             case Locations.Trash:

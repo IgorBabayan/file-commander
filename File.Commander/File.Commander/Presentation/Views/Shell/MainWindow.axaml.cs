@@ -52,11 +52,29 @@ public partial class MainWindow : Window
             e.Handled = true;
     }
 
-    /// <summary>Alt+Left / Alt+Right / Alt+Up, and Backspace for "up".</summary>
+    /// <summary>
+    /// Ctrl+L / Alt+D: type a path, F5: refresh, Alt+Left / Alt+Right / Alt+Up and Backspace: history and "up".
+    /// </summary>
     private void OnNavigationKeyDown(object? sender, KeyEventArgs e)
     {
-        // Leave Backspace and arrows alone while the user types (e.g. a future search box)
-        if (ViewModel is not { } vm || e.Source is TextBox)
+        if (ViewModel is not { } vm)
+            return;
+
+        var global = (e.Key, e.KeyModifiers) switch
+        {
+            (Key.L, KeyModifiers.Control) or (Key.D, KeyModifiers.Alt) => vm.AddressBar.BeginEditCommand,
+            (Key.F5, KeyModifiers.None) => vm.RefreshCommand,
+            _ => null,
+        };
+
+        if (TryExecute(global))
+        {
+            e.Handled = true;
+            return;
+        }
+
+        // Leave Backspace and arrows alone while the user types (address bar, a future search box)
+        if (e.Source is TextBox)
             return;
 
         var command = (e.Key, e.KeyModifiers) switch

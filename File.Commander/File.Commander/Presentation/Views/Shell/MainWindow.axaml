@@ -7,6 +7,7 @@
         xmlns:pages="clr-namespace:File.Commander.Presentation.ViewModels.Pages"
         xmlns:browser="clr-namespace:File.Commander.Presentation.ViewModels.Browser"
         xmlns:browserViews="clr-namespace:File.Commander.Presentation.Views.Browser"
+        xmlns:shellViews="clr-namespace:File.Commander.Presentation.Views.Shell"
         xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
         mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
         x:Class="File.Commander.Presentation.Views.Shell.MainWindow"
@@ -15,7 +16,7 @@
         MinWidth="820" MinHeight="520"
         RequestedThemeVariant="Dark"
         Icon="/Assets/logo.png"
-        Title="File Commander">
+        Title="{Binding CurrentPage.Title, StringFormat='{}{0} — File Commander'}">
     <Window.Resources>
         <!-- Semantic aliases over the Catppuccin Mocha palette from Theme.axaml -->
         <SolidColorBrush x:Key="FcTitleBarBrush" Color="{StaticResource Mantle}" />
@@ -279,6 +280,9 @@
                             <Button Classes="nav" ToolTip.Tip="Forward (Alt+Right)" Command="{Binding GoForwardCommand}">
                                 <avalonia:MaterialIcon Kind="ChevronRight" Width="20" Height="20" />
                             </Button>
+                            <Button Classes="nav" ToolTip.Tip="Up (Alt+Up)" Command="{Binding GoUpCommand}">
+                                <avalonia:MaterialIcon Kind="ArrowUp" Width="18" Height="18" />
+                            </Button>
                         </StackPanel>
                     </Border>
 
@@ -291,15 +295,20 @@
                         <avalonia:MaterialIcon Kind="Monitor" Width="18" Height="18" />
                     </Button>
 
-                    <TextBlock Grid.Column="3"
-                               Text="{Binding CurrentPage.Title}"
-                               Margin="16,0"
-                               FontSize="14"
-                               FontWeight="Medium"
-                               VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis"
-                               Foreground="{StaticResource FcTextBrush}"
-                               IsHitTestVisible="False" />
+                    <!-- Address bar: breadcrumbs, click the empty part (or Ctrl+L) to type a path -->
+                    <Grid Grid.Column="3"
+                          ColumnDefinitions="*,Auto"
+                          Margin="12,0,16,0"
+                          VerticalAlignment="Center">
+                        <shellViews:AddressBar Grid.Column="0" DataContext="{Binding AddressBar}" />
+                        <Button Grid.Column="1"
+                                Classes="window-button"
+                                Margin="6,0,0,0"
+                                ToolTip.Tip="Refresh (F5)"
+                                Command="{Binding RefreshCommand}">
+                            <avalonia:MaterialIcon Kind="Refresh" />
+                        </Button>
+                    </Grid>
 
                     <StackPanel Grid.Column="4"
                                 Orientation="Horizontal"
