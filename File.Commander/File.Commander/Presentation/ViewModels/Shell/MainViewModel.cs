@@ -14,6 +14,9 @@ public partial class MainViewModel : ViewModelBase, INavigator
     private readonly Stack<string> _forward = new();
     private PageViewModel _currentPage;
     private DirectoryViewMode _viewMode = DirectoryViewMode.List;
+    private FileSortMode _sortMode = FileSortMode.NameAscending;
+    private bool _showHiddenFiles;
+    private readonly FileColumnsViewModel _columns = new();
 
     public SidebarViewModel Sidebar { get; }
 
@@ -42,6 +45,79 @@ public partial class MainViewModel : ViewModelBase, INavigator
     public bool IsListView => ViewMode == DirectoryViewMode.List;
 
     public bool IsTreeView => ViewMode == DirectoryViewMode.Tree;
+
+    /// <summary>Order of folder pages. Kept across navigation.</summary>
+    public FileSortMode SortMode
+    {
+        get => _sortMode;
+        private set
+        {
+            if (!SetProperty(ref _sortMode, value))
+                return;
+
+            OnPropertyChanged(nameof(IsSortedAToZ));
+            OnPropertyChanged(nameof(IsSortedZToA));
+            OnPropertyChanged(nameof(IsSortedNewestFirst));
+            OnPropertyChanged(nameof(IsSortedOldestFirst));
+            OnPropertyChanged(nameof(IsSortedBySize));
+            OnPropertyChanged(nameof(IsSortedByType));
+
+            if (CurrentPage is DirectoryViewModel directory)
+                directory.SortMode = value;
+        }
+    }
+
+    // Bound two-way to the sort menu's radio buttons. A radio button that gets unchecked
+    // (because another one was picked) writes false, which is ignored.
+    public bool IsSortedAToZ
+    {
+        get => SortMode == FileSortMode.NameAscending;
+        set => PickSort(value, FileSortMode.NameAscending);
+    }
+
+    public bool IsSortedZToA
+    {
+        get => SortMode == FileSortMode.NameDescending;
+        set => PickSort(value, FileSortMode.NameDescending);
+    }
+
+    public bool IsSortedNewestFirst
+    {
+        get => SortMode == FileSortMode.NewestFirst;
+        set => PickSort(value, FileSortMode.NewestFirst);
+    }
+
+    public bool IsSortedOldestFirst
+    {
+        get => SortMode == FileSortMode.OldestFirst;
+        set => PickSort(value, FileSortMode.OldestFirst);
+    }
+
+    public bool IsSortedBySize
+    {
+        get => SortMode == FileSortMode.LargestFirst;
+        set => PickSort(value, FileSortMode.LargestFirst);
+    }
+
+    public bool IsSortedByType
+    {
+        get => SortMode == FileSortMode.Type;
+        set => PickSort(value, FileSortMode.Type);
+    }
+
+    /// <summary>Whether folder pages list dot files. Kept across navigation. Changing it reloads the current folder.</summary>
+    public bool ShowHiddenFiles
+    {
+        get => _showHiddenFiles;
+        set
+        {
+            if (SetProperty(ref _showHiddenFiles, value) && IsFolderPage)
+                Refresh();
+        }
+    }
+
+    /// <summary>Only folder pages have a layout or an order to change.</summary>
+    public bool IsFolderPage => CurrentPage is DirectoryViewModel;
 
 #pragma warning disable CA1822
     public bool IsNotHyprland => !DesktopEnvironmentHelper.IsHyprland();
@@ -120,8 +196,17 @@ public partial class MainViewModel : ViewModelBase, INavigator
     [RelayCommand(CanExecute = nameof(CanChangeViewMode))]
     private void ShowTreeView() => ViewMode = DirectoryViewMode.Tree;
 
-    /// <summary>Only folder pages have a layout to switch.</summary>
-    private bool CanChangeViewMode() => CurrentPage is DirectoryViewModel;
+    private bool CanChangeViewMode() => IsFolderPage;
+
+    /// <summary>Ctrl+H. Works on any page; the choice applies to the next folder opened.</summary>
+    [RelayCommand]
+    private void ToggleHiddenFiles() => ShowHiddenFiles = !ShowHiddenFiles;
+
+    private void PickSort(bool picked, FileSortMode mode)
+    {
+        if (picked)
+            SortMode = mode;
+    }
 
     [RelayCommand]
     public async Task Settings(CancellationToken cancellationToken = default)
@@ -150,6 +235,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
         ShowGridViewCommand.NotifyCanExecuteChanged();
         ShowListViewCommand.NotifyCanExecuteChanged();
         ShowTreeViewCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(IsFolderPage));
     }
 
     // History stores locations, not pages: going back re-reads the folder, so it's never stale
@@ -172,7 +258,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
                 return new PlaceholderPageViewModel(location, "Network", MaterialIconKind.LanConnect);
         }
 
-        var directory = new DirectoryViewModel(location, ViewMode, this);
+        var directory = new DirectoryViewModel(location, ViewMode, SortMode, ShowHiddenFiles, _columns, this);
         _ = directory.LoadAsync(); // never throws, reports errors through Error
         return directory;
     }

@@ -88,6 +88,10 @@
             <Setter Property="FontSize" Value="12" />
             <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
         </Style>
+        <!-- Dot files (only listed when hidden files are shown) -->
+        <Style Selector="DockPanel.hidden, StackPanel.hidden">
+            <Setter Property="Opacity" Value="0.55" />
+        </Style>
         <Style Selector="TextBlock.placeholder">
             <Setter Property="FontStyle" Value="Italic" />
             <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
@@ -101,11 +105,57 @@
 
         <!-- ===== Column headers (list and tree) ===== -->
         <!-- margin = control padding + item padding; the tree adds the expander column -->
-        <Style Selector="Grid.column-headers">
+        <Style Selector="DockPanel.column-headers">
             <Setter Property="Margin" Value="22,14,22,6" />
         </Style>
-        <Style Selector="Grid.column-headers.tree">
+        <Style Selector="DockPanel.column-headers.tree">
             <Setter Property="Margin" Value="48,14,22,6" />
+        </Style>
+
+        <!-- ===== Detail columns: header and rows share these, so they line up ===== -->
+        <Style Selector="TextBlock.cell">
+            <Setter Property="Margin" Value="12,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector="TextBlock.col-size">
+            <Setter Property="Width" Value="76" />
+            <Setter Property="TextAlignment" Value="Right" />
+        </Style>
+        <Style Selector="TextBlock.col-type">
+            <Setter Property="Width" Value="110" />
+        </Style>
+        <Style Selector="TextBlock.col-modified">
+            <Setter Property="Width" Value="128" />
+        </Style>
+        <Style Selector="TextBlock.col-created">
+            <Setter Property="Width" Value="128" />
+        </Style>
+        <Style Selector="TextBlock.col-accessed">
+            <Setter Property="Width" Value="128" />
+        </Style>
+        <Style Selector="TextBlock.col-permissions">
+            <Setter Property="Width" Value="84" />
+        </Style>
+
+        <!-- Columns turned off in the header's context menu (classes set on the root grid) -->
+        <Style Selector="Grid.hide-size TextBlock.col-size">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.hide-type TextBlock.col-type">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.hide-modified TextBlock.col-modified">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.hide-created TextBlock.col-created">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.hide-accessed TextBlock.col-accessed">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.hide-permissions TextBlock.col-permissions">
+            <Setter Property="IsVisible" Value="False" />
         </Style>
         <Style Selector="TextBlock.column-header">
             <Setter Property="FontSize" Value="12" />
@@ -113,17 +163,42 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto,*">
-        <!-- Same columns as the rows. The grid has no columns, so no headers -->
-        <Grid Grid.Row="0"
-              Classes="column-headers"
-              Classes.tree="{Binding IsTreeView}"
-              ColumnDefinitions="28,*,170,90"
-              IsVisible="{Binding !IsGridView}">
-            <TextBlock Grid.Column="1" Classes="column-header" Text="Name" />
-            <TextBlock Grid.Column="2" Classes="column-header" Text="Modified" />
-            <TextBlock Grid.Column="3" Classes="column-header" Text="Size" HorizontalAlignment="Right" />
-        </Grid>
+    <Grid RowDefinitions="Auto,*"
+          Classes.hide-size="{Binding !Columns.ShowSize}"
+          Classes.hide-type="{Binding !Columns.ShowType}"
+          Classes.hide-modified="{Binding !Columns.ShowModified}"
+          Classes.hide-created="{Binding !Columns.ShowCreated}"
+          Classes.hide-accessed="{Binding !Columns.ShowAccessed}"
+          Classes.hide-permissions="{Binding !Columns.ShowPermissions}">
+        <!-- Same layout as the rows: icon left, details docked right, name fills the rest.
+             The grid view has no columns, so no headers. -->
+        <DockPanel Grid.Row="0"
+                   Classes="column-headers"
+                   Classes.tree="{Binding IsTreeView}"
+                   Background="Transparent"
+                   IsVisible="{Binding !IsGridView}"
+                   ToolTip.Tip="Right-click to choose columns">
+            <DockPanel.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Size" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowSize, Mode=TwoWay}" />
+                    <MenuItem Header="Type" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowType, Mode=TwoWay}" />
+                    <MenuItem Header="Modified" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowModified, Mode=TwoWay}" />
+                    <MenuItem Header="Created" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowCreated, Mode=TwoWay}" />
+                    <MenuItem Header="Accessed" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowAccessed, Mode=TwoWay}" />
+                    <MenuItem Header="Permissions" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowPermissions, Mode=TwoWay}" />
+                </ContextMenu>
+            </DockPanel.ContextMenu>
+
+            <Border DockPanel.Dock="Left" Width="28" />
+            <!-- Docked right: the first one is the rightmost -->
+            <TextBlock DockPanel.Dock="Right" Classes="column-header cell col-permissions" Text="Permissions" />
+            <TextBlock DockPanel.Dock="Right" Classes="column-header cell col-accessed" Text="Accessed" />
+            <TextBlock DockPanel.Dock="Right" Classes="column-header cell col-created" Text="Created" />
+            <TextBlock DockPanel.Dock="Right" Classes="column-header cell col-modified" Text="Modified" />
+            <TextBlock DockPanel.Dock="Right" Classes="column-header cell col-type" Text="Type" />
+            <TextBlock DockPanel.Dock="Right" Classes="column-header cell col-size" Text="Size" />
+            <TextBlock Classes="column-header" Text="Name" VerticalAlignment="Center" />
+        </DockPanel>
 
         <ProgressBar Grid.Row="0"
                      IsIndeterminate="True"
@@ -141,30 +216,25 @@
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="browser:FileEntryViewModel">
-                        <Grid ColumnDefinitions="28,*,170,90" ToolTip.Tip="{Binding FullPath}">
-                            <avalonia:MaterialIcon Grid.Column="0"
+                        <DockPanel Classes.hidden="{Binding IsHidden}" ToolTip.Tip="{Binding FullPath}">
+                            <avalonia:MaterialIcon DockPanel.Dock="Left"
                                                    Classes="entry-icon"
                                                    Classes.folder="{Binding IsDirectory}"
                                                    Kind="{Binding Icon}"
                                                    Width="20" Height="20"
-                                                   HorizontalAlignment="Left"
+                                                   Margin="0,0,8,0"
                                                    VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding Name}"
+                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-permissions" Text="{Binding PermissionsText}" />
+                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-accessed" Text="{Binding AccessedText}" />
+                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-created" Text="{Binding CreatedText}" />
+                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-modified" Text="{Binding ModifiedText}" />
+                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-type" Text="{Binding TypeText}" />
+                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-size" Text="{Binding SizeText}" />
+                            <TextBlock Text="{Binding Name}"
                                        FontSize="14"
-                                       Margin="0,0,12,0"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis" />
-                            <TextBlock Grid.Column="2"
-                                       Classes="meta"
-                                       Text="{Binding ModifiedText}"
-                                       VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="3"
-                                       Classes="meta"
-                                       Text="{Binding SizeText}"
-                                       HorizontalAlignment="Right"
-                                       VerticalAlignment="Center" />
-                        </Grid>
+                        </DockPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -183,7 +253,7 @@
                 </ListBox.ItemsPanel>
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="browser:FileEntryViewModel">
-                        <StackPanel Spacing="8" ToolTip.Tip="{Binding FullPath}">
+                        <StackPanel Spacing="8" Classes.hidden="{Binding IsHidden}" ToolTip.Tip="{Binding FullPath}">
                             <avalonia:MaterialIcon Classes="entry-icon"
                                                    Classes.folder="{Binding IsDirectory}"
                                                    Kind="{Binding Icon}"
@@ -209,32 +279,29 @@
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <TreeView.ItemTemplate>
                     <TreeDataTemplate x:DataType="browser:FileTreeNodeViewModel" ItemsSource="{Binding Children}">
-                        <Grid ColumnDefinitions="28,*,170,90" ToolTip.Tip="{Binding FullPath}">
-                            <avalonia:MaterialIcon Grid.Column="0"
-                                                   Classes="entry-icon"
-                                                   Classes.folder="{Binding IsDirectory}"
-                                                   Kind="{Binding Icon}"
-                                                   IsVisible="{Binding !IsPlaceholder}"
-                                                   Width="20" Height="20"
-                                                   HorizontalAlignment="Left"
-                                                   VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1"
-                                       Classes.placeholder="{Binding IsPlaceholder}"
+                        <DockPanel Classes.hidden="{Binding IsHidden}" ToolTip.Tip="{Binding FullPath}">
+                            <!-- Fixed slot, so a placeholder's text lines up with the names around it -->
+                            <Panel DockPanel.Dock="Left" Width="28">
+                                <avalonia:MaterialIcon Classes="entry-icon"
+                                                       Classes.folder="{Binding IsDirectory}"
+                                                       Kind="{Binding Icon}"
+                                                       IsVisible="{Binding !IsPlaceholder}"
+                                                       Width="20" Height="20"
+                                                       HorizontalAlignment="Left"
+                                                       VerticalAlignment="Center" />
+                            </Panel>
+                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-permissions" Text="{Binding PermissionsText}" />
+                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-accessed" Text="{Binding AccessedText}" />
+                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-created" Text="{Binding CreatedText}" />
+                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-modified" Text="{Binding ModifiedText}" />
+                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-type" Text="{Binding TypeText}" />
+                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-size" Text="{Binding SizeText}" />
+                            <TextBlock Classes.placeholder="{Binding IsPlaceholder}"
                                        Text="{Binding Name}"
                                        FontSize="14"
-                                       Margin="0,0,12,0"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis" />
-                            <TextBlock Grid.Column="2"
-                                       Classes="meta"
-                                       Text="{Binding ModifiedText}"
-                                       VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="3"
-                                       Classes="meta"
-                                       Text="{Binding SizeText}"
-                                       HorizontalAlignment="Right"
-                                       VerticalAlignment="Center" />
-                        </Grid>
+                        </DockPanel>
                     </TreeDataTemplate>
                 </TreeView.ItemTemplate>
             </TreeView>

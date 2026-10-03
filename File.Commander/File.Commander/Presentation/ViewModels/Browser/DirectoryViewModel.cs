@@ -10,25 +10,37 @@ public sealed partial class DirectoryViewModel : PageViewModel
 {
     // Defaults skip Hidden | System, i.e. dot files on Linux.
     // IgnoreInaccessible = false, so an unreadable folder reports an error instead of looking empty.
-    private static readonly EnumerationOptions EnumerationOptions = new() { IgnoreInaccessible = false };
+    private static readonly EnumerationOptions WithoutHidden = new() { IgnoreInaccessible = false };
+
+    // Skips nothing: dot files included
+    private static readonly EnumerationOptions WithHidden = new() { IgnoreInaccessible = false, AttributesToSkip = 0 };
 
     private readonly INavigator _navigator;
+    private readonly bool _showHidden;
     private readonly CancellationTokenSource _cts = new();
 
     // The entries TreeRoots was built from: switching views keeps the expanded folders
     private IReadOnlyList<FileEntryViewModel>? _treeSource;
 
-    public DirectoryViewModel(string path, DirectoryViewMode viewMode, INavigator navigator)
+    /// <param name="showHidden">Whether dot files are listed. Fixed for the page: the shell reloads it when this changes.</param>
+    public DirectoryViewModel(string path, DirectoryViewMode viewMode, FileSortMode sortMode, bool showHidden,
+        FileColumnsViewModel columns, INavigator navigator)
     {
         _navigator = navigator;
+        _showHidden = showHidden;
+        Columns = columns;
         Location = Locations.Normalize(path);
         Title = Location == "/" ? "/" : IOPath.GetFileName(Location);
         ViewMode = viewMode;
+        SortMode = sortMode;
     }
 
     public override string Location { get; }
 
     public override string Title { get; }
+
+    /// <summary>Shared with the shell and every other folder page.</summary>
+    public FileColumnsViewModel Columns { get; }
 
     /// <summary>Set by the shell when the user picks another layout.</summary>
     [ObservableProperty]
@@ -40,6 +52,10 @@ public sealed partial class DirectoryViewModel : PageViewModel
     public bool IsListView => ViewMode == DirectoryViewMode.List;
 
     public bool IsTreeView => ViewMode == DirectoryViewMode.Tree;
+
+    /// <summary>Set by the shell when the user picks another order.</summary>
+    [ObservableProperty]
+    public partial FileSortMode SortMode { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusText), nameof(IsEmpty), nameof(GridEntries))]
@@ -86,7 +102,14 @@ public sealed partial class DirectoryViewModel : PageViewModel
         try
         {
             var path = Location;
-            var entries = await Task.Run(() => ReadEntries(path, token), token);
+            var comparer = FileSorting.For(SortMode);
+            var showHidden = _showHidden;
+            var entries = await Task.Run(() => ReadEntries(path, comparer, showHidden, token), token);
+
+            // The order may have changed while the folder was being read
+            if (FileSorting.For(SortMode) is var current && !ReferenceEquals(current, comparer))
+                entries = entries.Order(current).ToList();
+
             if (!token.IsCancellationRequested)
                 Entries = entries;
         }
@@ -138,14 +161,31 @@ public sealed partial class DirectoryViewModel : PageViewModel
 
     partial void OnEntriesChanged(IReadOnlyList<FileEntryViewModel> value) => EnsureTree();
 
+    partial void OnSortModeChanged(FileSortMode value)
+    {
+        var comparer = FileSorting.For(value);
+        var sorted = Entries.Order(comparer).ToList();
+
+        // Reorder the tree in place rather than rebuilding it, so expanded folders stay expanded
+        if (ReferenceEquals(_treeSource, Entries))
+        {
+            _treeSource = sorted;
+            TreeRoots = FileTreeNodeViewModel.Sort(TreeRoots, comparer);
+        }
+
+        Entries = sorted;
+    }
+
     private void EnsureTree()
     {
         if (!IsTreeView || ReferenceEquals(_treeSource, Entries))
             return;
 
         _treeSource = Entries;
-        TreeRoots = Entries.Select(e => new FileTreeNodeViewModel(e, _cts.Token)).ToList();
+        TreeRoots = Entries.Select(e => new FileTreeNodeViewModel(e, CurrentComparer, _showHidden, _cts.Token)).ToList();
     }
+
+    private IComparer<FileEntryViewModel> CurrentComparer() => FileSorting.For(SortMode);
 
     protected override void OnDispose()
     {
@@ -155,20 +195,21 @@ public sealed partial class DirectoryViewModel : PageViewModel
     }
 
     /// <summary>Also used by the tree view to read subfolders.</summary>
-    internal static IReadOnlyList<FileEntryViewModel> ReadEntries(string path, CancellationToken token)
+    internal static IReadOnlyList<FileEntryViewModel> ReadEntries(string path, IComparer<FileEntryViewModel> comparer,
+        bool showHidden, CancellationToken token)
     {
         var directory = new DirectoryInfo(path);
         if (!directory.Exists)
             throw new DirectoryNotFoundException(path);
 
         var result = new List<FileEntryViewModel>();
-        foreach (var info in directory.EnumerateFileSystemInfos("*", EnumerationOptions))
+        foreach (var info in directory.EnumerateFileSystemInfos("*", showHidden ? WithHidden : WithoutHidden))
         {
             token.ThrowIfCancellationRequested();
             result.Add(FileEntryViewModel.From(info));
         }
 
-        result.Sort(FileEntryViewModel.Comparer);
+        result.Sort(comparer);
         return result;
     }
 }

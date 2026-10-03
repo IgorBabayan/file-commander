@@ -9,13 +9,20 @@ namespace File.Commander.Presentation.ViewModels.Browser;
 /// </summary>
 public sealed partial class FileTreeNodeViewModel : ObservableObject
 {
+    private readonly Func<IComparer<FileEntryViewModel>>? _comparer;
+    private readonly bool _showHidden;
     private readonly CancellationToken _cancellationToken;
     private bool _loadStarted;
 
-    public FileTreeNodeViewModel(FileEntryViewModel entry, CancellationToken cancellationToken)
+    /// <param name="comparer">The page's current order, read whenever children are loaded.</param>
+    /// <param name="showHidden">Whether subfolders list dot files. Fixed for the page: toggling it reloads the page.</param>
+    public FileTreeNodeViewModel(FileEntryViewModel entry, Func<IComparer<FileEntryViewModel>> comparer,
+        bool showHidden, CancellationToken cancellationToken)
     {
         Entry = entry;
         Name = entry.Name;
+        _comparer = comparer;
+        _showHidden = showHidden;
         _cancellationToken = cancellationToken;
 
         // A placeholder child makes the expander show before the folder is read
@@ -38,14 +45,24 @@ public sealed partial class FileTreeNodeViewModel : ObservableObject
 
     public bool IsDirectory => Entry?.IsDirectory == true;
 
+    public bool IsHidden => Entry?.IsHidden == true;
+
     public MaterialIconKind Icon => Entry?.Icon ?? MaterialIconKind.FileOutline;
 
     /// <summary>Tooltip. Null for placeholders, so they get none.</summary>
     public string? FullPath => Entry?.FullPath;
 
+    public string SizeText => Entry?.SizeText ?? string.Empty;
+
+    public string TypeText => Entry?.TypeText ?? string.Empty;
+
     public string ModifiedText => Entry?.ModifiedText ?? string.Empty;
 
-    public string SizeText => Entry?.SizeText ?? string.Empty;
+    public string CreatedText => Entry?.CreatedText ?? string.Empty;
+
+    public string AccessedText => Entry?.AccessedText ?? string.Empty;
+
+    public string PermissionsText => Entry?.PermissionsText ?? string.Empty;
 
     [ObservableProperty]
     public partial IReadOnlyList<FileTreeNodeViewModel> Children { get; set; } = [];
@@ -69,10 +86,16 @@ public sealed partial class FileTreeNodeViewModel : ObservableObject
         try
         {
             var path = Entry!.FullPath;
-            var entries = await Task.Run(() => DirectoryViewModel.ReadEntries(path, token), token);
+            var comparer = _comparer!();
+            var entries = await Task.Run(() => DirectoryViewModel.ReadEntries(path, comparer, _showHidden, token), token);
+
+            // The order may have changed while the folder was being read
+            if (_comparer() is var current && !ReferenceEquals(current, comparer))
+                entries = entries.Order(current).ToList();
+
             Children = entries.Count == 0
                 ? [Placeholder("Empty")]
-                : entries.Select(e => new FileTreeNodeViewModel(e, token)).ToList();
+                : entries.Select(e => new FileTreeNodeViewModel(e, _comparer, _showHidden, token)).ToList();
         }
         catch (OperationCanceledException)
         {
@@ -84,6 +107,24 @@ public sealed partial class FileTreeNodeViewModel : ObservableObject
             _loadStarted = false;
             Children = [Placeholder(ex is UnauthorizedAccessException ? "No permission" : ex.Message)];
         }
+    }
+
+    /// <summary>
+    /// Reorders <paramref name="nodes"/> and every folder already read below them.
+    /// Expanded folders stay expanded: the nodes are kept, only their order changes.
+    /// </summary>
+    internal static IReadOnlyList<FileTreeNodeViewModel> Sort(
+        IReadOnlyList<FileTreeNodeViewModel> nodes, IComparer<FileEntryViewModel> comparer)
+    {
+        foreach (var node in nodes)
+        {
+            // Files and placeholders have no children; an unread folder only its placeholder
+            if (node.Children.Count > 0)
+                node.Children = Sort(node.Children, comparer);
+        }
+
+        // A single node (or a placeholder, which is always alone) has no order to change
+        return nodes.Count < 2 ? nodes : nodes.OrderBy(n => n.Entry!, comparer).ToList();
     }
 
     private static FileTreeNodeViewModel Placeholder(string text) => new(text);
