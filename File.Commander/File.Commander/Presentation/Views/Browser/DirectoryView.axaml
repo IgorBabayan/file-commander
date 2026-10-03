@@ -1,0 +1,134 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:browser="clr-namespace:File.Commander.Presentation.ViewModels.Browser"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             x:Class="File.Commander.Presentation.Views.Browser.DirectoryView"
+             x:DataType="browser:DirectoryViewModel">
+    <!-- Fc* brushes live in MainWindow.Resources, so they must be DynamicResource here:
+         a UserControl is parsed on its own and StaticResource can't see the window. -->
+    <UserControl.Styles>
+        <Style Selector="ListBox.file-list">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="12,0,12,12" />
+        </Style>
+        <Style Selector="ListBox.file-list ListBoxItem">
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="Margin" Value="0,1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.file-list ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.file-list ListBoxItem:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.file-list ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+
+        <!-- Order matters: later styles win, so :selected comes last -->
+        <Style Selector="ListBox.file-list avalonia|MaterialIcon.entry-icon">
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.file-list avalonia|MaterialIcon.entry-icon.folder">
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="ListBox.file-list TextBlock.meta">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.file-list ListBoxItem:selected avalonia|MaterialIcon.entry-icon">
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="ListBox.file-list ListBoxItem:selected TextBlock.meta">
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+
+        <Style Selector="TextBlock.column-header">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource FcHeaderTextBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Column headers: same columns as the rows; margin = list padding + item padding -->
+        <Grid Grid.Row="0" ColumnDefinitions="28,*,170,90" Margin="22,14,22,6">
+            <TextBlock Grid.Column="1" Classes="column-header" Text="Name" />
+            <TextBlock Grid.Column="2" Classes="column-header" Text="Modified" />
+            <TextBlock Grid.Column="3" Classes="column-header" Text="Size" HorizontalAlignment="Right" />
+        </Grid>
+
+        <ProgressBar Grid.Row="0"
+                     IsIndeterminate="True"
+                     IsVisible="{Binding IsLoading}"
+                     VerticalAlignment="Bottom"
+                     Height="2" MinHeight="2" />
+
+        <ListBox x:Name="FileList"
+                 Grid.Row="1"
+                 Classes="file-list"
+                 ItemsSource="{Binding Entries}"
+                 SelectedItem="{Binding SelectedEntry}"
+                 IsVisible="{Binding !HasError}"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="browser:FileEntryViewModel">
+                    <Grid ColumnDefinitions="28,*,170,90" ToolTip.Tip="{Binding FullPath}">
+                        <avalonia:MaterialIcon Grid.Column="0"
+                                               Classes="entry-icon"
+                                               Classes.folder="{Binding IsDirectory}"
+                                               Kind="{Binding Icon}"
+                                               Width="20" Height="20"
+                                               HorizontalAlignment="Left"
+                                               VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Name}"
+                                   FontSize="14"
+                                   Margin="0,0,12,0"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="2"
+                                   Classes="meta"
+                                   Text="{Binding ModifiedText}"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="3"
+                                   Classes="meta"
+                                   Text="{Binding SizeText}"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <TextBlock Grid.Row="1"
+                   Text="This folder is empty"
+                   IsVisible="{Binding IsEmpty}"
+                   FontSize="14"
+                   Foreground="{DynamicResource FcSubtleTextBrush}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+
+        <StackPanel Grid.Row="1"
+                    IsVisible="{Binding HasError}"
+                    Spacing="12"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+            <avalonia:MaterialIcon Kind="FolderAlertOutline"
+                                   Width="56" Height="56"
+                                   Foreground="{DynamicResource FcHeaderTextBrush}" />
+            <TextBlock Text="{Binding Error}"
+                       FontSize="14"
+                       Foreground="{DynamicResource FcSubtleTextBrush}"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+    </Grid>
+</UserControl>
