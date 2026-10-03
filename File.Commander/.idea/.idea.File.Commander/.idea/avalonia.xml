@@ -3,6 +3,12 @@
   <component name="AvaloniaProject">
     <option name="projectPerEditor">
       <map>
+        <entry key="File.Commander/App.axaml" value="File.Commander/File.Commander.csproj" />
+        <entry key="File.Commander/Presentation/Styles/Button.axaml" value="File.Commander/File.Commander.csproj" />
+        <entry key="File.Commander/Presentation/Styles/TextBlock.axaml" value="File.Commander/File.Commander.csproj" />
+        <entry key="File.Commander/Presentation/Styles/Theme.axaml" value="File.Commander/File.Commander.csproj" />
+        <entry key="File.Commander/Presentation/Views/MainWindow.axaml" value="File.Commander/File.Commander.csproj" />
+        <entry key="File.Commander/Presentation/Views/Shell/MainWindow.axaml" value="File.Commander/File.Commander.csproj" />
         <entry key="File.Commander/Views/MainWindow.axaml" value="File.Commander/File.Commander.csproj" />
       </map>
     </option>

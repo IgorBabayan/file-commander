@@ -21,5 +21,26 @@
             <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
         </PackageReference>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2"/>
+        <PackageReference Include="Material.Icons.Avalonia" Version="3.0.3-nightly.0.2" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0-rc.1.26425.128" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="Presentation\Views\Shell\MainWindow.axaml.cs">
+        <DependentUpon>MainWindow.axaml</DependentUpon>
+        <SubType>Code</SubType>
+      </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\File.Commander.Plugins\File.Commander.Plugins.csproj" />
+    </ItemGroup>
+
+    <!-- Debug: building/running the host also builds the plugins, whose DeployPluginLocally
+     target copies them into <AppData>/ed-assistant/plugins. The host never references them. -->
+    <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+        <ProjectReference Include="..\Plugins\*\*.csproj"
+                          ReferenceOutputAssembly="false"
+                          Private="false" />
     </ItemGroup>
 </Project>

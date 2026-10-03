@@ -1,0 +1,62 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:shell="clr-namespace:File.Commander.Presentation.ViewModels.Shell"
+        xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="File.Commander.Presentation.Views.Shell.MainWindow"
+        x:DataType="shell:MainViewModel"
+        Icon="/Assets/logo.png"
+        Title="File Commander">
+    <Border Background="{StaticResource BaseBrush}">
+        <Grid RowDefinitions="36,*,36">
+            <Border Grid.Row="0"
+                    Background="Transparent"
+                    PointerPressed="OnPointerPressed">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0"
+                               Classes="primary"
+                               Text="File Commander"
+                               Margin="15,0,0,0"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                    
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                Spacing="5">
+                        <Button Classes="window-button"
+                                ToolTip.Tip="Settings"
+                                Command="{Binding SettingsCommand}"
+                                Margin="0,0,15,0">
+                            <avalonia:MaterialIcon Kind="Settings"/>
+                        </Button>
+                        
+                        <Button Classes="window-button"
+                                ToolTip.Tip="Minimize window"
+                                Click="OnMinimizeClick"
+                                IsVisible="{Binding IsNotHyprland}">
+                            <avalonia:MaterialIcon Kind="WindowMinimize"/>
+                        </Button>
+                        
+                        <Button Classes="window-button"
+                                ToolTip.Tip="Maximize window"
+                                Click="OnMaximizeClick"
+                                IsVisible="{Binding IsNotHyprland}">
+                            <avalonia:MaterialIcon Kind="WindowMaximize"/>
+                        </Button>
+
+                        <Button Classes="window-button close"
+                                ToolTip.Tip="Close window"
+                                Click="OnCloseClick">
+                            <avalonia:MaterialIcon Kind="WindowClose"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>
