@@ -1,0 +1,33 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Styles.Resources>
+        <!-- Thin thumb width = ScrollBarSize (16) x scale. Fluent's 0.125 gives 2px; 0.25 gives 4px. -->
+        <TransformOperations x:Key="VerticalSmallScrollThumbScaleTransform">scaleX(0.25) translateX(-2px)</TransformOperations>
+        <TransformOperations x:Key="HorizontalSmallScrollThumbScaleTransform">scaleY(0.25) translateY(-2px)</TransformOperations>
+    </Styles.Resources>
+
+    <!--
+        Fluent's ScrollBar expands on hover (IsExpanded=true): it fades in the track and the
+        line arrows and widens the thumb to full size. Undo every one of those setters so the
+        bar keeps its thin, collapsed look whether or not the pointer is over it.
+        Mirrors Avalonia.Themes.Fluent/Controls/ScrollBar.xaml (12.1.3).
+    -->
+    <Style Selector="ScrollBar[IsExpanded=true] /template/ Grid#Root">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ScrollBar[IsExpanded=true] /template/ Rectangle#TrackRect">
+        <Setter Property="Opacity" Value="0" />
+    </Style>
+    <Style Selector="ScrollBar[IsExpanded=true] /template/ RepeatButton">
+        <Setter Property="Opacity" Value="0" />
+    </Style>
+    <Style Selector="ScrollBar[IsExpanded=true] /template/ Thumb">
+        <Setter Property="Background" Value="{DynamicResource ScrollBarPanningThumbBackground}" />
+    </Style>
+    <Style Selector="ScrollBar:vertical[IsExpanded=true] /template/ Thumb">
+        <Setter Property="RenderTransform" Value="{DynamicResource VerticalSmallScrollThumbScaleTransform}" />
+    </Style>
+    <Style Selector="ScrollBar:horizontal[IsExpanded=true] /template/ Thumb">
+        <Setter Property="RenderTransform" Value="{DynamicResource HorizontalSmallScrollThumbScaleTransform}" />
+    </Style>
+</Styles>

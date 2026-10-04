@@ -18,5 +18,6 @@
         <avalonia:MaterialIconStyles />
         <StyleInclude Source="avares://File.Commander/Presentation/Styles/TextBlock.axaml" />
         <StyleInclude Source="avares://File.Commander/Presentation/Styles/Button.axaml" />
+        <StyleInclude Source="avares://File.Commander/Presentation/Styles/ScrollBar.axaml" />
     </Application.Styles>
 </Application>
