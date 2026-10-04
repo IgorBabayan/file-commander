@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using Avalonia.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -9,6 +10,7 @@ namespace File.Commander.Presentation.ViewModels.Settings;
 /// <summary>
 /// Settings → Basic → Keymap: every shortcut, grouped by kind. Right-click a row to change,
 /// add, remove or reset it. Each change is reported through the callback and saved at once.
+/// <see cref="SearchText"/> narrows the list to the actions whose name matches.
 /// </summary>
 public sealed partial class KeymapSettingsViewModel : ObservableObject
 {
@@ -18,6 +20,9 @@ public sealed partial class KeymapSettingsViewModel : ObservableObject
 
     private KeymapItemViewModel? _recording;
     private bool _recordingAdds;
+
+    /// <summary>Each group's expansion before a search started; restored when the search is cleared.</summary>
+    private Dictionary<KeymapGroupViewModel, bool>? _expandedBeforeSearch;
 
     /// <param name="stored">The overrides from settings.json, see <see cref="AppSettings.Keymap"/>.</param>
     /// <param name="changed">Called after every change; the owner saves <see cref="ToOverrides"/>.</param>
@@ -48,6 +53,51 @@ public sealed partial class KeymapSettingsViewModel : ObservableObject
 
     /// <summary>A row waits for a key press. The window then sends every key here instead of handling it.</summary>
     public bool IsRecording => _recording is not null;
+
+    /// <summary>Shows only the actions whose name contains every word typed, ignoring case. Not saved.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSearching))]
+    [NotifyCanExecuteChangedFor(nameof(ClearSearchCommand))]
+    public partial string? SearchText { get; set; }
+
+    public bool IsSearching => !string.IsNullOrWhiteSpace(SearchText);
+
+    /// <summary>A search is typed and no action's name matches it.</summary>
+    public bool HasNoMatches => IsSearching && Groups.All(g => !g.HasItems);
+
+    partial void OnSearchTextChanged(string? value)
+    {
+        CancelRecording();
+        Notice = null;
+
+        // Searching opens every group so matches aren't hidden in a collapsed one
+        if (IsSearching && _expandedBeforeSearch is null)
+        {
+            _expandedBeforeSearch = Groups.ToDictionary(g => g, g => g.IsExpanded);
+            foreach (var group in Groups)
+                group.IsExpanded = true;
+        }
+        else if (!IsSearching && _expandedBeforeSearch is { } expanded)
+        {
+            foreach (var (group, isExpanded) in expanded)
+                group.IsExpanded = isExpanded;
+            _expandedBeforeSearch = null;
+        }
+
+        var selected = Selected;
+        Rebuild();
+
+        // Rows are rebuilt: keep the highlight on the same shortcut when it's still listed
+        Selected = selected is null
+            ? null
+            : Groups.SelectMany(g => g.Items)
+                .FirstOrDefault(i => i.Action == selected.Action && i.Chord == selected.Chord);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanClearSearch))]
+    private void ClearSearch() => SearchText = null;
+
+    private bool CanClearSearch() => !string.IsNullOrEmpty(SearchText);
 
     partial void OnSelectedChanged(KeymapItemViewModel? oldValue, KeymapItemViewModel? newValue)
     {
@@ -181,13 +231,19 @@ public sealed partial class KeymapSettingsViewModel : ObservableObject
         _changed();
     }
 
-    /// <summary>One row per chord; an action without any gets one "Unassigned" row so it can be bound again.</summary>
+    /// <summary>
+    /// One row per chord; an action without any gets one "Unassigned" row so it can be bound again.
+    /// Only the actions matching <see cref="SearchText"/> are listed.
+    /// </summary>
     private void Rebuild()
     {
+        var terms = (SearchText ?? string.Empty)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
         foreach (var group in Groups)
         {
             group.Items.Clear();
-            foreach (var action in KeymapActions.All.Where(a => a.Group == group.Title))
+            foreach (var action in KeymapActions.All.Where(a => a.Group == group.Title && Matches(a, terms)))
             {
                 var chords = _bindings[action.Id];
                 if (chords.Count == 0)
@@ -199,8 +255,17 @@ public sealed partial class KeymapSettingsViewModel : ObservableObject
                 foreach (var chord in chords)
                     group.Items.Add(new KeymapItemViewModel(this, action, chord));
             }
+
+            group.NotifyItemsChanged();
         }
+
+        OnPropertyChanged(nameof(HasNoMatches));
     }
+
+    // Accents are ignored too: "frappe" finds "Select theme Frappé"
+    private static bool Matches(KeymapAction action, string[] terms)
+        => terms.All(term => CultureInfo.CurrentCulture.CompareInfo.IndexOf(
+            action.Title, term, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) >= 0);
 }
 
 /// <summary>A collapsible group of the keymap (Actions, Navigation…).</summary>
@@ -216,8 +281,13 @@ public sealed partial class KeymapGroupViewModel : ObservableObject
 
     public ObservableCollection<KeymapItemViewModel> Items { get; } = [];
 
+    /// <summary>False while a search hides every action of the group; the group is hidden then.</summary>
+    public bool HasItems => Items.Count > 0;
+
     [ObservableProperty]
     public partial bool IsExpanded { get; set; }
+
+    internal void NotifyItemsChanged() => OnPropertyChanged(nameof(HasItems));
 }
 
 /// <summary>One shortcut of an action, or the "Unassigned" row of an action without any.</summary>

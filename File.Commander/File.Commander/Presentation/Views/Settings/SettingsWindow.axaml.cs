@@ -34,6 +34,8 @@ public partial class SettingsWindow : Window
         AddHandler(PointerPressedEvent, OnWindowPointerPressed, RoutingStrategies.Tunnel);
         KeymapGroups.AddHandler(PointerPressedEvent, OnKeymapPointerPressed, RoutingStrategies.Tunnel);
         KeymapGroups.AddHandler(DoubleTappedEvent, OnKeymapDoubleTapped);
+        // Tunnel: the first Esc clears the search before the window sees it and closes
+        KeymapSearch.AddHandler(KeyDownEvent, OnKeymapSearchKeyDown, RoutingStrategies.Tunnel);
     }
 
     private SettingsViewModel? ViewModel => DataContext as SettingsViewModel;
@@ -65,6 +67,17 @@ public partial class SettingsWindow : Window
             keymap.CancelRecording();
         else
             keymap.Capture(e.Key, e.KeyModifiers);
+    }
+
+    /// <summary>Esc in a non-empty search box clears it; Esc in an empty one closes the window as usual.</summary>
+    private void OnKeymapSearchKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Escape || e.KeyModifiers != KeyModifiers.None
+            || ViewModel?.Keymap is not { } keymap || string.IsNullOrEmpty(keymap.SearchText))
+            return;
+
+        keymap.ClearSearchCommand.Execute(null);
+        e.Handled = true;
     }
 
     /// <summary>A click anywhere stops recording; the context menu starts it only after its own click.</summary>

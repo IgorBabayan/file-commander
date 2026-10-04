@@ -369,6 +369,8 @@ public partial class MainViewModel : ViewModelBase, INavigator
     {
         _desktopService.BuildDesktopFile();
         await _desktopService.SaveDesktopFileAsync(cancellationToken);
+        
+        OnPropertyChanged(nameof(HasNotDesktopFile));
     }
 
     /// <summary>Settings are saved as they change; this applies each save to the running window.</summary>

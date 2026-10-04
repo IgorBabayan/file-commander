@@ -120,6 +120,66 @@
             <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="Margin" Value="2,0,0,6" />
         </Style>
+        <Style Selector="TextBox.keymap-search">
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextBrush}" />
+            <Setter Property="PlaceholderForeground" Value="{DynamicResource Overlay1Brush}" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource BlueBrush}" />
+            <Setter Property="SelectionForegroundBrush" Value="{DynamicResource CrustBrush}" />
+        </Style>
+        <Style Selector="TextBox.keymap-search /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="TextBox.keymap-search:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        <Style Selector="TextBox.keymap-search:focus /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BlueBrush}" />
+        </Style>
+        <Style Selector="TextBox.keymap-search:pointerover, TextBox.keymap-search:focus">
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="TextBox.keymap-search avalonia|MaterialIcon.search-icon">
+            <Setter Property="Width" Value="16" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+        </Style>
+        <Style Selector="Button.keymap-search-clear">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,5,0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Button.keymap-search-clear:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Surface2Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.keymap-empty">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontStyle" Value="Italic" />
+            <Setter Property="Margin" Value="10,8" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+        </Style>
         <Style Selector="Border.keymap-panel">
             <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
             <Setter Property="CornerRadius" Value="8" />
@@ -283,15 +343,32 @@
                             <StackPanel Classes="section">
                                 <TextBlock Classes="keymap-hint"
                                            Text="Right-click a shortcut to change, add, remove or reset it. Double-click changes it." />
+                                <TextBox x:Name="KeymapSearch"
+                                         Classes="keymap-search"
+                                         PlaceholderText="Search keybindings by name"
+                                         Text="{Binding Keymap.SearchText}">
+                                    <TextBox.InnerLeftContent>
+                                        <avalonia:MaterialIcon Classes="search-icon" Kind="Magnify" />
+                                    </TextBox.InnerLeftContent>
+                                    <TextBox.InnerRightContent>
+                                        <Button Classes="keymap-search-clear"
+                                                Focusable="False"
+                                                ToolTip.Tip="Clear search (Esc)"
+                                                Command="{Binding Keymap.ClearSearchCommand}"
+                                                IsVisible="{Binding Keymap.SearchText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                            <avalonia:MaterialIcon Kind="Close" Width="14" Height="14" />
+                                        </Button>
+                                    </TextBox.InnerRightContent>
+                                </TextBox>
                                 <TextBlock Classes="keymap-notice"
                                            Text="{Binding Keymap.Notice}"
                                            IsVisible="{Binding Keymap.HasNotice}" />
                                 <!-- No Tag inside: Tags mark the navigation anchors -->
-                                <Border Classes="keymap-panel">
+                                <Border Classes="keymap-panel" IsVisible="{Binding !Keymap.HasNoMatches}">
                                     <ItemsControl x:Name="KeymapGroups" ItemsSource="{Binding Keymap.Groups}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate DataType="vm:KeymapGroupViewModel">
-                                                <StackPanel Spacing="1">
+                                                <StackPanel Spacing="1" IsVisible="{Binding HasItems}">
                                                     <ToggleButton Classes="keymap-group" IsChecked="{Binding IsExpanded}">
                                                         <StackPanel Orientation="Horizontal" Spacing="6">
                                                             <avalonia:MaterialIcon Classes="chevron" Kind="ChevronRight"
@@ -355,6 +432,9 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
                                 </Border>
+                                <TextBlock Classes="keymap-empty"
+                                           Text="No keybindings match your search."
+                                           IsVisible="{Binding Keymap.HasNoMatches}" />
                             </StackPanel>
 
                             <TextBlock Classes="section-title" Text="Open behavior" Tag="open-behavior" />
