@@ -3,10 +3,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:shell="clr-namespace:File.Commander.Presentation.ViewModels.Shell"
-        xmlns:computer="clr-namespace:File.Commander.Presentation.ViewModels.Computer"
-        xmlns:pages="clr-namespace:File.Commander.Presentation.ViewModels.Pages"
-        xmlns:browser="clr-namespace:File.Commander.Presentation.ViewModels.Browser"
-        xmlns:browserViews="clr-namespace:File.Commander.Presentation.Views.Browser"
         xmlns:shellViews="clr-namespace:File.Commander.Presentation.Views.Shell"
         xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
         mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
@@ -369,172 +365,25 @@
                     </DockPanel>
                 </Border>
 
-                <!-- Current page, with the info panel (Space) on its right -->
-                <Grid Grid.Column="1" RowDefinitions="*,Auto" ColumnDefinitions="*,Auto">
-                    <ContentControl Grid.Row="0" Content="{Binding CurrentPage}">
-                        <ContentControl.DataTemplates>
-                            <DataTemplate DataType="computer:ComputerViewModel">
-                                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-                                    <StackPanel Margin="22,22,0,0">
-
-                                        <TextBlock Classes="section-title" Text="My Directories" />
-
-                                        <ItemsControl ItemsSource="{Binding Directories}">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <WrapPanel />
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate x:DataType="computer:DirectoryCardViewModel">
-                                                    <Button Classes="card directory-card" ToolTip.Tip="{Binding Location}" Command="{Binding OpenCommand}">
-                                                        <StackPanel Spacing="16">
-                                                            <!-- Folder glyph: tab + gradient body + white badge -->
-                                                            <Panel Width="58" Height="50" HorizontalAlignment="Center">
-                                                                <Border Width="24" Height="10"
-                                                                        Margin="3,0,0,0"
-                                                                        CornerRadius="4,4,0,0"
-                                                                        HorizontalAlignment="Left"
-                                                                        VerticalAlignment="Top"
-                                                                        Background="{DynamicResource FcFolderTabBrush}" />
-                                                                <Border Margin="0,5,0,0"
-                                                                        CornerRadius="6"
-                                                                        Background="{DynamicResource FcFolderBodyBrush}"
-                                                                        BoxShadow="0 2 6 0 #66000000">
-                                                                    <Border Width="24" Height="24"
-                                                                            Margin="0,4,0,0"
-                                                                            CornerRadius="12"
-                                                                            Background="{DynamicResource FcFolderBadgeBrush}"
-                                                                            HorizontalAlignment="Center"
-                                                                            VerticalAlignment="Center">
-                                                                        <avalonia:MaterialIcon Kind="{Binding Badge}"
-                                                                                               Width="14" Height="14"
-                                                                                               Foreground="{DynamicResource FcAccentBrush}" />
-                                                                    </Border>
-                                                                </Border>
-                                                            </Panel>
-
-                                                            <TextBlock Text="{Binding Name}"
-                                                                       FontSize="14"
-                                                                       HorizontalAlignment="Center"
-                                                                       TextTrimming="CharacterEllipsis" />
-                                                        </StackPanel>
-                                                    </Button>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-
-                                        <TextBlock Classes="section-title" Text="Disks" Margin="0,8,0,20" />
-
-                                        <ItemsControl ItemsSource="{Binding Disks}">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <WrapPanel />
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate x:DataType="computer:DiskCardViewModel">
-                                                    <Button Classes="card disk-card" ToolTip.Tip="{Binding MountPoint}" Command="{Binding OpenCommand}">
-                                                        <Grid ColumnDefinitions="Auto,*">
-                                                            <Panel Grid.Column="0" Width="54" Height="58" VerticalAlignment="Center">
-                                                                <!-- Hard drive / USB stick -->
-                                                                <Grid Width="46"
-                                                                      RowDefinitions="*,12"
-                                                                      IsVisible="{Binding !IsOptical}">
-                                                                    <Border Grid.Row="0"
-                                                                            Classes="disk-body"
-                                                                            Classes.removable="{Binding IsRemovable}"
-                                                                            CornerRadius="5,5,0,0">
-                                                                        <avalonia:MaterialIcon Kind="{Binding Glyph}"
-                                                                                               IsVisible="{Binding HasGlyph}"
-                                                                                               Width="24" Height="24"
-                                                                                               Foreground="{DynamicResource FcOnAccentBrush}" />
-                                                                    </Border>
-                                                                    <Border Grid.Row="1"
-                                                                            Classes="disk-base"
-                                                                            Classes.removable="{Binding IsRemovable}"
-                                                                            CornerRadius="0,0,5,5">
-                                                                        <Grid ColumnDefinitions="Auto,*,Auto"
-                                                                              Margin="6,0"
-                                                                              VerticalAlignment="Center">
-                                                                            <Ellipse Grid.Column="0"
-                                                                                     Width="4" Height="4"
-                                                                                     Classes="disk-led"
-                                                                                     Classes.removable="{Binding IsRemovable}" />
-                                                                            <Border Grid.Column="2"
-                                                                                    Width="12" Height="3"
-                                                                                    CornerRadius="1"
-                                                                                    Background="{DynamicResource Overlay0Brush}" />
-                                                                        </Grid>
-                                                                    </Border>
-                                                                </Grid>
-
-                                                                <!-- Optical disc -->
-                                                                <Panel Width="54" Height="54" IsVisible="{Binding IsOptical}">
-                                                                    <Ellipse Fill="{DynamicResource FcOpticalDiscBrush}" />
-                                                                    <Ellipse Width="20" Height="20" Fill="{DynamicResource Surface2Brush}" />
-                                                                    <Ellipse Width="10" Height="10" Fill="{DynamicResource FcCardBrush}" />
-                                                                </Panel>
-                                                            </Panel>
-
-                                                            <StackPanel Grid.Column="1"
-                                                                        Margin="18,0,0,0"
-                                                                        VerticalAlignment="Center"
-                                                                        Spacing="6">
-                                                                <TextBlock Text="{Binding Name}"
-                                                                           FontSize="16"
-                                                                           TextTrimming="CharacterEllipsis" />
-                                                                <TextBlock Text="{Binding UsageText}"
-                                                                           FontSize="12"
-                                                                           Foreground="{DynamicResource FcSubtleTextBrush}" />
-                                                                <ProgressBar Classes="usage"
-                                                                             Classes.warning="{Binding IsAlmostFull}"
-                                                                             Value="{Binding UsedPercent}"
-                                                                             Margin="0,4,0,0" />
-                                                            </StackPanel>
-                                                        </Grid>
-                                                    </Button>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </StackPanel>
-                                </ScrollViewer>
+                <!-- The views (two side by side in split view), with the info panel (Space) on their right -->
+                <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
+                    <ItemsControl Grid.Column="0" ItemsSource="{Binding Panes}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Rows="1" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="shell:PaneViewModel">
+                                <shellViews:PaneView />
                             </DataTemplate>
-
-                            <DataTemplate DataType="browser:DirectoryViewModel">
-                                <browserViews:DirectoryView />
-                            </DataTemplate>
-
-                            <DataTemplate DataType="pages:PlaceholderPageViewModel">
-                                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <avalonia:MaterialIcon Kind="{Binding Icon}"
-                                                           Width="56" Height="56"
-                                                           Foreground="{DynamicResource FcHeaderTextBrush}" />
-                                    <TextBlock Text="{Binding Message}"
-                                               FontSize="14"
-                                               HorizontalAlignment="Center"
-                                               Foreground="{DynamicResource FcSubtleTextBrush}" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </ContentControl.DataTemplates>
-                    </ContentControl>
-
-                    <!-- Status bar -->
-                    <Border Grid.Row="1"
-                            Height="32"
-                            BorderBrush="{DynamicResource FcDividerBrush}"
-                            BorderThickness="0,1,0,0">
-                        <TextBlock Text="{Binding CurrentPage.StatusText}"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource FcSubtleTextBrush}"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center" />
-                    </Border>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
                     <!-- Info panel: slides in from the right by growing from 0 to its full width.
                          The panel itself keeps its width and sticks to the right edge, so it moves in
                          rather than squeezing its text while the host grows. -->
-                    <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"
+                    <Border Grid.Column="1"
                             Classes="info-panel"
                             Classes.open="{Binding InfoPanel.IsShown}"
                             ClipToBounds="True">

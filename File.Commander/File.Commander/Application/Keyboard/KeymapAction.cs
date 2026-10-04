@@ -37,6 +37,7 @@ public static class KeymapActions
     public const string GridView = "view.grid";
     public const string ListView = "view.list";
     public const string TreeView = "view.tree";
+    public const string ToggleSplitView = "view.split";
 
     public const string ThemeLatte = "appearance.theme-latte";
     public const string ThemeFrappe = "appearance.theme-frappe";
@@ -67,6 +68,8 @@ public static class KeymapActions
         new(GridView, ViewGroup, "Icons view", [new(Key.D1, KeyModifiers.Control)]),
         new(ListView, ViewGroup, "List view", [new(Key.D2, KeyModifiers.Control)]),
         new(TreeView, ViewGroup, "Tree view", [new(Key.D3, KeyModifiers.Control)]),
+        // Like Dolphin's split view
+        new(ToggleSplitView, ViewGroup, "Split view", [new(Key.F3)]),
 
         new(ThemeLatte, AppearanceGroup, "Select theme Latte",
             [new(Key.D1, KeyModifiers.Control | KeyModifiers.Alt)]),

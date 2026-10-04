@@ -4,7 +4,7 @@
              xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              x:Class="File.Commander.Presentation.Views.Shell.ViewModeSwitcher"
              x:DataType="shell:MainViewModel">
-    <!-- Grid / list / tree buttons. Fc* brushes follow the theme: DynamicResource -->
+    <!-- Grid / list / tree buttons, then split view. Fc* brushes follow the theme: DynamicResource -->
     <UserControl.Styles>
         <!-- Order matters: later styles win, so .selected and :disabled come last -->
         <Style Selector="Button.view-mode">
@@ -61,6 +61,15 @@
                 Command="{Binding ShowTreeViewCommand}"
                 ToolTip.Tip="Tree (Ctrl+3)">
             <avalonia:MaterialIcon Kind="FileTreeOutline" Width="18" Height="18" />
+        </Button>
+
+        <!-- Split view: always available, highlighted while the window shows two views -->
+        <Button Classes="view-mode"
+                Classes.selected="{Binding IsSplit}"
+                Margin="6,0,0,0"
+                Command="{Binding ToggleSplitViewCommand}"
+                ToolTip.Tip="Split view (F3)">
+            <avalonia:MaterialIcon Kind="ViewSplitVertical" Width="18" Height="18" />
         </Button>
     </StackPanel>
 </UserControl>

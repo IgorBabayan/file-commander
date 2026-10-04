@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using File.Commander.Application.Path;
 
@@ -16,6 +17,9 @@ public partial class MainWindow : Window
         // Tunnel: works wherever the pointer or focus is, before a child control can swallow the event
         AddHandler(PointerPressedEvent, OnNavigationPointerPressed, RoutingStrategies.Tunnel);
         AddHandler(KeyDownEvent, OnNavigationKeyDown, RoutingStrategies.Tunnel);
+
+        // Tab into a view: it becomes the active one, like a click
+        AddHandler(GotFocusEvent, (_, e) => ActivatePaneOf(e.Source));
     }
 
     private MainViewModel? ViewModel => DataContext as MainViewModel;
@@ -37,11 +41,14 @@ public partial class MainWindow : Window
         BeginMoveDrag(args);
     }
 
-    /// <summary>Mouse side buttons: back / forward.</summary>
+    /// <summary>Any click into a view makes it the active one. Mouse side buttons: back / forward.</summary>
     private void OnNavigationPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (ViewModel is not { } vm)
             return;
+
+        // First, so the view itself and the side buttons below act on the view that was clicked
+        ActivatePaneOf(e.Source);
 
         var properties = e.GetCurrentPoint(this).Properties;
         var command = properties.IsXButton1Pressed ? vm.GoBackCommand
@@ -50,6 +57,15 @@ public partial class MainWindow : Window
 
         if (TryExecute(command))
             e.Handled = true;
+    }
+
+    /// <summary>Split view: makes the view that contains <paramref name="source"/> the active one.</summary>
+    private void ActivatePaneOf(object? source)
+    {
+        if (ViewModel is { } vm
+            && source is Avalonia.Visual visual
+            && visual.FindAncestorOfType<PaneView>(includeSelf: true)?.DataContext is PaneViewModel pane)
+            vm.ActivatePane(pane);
     }
 
     /// <summary>
