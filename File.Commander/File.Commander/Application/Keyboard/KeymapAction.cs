@@ -22,6 +22,7 @@ public static class KeymapActions
     public const string SelectionGroup = "Selection";
     public const string NavigationGroup = "Navigation";
     public const string ViewGroup = "View";
+    public const string TabsGroup = "Tabs";
     public const string AppearanceGroup = "Appearance";
 
     public const string ToggleHiddenFiles = "actions.toggle-hidden-files";
@@ -44,6 +45,11 @@ public static class KeymapActions
     public const string TreeView = "view.tree";
     public const string ToggleSplitView = "view.split";
 
+    public const string NewTab = "tabs.new";
+    public const string CloseTab = "tabs.close";
+    public const string NextTab = "tabs.next";
+    public const string PreviousTab = "tabs.previous";
+
     public const string ThemeLatte = "appearance.theme-latte";
     public const string ThemeFrappe = "appearance.theme-frappe";
     public const string ThemeMacchiato = "appearance.theme-macchiato";
@@ -51,7 +57,7 @@ public static class KeymapActions
 
     /// <summary>The order the groups are shown in.</summary>
     public static IReadOnlyList<string> Groups { get; } =
-        [ActionsGroup, SelectionGroup, NavigationGroup, ViewGroup, AppearanceGroup];
+        [ActionsGroup, SelectionGroup, NavigationGroup, ViewGroup, TabsGroup, AppearanceGroup];
 
     public static IReadOnlyList<KeymapAction> All { get; } =
     [
@@ -83,6 +89,14 @@ public static class KeymapActions
         new(TreeView, ViewGroup, "Tree view", [new(Key.D3, KeyModifiers.Control)]),
         // Like Dolphin's split view
         new(ToggleSplitView, ViewGroup, "Split view", [new(Key.F3)]),
+
+        // Like a browser's. The new tab opens where the active view is.
+        new(NewTab, TabsGroup, "New tab", [new(Key.T, KeyModifiers.Control)]),
+        new(CloseTab, TabsGroup, "Close tab", [new(Key.W, KeyModifiers.Control)]),
+        new(NextTab, TabsGroup, "Next tab",
+            [new(Key.Tab, KeyModifiers.Control), new(Key.PageDown, KeyModifiers.Control)]),
+        new(PreviousTab, TabsGroup, "Previous tab",
+            [new(Key.Tab, KeyModifiers.Control | KeyModifiers.Shift), new(Key.PageUp, KeyModifiers.Control)]),
 
         new(ThemeLatte, AppearanceGroup, "Select theme Latte",
             [new(Key.D1, KeyModifiers.Control | KeyModifiers.Alt)]),

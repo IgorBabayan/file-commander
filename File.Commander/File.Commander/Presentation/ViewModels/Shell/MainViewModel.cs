@@ -16,7 +16,7 @@ namespace File.Commander.Presentation.ViewModels.Shell;
 
 public partial class MainViewModel : ViewModelBase, INavigator
 {
-    private PaneViewModel _activePane;
+    private TabViewModel _activeTab;
     private bool _showHiddenFiles;
     
     private readonly FileColumnsViewModel _columns = new();
@@ -32,16 +32,23 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
     public AddressBarViewModel AddressBar { get; }
 
-    /// <summary>The details panel on the right, toggled with Space.</summary>
-    public InfoPanelViewModel InfoPanel { get; } = new();
+    /// <summary>The tabs of the window (Ctrl+T). Each has its own views, split view and info panel.</summary>
+    public ObservableCollection<TabViewModel> Tabs { get; } = [];
 
-    /// <summary>The views of the content area: one, or two side by side in split view.</summary>
-    public ObservableCollection<PaneViewModel> Panes { get; } = [];
+    /// <summary>The tab the window shows and the shell acts on.</summary>
+    public TabViewModel ActiveTab => _activeTab;
+
+    /// <summary>The tab bar only shows while there is more than one tab.</summary>
+    public bool HasMultipleTabs => Tabs.Count > 1;
+
+    /// <summary>The details panel of the selected tab, toggled with Space.</summary>
+    public InfoPanelViewModel InfoPanel => ActiveTab.InfoPanel;
 
     /// <summary>The view the title bar, address bar and sidebar act on. Picked by clicking into a view.</summary>
-    public PaneViewModel ActivePane => _activePane;
+    public PaneViewModel ActivePane => ActiveTab.ActivePane;
 
-    public bool IsSplit => Panes.Count > 1;
+    /// <summary>The selected tab shows two views side by side.</summary>
+    public bool IsSplit => ActiveTab.IsSplit;
 
     public bool IsGridView => ViewMode == DirectoryViewMode.Grid;
 
@@ -148,7 +155,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
             OnPropertyChanged(nameof(IsSortedByType));
 
             // Empty while the constructor sets the stored order: the first page is created with it
-            foreach (var pane in Panes)
+            foreach (var pane in AllPanes)
             {
                 if (pane.CurrentPage is DirectoryViewModel directory)
                     directory.Sort = FileSort.Of(value);
@@ -184,9 +191,10 @@ public partial class MainViewModel : ViewModelBase, INavigator
         SortMode = ToSortMode(basic.SortOrder);
 
         var start = StartLocationOf(basic.StartLocation);
-        _activePane = CreatePane(start, ToViewMode(_appliedSettings.Workspace!.DefaultView));
-        Panes.Add(_activePane);
-        UpdatePaneStates();
+        _activeTab = CreateTab(start, ToViewMode(_appliedSettings.Workspace!.DefaultView));
+        _activeTab.IsSelected = true;
+        Tabs.Add(_activeTab);
+        UpdateTabStates();
         SyncWithActivePane();
 
         _settings.Changed += OnSettingsChanged;
@@ -195,16 +203,68 @@ public partial class MainViewModel : ViewModelBase, INavigator
     /// <summary>Opens <paramref name="location"/> in the active view as a new history entry. Clears Forward.</summary>
     public void Navigate(string location) => ActivePane.Navigate(location);
 
-    /// <summary>Makes <paramref name="pane"/> the view the shell acts on. Called by a click or focus inside it.</summary>
-    public void ActivatePane(PaneViewModel pane)
+    /// <summary>
+    /// Makes <paramref name="pane"/> the view the shell acts on. Called by a click or focus inside it.
+    /// Only views of the selected tab: the others are hidden.
+    /// </summary>
+    public void ActivatePane(PaneViewModel pane) => ActiveTab.ActivatePane(pane); // Syncs through ActivePageChanged
+
+    /// <summary>Shows <paramref name="tab"/> and points the shell at its active view.</summary>
+    public void SelectTab(TabViewModel tab)
     {
-        if (ReferenceEquals(pane, _activePane) || !Panes.Contains(pane))
+        if (ReferenceEquals(tab, _activeTab) || !Tabs.Contains(tab))
             return;
 
-        _activePane = pane;
-        UpdatePaneStates();
-        OnPropertyChanged(nameof(ActivePane));
+        _activeTab.IsSelected = false;
+        _activeTab = tab;
+        _activeTab.IsSelected = true;
+
+        OnPropertyChanged(nameof(ActiveTab));
         SyncWithActivePane();
+    }
+
+    /// <summary>
+    /// Ctrl+T by default, and the + button of the tab bar. Opens a tab next to the selected one,
+    /// starting at the active view's location in the same layout, with a history of its own.
+    /// </summary>
+    [RelayCommand]
+    private void NewTab()
+    {
+        var source = ActivePane;
+        var tab = CreateTab(source.Location, source.ViewMode);
+        Tabs.Insert(Tabs.IndexOf(_activeTab) + 1, tab);
+        UpdateTabStates();
+        SelectTab(tab);
+    }
+
+    /// <summary>Ctrl+W by default: closes the selected tab. The last tab stays.</summary>
+    [RelayCommand(CanExecute = nameof(HasMultipleTabs))]
+    private void CloseTab() => RemoveTab(_activeTab);
+
+    /// <summary>Ctrl+Tab / Ctrl+PageDown by default. Wraps around.</summary>
+    [RelayCommand(CanExecute = nameof(HasMultipleTabs))]
+    private void NextTab() => SelectTab(Tabs[(Tabs.IndexOf(_activeTab) + 1) % Tabs.Count]);
+
+    /// <summary>Ctrl+Shift+Tab / Ctrl+PageUp by default. Wraps around.</summary>
+    [RelayCommand(CanExecute = nameof(HasMultipleTabs))]
+    private void PreviousTab() => SelectTab(Tabs[(Tabs.IndexOf(_activeTab) - 1 + Tabs.Count) % Tabs.Count]);
+
+    /// <summary>Closes <paramref name="tab"/>. Closing the selected one selects its right neighbour, else its left one.</summary>
+    private void RemoveTab(TabViewModel tab)
+    {
+        var index = Tabs.IndexOf(tab);
+        if (index < 0 || Tabs.Count < 2)
+            return;
+
+        if (ReferenceEquals(tab, _activeTab))
+            SelectTab(Tabs[index + 1 < Tabs.Count ? index + 1 : index - 1]);
+
+        tab.ActivePageChanged -= OnTabActivePageChanged;
+        tab.SelectRequested -= OnTabSelectRequested;
+        tab.CloseRequested -= OnTabCloseRequested;
+        Tabs.Remove(tab);
+        tab.Dispose();
+        UpdateTabStates();
     }
 
     [RelayCommand(CanExecute = nameof(CanGoBack))]
@@ -230,26 +290,14 @@ public partial class MainViewModel : ViewModelBase, INavigator
     private void Refresh() => ActivePane.Refresh();
 
     /// <summary>
-    /// The button between the view switcher and Search (F3 by default). Splits the window into two views,
+    /// The button between the view switcher and Search (F3 by default). Splits the selected tab into two views,
     /// the new one opening the active view's folder in the same layout with a history of its own.
     /// While split, closes the other view and keeps the active one.
     /// </summary>
     [RelayCommand]
     private void ToggleSplitView()
     {
-        if (IsSplit)
-        {
-            foreach (var pane in Panes.Where(p => !ReferenceEquals(p, _activePane)).ToList())
-                ClosePane(pane);
-        }
-        else
-        {
-            var source = ActivePane;
-            var pane = CreatePane(source.Location, source.ViewMode);
-            Panes.Insert(Panes.IndexOf(source) + 1, pane);
-        }
-
-        UpdatePaneStates();
+        ActiveTab.ToggleSplitView();
         OnPropertyChanged(nameof(IsSplit));
     }
 
@@ -360,6 +408,10 @@ public partial class MainViewModel : ViewModelBase, INavigator
         KeymapActions.ListView => (ShowListViewCommand, null),
         KeymapActions.TreeView => (ShowTreeViewCommand, null),
         KeymapActions.ToggleSplitView => (ToggleSplitViewCommand, null),
+        KeymapActions.NewTab => (NewTabCommand, null),
+        KeymapActions.CloseTab => (CloseTabCommand, null),
+        KeymapActions.NextTab => (NextTabCommand, null),
+        KeymapActions.PreviousTab => (PreviousTabCommand, null),
         KeymapActions.ThemeLatte => (SelectThemeCommand, AppTheme.Latte),
         KeymapActions.ThemeFrappe => (SelectThemeCommand, AppTheme.Frappe),
         KeymapActions.ThemeMacchiato => (SelectThemeCommand, AppTheme.Macchiato),
@@ -427,11 +479,11 @@ public partial class MainViewModel : ViewModelBase, INavigator
             reloadComputer = true;
 
         // Only a change of the default itself: Ctrl+1/2/3 choices survive unrelated saves.
-        // A new default applies to every view.
+        // A new default applies to every view of every tab.
         if (settings.Workspace.DefaultView != previous.Workspace.DefaultView)
         {
             var mode = ToViewMode(settings.Workspace.DefaultView);
-            foreach (var pane in Panes)
+            foreach (var pane in AllPanes)
                 pane.ViewMode = mode;
 
             NotifyViewModeChanged();
@@ -506,56 +558,78 @@ public partial class MainViewModel : ViewModelBase, INavigator
     protected override void OnDispose()
     {
         _settings.Changed -= OnSettingsChanged;
-        InfoPanel.Dispose();
 
-        foreach (var pane in Panes)
+        foreach (var tab in Tabs)
         {
-            pane.Navigated -= OnPaneNavigated;
-            pane.Dispose();
+            tab.ActivePageChanged -= OnTabActivePageChanged;
+            tab.SelectRequested -= OnTabSelectRequested;
+            tab.CloseRequested -= OnTabCloseRequested;
+            tab.Dispose();
         }
 
         base.OnDispose();
     }
 
+    /// <summary>The views of every tab, hidden ones included: settings apply to all of them.</summary>
+    private IEnumerable<PaneViewModel> AllPanes => Tabs.SelectMany(tab => tab.Panes);
+
+    private TabViewModel CreateTab(string location, DirectoryViewMode viewMode)
+    {
+        var tab = new TabViewModel(location, viewMode, CreatePane);
+        tab.ActivePageChanged += OnTabActivePageChanged;
+        tab.SelectRequested += OnTabSelectRequested;
+        tab.CloseRequested += OnTabCloseRequested;
+        return tab;
+    }
+
     private PaneViewModel CreatePane(string location, DirectoryViewMode viewMode)
-    {
-        var pane = new PaneViewModel(location, viewMode, CreatePage);
-        pane.Navigated += OnPaneNavigated;
-        return pane;
-    }
+        => new(location, viewMode, CreatePage);
 
-    private void ClosePane(PaneViewModel pane)
+    /// <summary>Only the selected tab drives the shell; the others keep their own paths.</summary>
+    private void OnTabActivePageChanged(object? sender, EventArgs e)
     {
-        pane.Navigated -= OnPaneNavigated;
-        Panes.Remove(pane);
-        pane.Dispose();
-    }
-
-    /// <summary>Only the active view drives the shell; the other one keeps its own path.</summary>
-    private void OnPaneNavigated(object? sender, EventArgs e)
-    {
-        if (ReferenceEquals(sender, _activePane))
+        if (ReferenceEquals(sender, _activeTab))
             SyncWithActivePane();
     }
 
-    private void UpdatePaneStates()
+    private void OnTabSelectRequested(object? sender, EventArgs e)
     {
-        var split = IsSplit;
-        foreach (var pane in Panes)
-        {
-            pane.IsSplit = split;
-            pane.IsActive = ReferenceEquals(pane, _activePane);
-        }
+        if (sender is TabViewModel tab)
+            SelectTab(tab);
     }
 
-    /// <summary>Points the address bar, sidebar, info panel and title bar buttons at the active view's page.</summary>
+    private void OnTabCloseRequested(object? sender, EventArgs e)
+    {
+        if (sender is TabViewModel tab)
+            RemoveTab(tab);
+    }
+
+    /// <summary>After tabs were added or removed: the tab bar, the close buttons and the tab commands follow the count.</summary>
+    private void UpdateTabStates()
+    {
+        var canClose = HasMultipleTabs;
+        foreach (var tab in Tabs)
+            tab.CanClose = canClose;
+
+        OnPropertyChanged(nameof(HasMultipleTabs));
+        CloseTabCommand.NotifyCanExecuteChanged();
+        NextTabCommand.NotifyCanExecuteChanged();
+        PreviousTabCommand.NotifyCanExecuteChanged();
+    }
+
+    /// <summary>
+    /// Points the address bar, sidebar and title bar buttons at the active view of the selected tab.
+    /// The tab attaches its own info panel.
+    /// </summary>
     private void SyncWithActivePane()
     {
         var page = CurrentPage;
-        InfoPanel.Attach(page);
         Sidebar.Select(page.Location);
         AddressBar.Update(page.Location);
 
+        OnPropertyChanged(nameof(ActivePane));
+        OnPropertyChanged(nameof(InfoPanel));
+        OnPropertyChanged(nameof(IsSplit));
         OnPropertyChanged(nameof(CurrentPage));
         OnPropertyChanged(nameof(IsFolderPage));
         NotifyViewModeChanged();
@@ -579,10 +653,10 @@ public partial class MainViewModel : ViewModelBase, INavigator
         OnPropertyChanged(nameof(IsTreeView));
     }
 
-    /// <summary>Rebuilds the page of every view whose page matches, e.g. all folders after Show hidden files.</summary>
+    /// <summary>Rebuilds the page of every view of every tab whose page matches, e.g. all folders after Show hidden files.</summary>
     private void RefreshPanes(Func<PageViewModel, bool> needsRefresh)
     {
-        foreach (var pane in Panes.ToList())
+        foreach (var pane in AllPanes.ToList())
         {
             if (needsRefresh(pane.CurrentPage))
                 pane.Refresh();

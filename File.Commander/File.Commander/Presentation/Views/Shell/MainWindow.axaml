@@ -70,6 +70,70 @@
             <Setter Property="Width" Value="300" />
         </Style>
 
+        <!-- ===== Tab bar: only while there is more than one tab ===== -->
+        <Style Selector="Border.tab-bar">
+            <Setter Property="Background" Value="{DynamicResource FcTitleBarBrush}" />
+            <Setter Property="Padding" Value="6,4,6,0" />
+        </Style>
+        <Style Selector="Border.tab">
+            <Setter Property="Height" Value="34" />
+            <Setter Property="MinWidth" Value="120" />
+            <Setter Property="MaxWidth" Value="220" />
+            <Setter Property="Margin" Value="0,0,2,0" />
+            <Setter Property="CornerRadius" Value="8,8,0,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Border.tab:pointerover">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+        </Style>
+        <!-- The selected tab takes the content's color, so it reads as part of the page below -->
+        <Style Selector="Border.tab.selected">
+            <Setter Property="Background" Value="{DynamicResource FcContentBrush}" />
+        </Style>
+        <Style Selector="Border.tab TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <Style Selector="Border.tab.selected TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Border.tab avalonia|MaterialIcon.tab-icon">
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <Style Selector="Border.tab.selected avalonia|MaterialIcon.tab-icon">
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="Button.tab-close">
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.tab-close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.tab-new">
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Margin" Value="4,0,0,2" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.tab-new:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+
         <!-- ===== Sidebar ===== -->
         <Style Selector="ListBox.sidebar">
             <Setter Property="Background" Value="Transparent" />
@@ -365,38 +429,108 @@
                     </DockPanel>
                 </Border>
 
-                <!-- The views (two side by side in split view), with the info panel (Space) on their right -->
-                <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-                    <ItemsControl Grid.Column="0" ItemsSource="{Binding Panes}">
+                <!-- The tab bar (Ctrl+T), and below it the selected tab -->
+                <DockPanel Grid.Column="1">
+                    <Border DockPanel.Dock="Top"
+                            Classes="tab-bar"
+                            IsVisible="{Binding HasMultipleTabs}">
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Disabled">
+                            <StackPanel Orientation="Horizontal">
+                                <ItemsControl ItemsSource="{Binding Tabs}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="shell:TabViewModel">
+                                            <!-- Left click selects, middle click closes (code-behind) -->
+                                            <Border Classes="tab"
+                                                    Classes.selected="{Binding IsSelected}"
+                                                    ToolTip.Tip="{Binding Location}"
+                                                    PointerReleased="OnTabPointerReleased">
+                                                <Grid ColumnDefinitions="Auto,*,Auto" Margin="10,0,6,0">
+                                                    <avalonia:MaterialIcon Grid.Column="0"
+                                                                           Classes="tab-icon"
+                                                                           Kind="{Binding Icon}"
+                                                                           Width="16" Height="16"
+                                                                           Margin="0,0,8,0"
+                                                                           VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding Title}"
+                                                               FontSize="13"
+                                                               VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                    <Button Grid.Column="2"
+                                                            Classes="tab-close"
+                                                            Margin="8,0,0,0"
+                                                            ToolTip.Tip="Close tab (Ctrl+W)"
+                                                            IsVisible="{Binding CanClose}"
+                                                            Command="{Binding CloseCommand}">
+                                                        <avalonia:MaterialIcon Kind="Close" Width="14" Height="14" />
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <Button Classes="tab-new"
+                                        ToolTip.Tip="New tab (Ctrl+T)"
+                                        Command="{Binding NewTabCommand}">
+                                    <avalonia:MaterialIcon Kind="Plus" Width="18" Height="18" />
+                                </Button>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Every tab stays in the tree, only the selected one visible: switching back keeps
+                         its scroll positions, selection and info panel exactly as they were -->
+                    <ItemsControl ItemsSource="{Binding Tabs}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <UniformGrid Rows="1" />
+                                <Panel />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="shell:PaneViewModel">
-                                <shellViews:PaneView />
+                            <DataTemplate x:DataType="shell:TabViewModel">
+                                <!-- The views (two side by side in split view), with the info panel (Space) on their right -->
+                                <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding IsSelected}">
+                                    <ItemsControl Grid.Column="0" ItemsSource="{Binding Panes}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Rows="1" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="shell:PaneViewModel">
+                                                <shellViews:PaneView />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <!-- Info panel: slides in from the right by growing from 0 to its full width.
+                                         The panel itself keeps its width and sticks to the right edge, so it moves in
+                                         rather than squeezing its text while the host grows. -->
+                                    <Border Grid.Column="1"
+                                            Classes="info-panel"
+                                            Classes.open="{Binding InfoPanel.IsShown}"
+                                            ClipToBounds="True">
+                                        <Border.Transitions>
+                                            <Transitions>
+                                                <DoubleTransition Property="Width" Duration="0:0:0.18" Easing="CubicEaseOut" />
+                                            </Transitions>
+                                        </Border.Transitions>
+                                        <shellViews:InfoPanel Width="300"
+                                                              HorizontalAlignment="Right"
+                                                              DataContext="{Binding InfoPanel}" />
+                                    </Border>
+                                </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-
-                    <!-- Info panel: slides in from the right by growing from 0 to its full width.
-                         The panel itself keeps its width and sticks to the right edge, so it moves in
-                         rather than squeezing its text while the host grows. -->
-                    <Border Grid.Column="1"
-                            Classes="info-panel"
-                            Classes.open="{Binding InfoPanel.IsShown}"
-                            ClipToBounds="True">
-                        <Border.Transitions>
-                            <Transitions>
-                                <DoubleTransition Property="Width" Duration="0:0:0.18" Easing="CubicEaseOut" />
-                            </Transitions>
-                        </Border.Transitions>
-                        <shellViews:InfoPanel Width="300"
-                                              HorizontalAlignment="Right"
-                                              DataContext="{Binding InfoPanel}" />
-                    </Border>
-                </Grid>
+                </DockPanel>
             </Grid>
         </Grid>
     </Border>

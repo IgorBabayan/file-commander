@@ -1,7 +1,9 @@
+using System.ComponentModel;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using File.Commander.Application.Path;
@@ -10,6 +12,8 @@ namespace File.Commander.Presentation.Views.Shell;
 
 public partial class MainWindow : Window
 {
+    private MainViewModel? _subscribed;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -23,6 +27,70 @@ public partial class MainWindow : Window
     }
 
     private MainViewModel? ViewModel => DataContext as MainViewModel;
+
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+
+        if (_subscribed is not null)
+            _subscribed.PropertyChanged -= OnViewModelPropertyChanged;
+
+        _subscribed = ViewModel;
+
+        if (_subscribed is not null)
+            _subscribed.PropertyChanged += OnViewModelPropertyChanged;
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // After the old tab is hidden and the new one shown
+        if (e.PropertyName is nameof(MainViewModel.ActiveTab))
+            Dispatcher.UIThread.Post(FocusActivePane, DispatcherPriority.Loaded);
+    }
+
+    /// <summary>
+    /// Another tab was selected: keyboard focus would stay in the now hidden one, so the arrow keys
+    /// would move its selection. Moves focus to the file list of the selected tab's active view.
+    /// </summary>
+    private void FocusActivePane()
+    {
+        if (ViewModel is not { } vm)
+            return;
+
+        var paneView = this.GetVisualDescendants()
+            .OfType<PaneView>()
+            .FirstOrDefault(view => ReferenceEquals(view.DataContext, vm.ActivePane) && view.IsEffectivelyVisible);
+
+        var candidates = paneView?.GetVisualDescendants()
+            .OfType<InputElement>()
+            .Where(element => element.Focusable && element.IsEffectivelyVisible && element.IsEffectivelyEnabled)
+            .ToList() ?? [];
+
+        // The file list; on a page without one (Computer…) its first control, e.g. a card
+        var target = candidates.FirstOrDefault(element => element is ListBox or TreeView)
+                     ?? candidates.FirstOrDefault();
+
+        // Nothing to focus in the view: at least take focus out of the hidden tab
+        if (target is null || !target.Focus())
+            Focus();
+    }
+
+    /// <summary>A click on a tab in the tab bar selects it, a middle click closes it.</summary>
+    private void OnTabPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (sender is not Control { DataContext: TabViewModel tab })
+            return;
+
+        var command = e.InitialPressMouseButton switch
+        {
+            MouseButton.Left => tab.SelectCommand,
+            MouseButton.Middle => tab.CloseCommand,
+            _ => null,
+        };
+
+        if (TryExecute(command))
+            e.Handled = true;
+    }
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs args)
     {
@@ -59,7 +127,7 @@ public partial class MainWindow : Window
             e.Handled = true;
     }
 
-    /// <summary>Split view: makes the view that contains <paramref name="source"/> the active one.</summary>
+    /// <summary>Split view: makes the view that contains <paramref name="source"/> the active one (selected tab only).</summary>
     private void ActivatePaneOf(object? source)
     {
         if (ViewModel is { } vm
