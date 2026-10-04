@@ -1,4 +1,5 @@
 using File.Commander.Application.Settings;
+using File.Commander.Presentation.Services;
 using File.Commander.Presentation.Views.Settings;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,12 +9,9 @@ static class ServiceCollectionExtensions
 {
     extension(IServiceCollection services)
     {
-        public IServiceCollection RegisterViewModels()
-        {
-            services.AddSingleton<MainViewModel>();
-            return services;
-        }
-        
+        public IServiceCollection RegisterViewModels() 
+            => services.AddSingleton<MainViewModel>();
+
         public IServiceCollection RegisterPlugins()
         {
             var pluginsRoot = Path.Combine(
@@ -47,19 +45,18 @@ static class ServiceCollectionExtensions
                 }
             }
         
-            services.AddSingleton(catalog)
+            return services.AddSingleton(catalog)
                 .AddSingleton<IPluginCatalog>(catalog)
                 .AddSingleton<IPluginUninstaller, PluginUninstaller>()
                 .AddSingleton<IPluginRegistry, PluginRegistry>();
-            return services;
         }
 
         public IServiceCollection RegisterServices()
         {
             return services
+                .AddSingleton<IDesktopService, DesktopService>()    
                 .AddSingleton<IDialogService, DialogService>()
                 .AddSingleton<ISettingsService>(_ => new SettingsService(SettingsService.DefaultPath))
-                // Transient: a closed window can't be shown again
                 .AddTransient<SettingsWindow>();
         }
         

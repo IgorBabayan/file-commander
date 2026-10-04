@@ -17,9 +17,11 @@ public partial class MainViewModel : ViewModelBase, INavigator
     private PageViewModel _currentPage;
     private DirectoryViewMode _viewMode;
     private bool _showHiddenFiles;
+    
     private readonly FileColumnsViewModel _columns = new();
     private readonly IDialogService _dialogService;
     private readonly ISettingsService _settings;
+    private readonly IDesktopService _desktopService;
 
     // What the shell currently runs with; compared on every save to apply only what changed
     private AppSettings _appliedSettings;
@@ -28,57 +30,11 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
     public AddressBarViewModel AddressBar { get; }
 
-    /// <summary>Layout of folder pages. Kept across navigation.</summary>
-    public DirectoryViewMode ViewMode
-    {
-        get => _viewMode;
-        private set
-        {
-            if (!SetProperty(ref _viewMode, value))
-                return;
-
-            OnPropertyChanged(nameof(IsGridView));
-            OnPropertyChanged(nameof(IsListView));
-            OnPropertyChanged(nameof(IsTreeView));
-
-            if (CurrentPage is DirectoryViewModel directory)
-                directory.ViewMode = value;
-        }
-    }
-
     public bool IsGridView => ViewMode == DirectoryViewMode.Grid;
 
     public bool IsListView => ViewMode == DirectoryViewMode.List;
 
     public bool IsTreeView => ViewMode == DirectoryViewMode.Tree;
-
-    /// <summary>The sort menu's order: saved in settings and used by every folder opened.</summary>
-    public FileSortMode SortMode
-    {
-        get;
-        private set
-        {
-            if (!SetProperty(ref field, value))
-                return;
-
-            OnPropertyChanged(nameof(IsSortedAToZ));
-            OnPropertyChanged(nameof(IsSortedZToA));
-            OnPropertyChanged(nameof(IsSortedNewestFirst));
-            OnPropertyChanged(nameof(IsSortedOldestFirst));
-            OnPropertyChanged(nameof(IsSortedBySize));
-            OnPropertyChanged(nameof(IsSortedByType));
-
-            if (CurrentPage is DirectoryViewModel directory)
-                directory.Sort = FileSort.Of(value);
-
-            // Saved like ShowHiddenFiles; the check also keeps OnSettingsChanged from saving it back
-            var current = _settings.Current;
-            var basic = current.Basic!;
-            var stored = ToSortOrder(value);
-            if (basic.SortOrder != stored)
-                _ = SaveSettingsAsync(current with { Basic = basic with { SortOrder = stored } });
-        }
-    } = FileSortMode.Type;
 
     // Bound two-way to the sort menu's radio buttons. A radio button that gets unchecked
     // (because another one was picked) writes false, which is ignored.
@@ -140,15 +96,69 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
     /// <summary>Only folder pages have a layout or an order to change.</summary>
     public bool IsFolderPage => CurrentPage is DirectoryViewModel;
+    
+    /// <summary>What the content area shows. Replaced (and the old one disposed) on every navigation.</summary>
+    public PageViewModel CurrentPage
+    {
+        get => _currentPage;
+        private set => SetProperty(ref _currentPage, value);
+    }
 
 #pragma warning disable CA1822
     public bool IsNotHyprland => !DesktopEnvironmentHelper.IsHyprland();
 #pragma warning restore CA1822
 
-    public MainViewModel(IDialogService dialogService, ISettingsService settings)
+    public bool HasDesktopFile => _desktopService.HasDesktopFile;
+    
+    private DirectoryViewMode ViewMode
+    {
+        get => _viewMode;
+        set
+        {
+            if (!SetProperty(ref _viewMode, value))
+                return;
+
+            OnPropertyChanged(nameof(IsGridView));
+            OnPropertyChanged(nameof(IsListView));
+            OnPropertyChanged(nameof(IsTreeView));
+
+            if (CurrentPage is DirectoryViewModel directory)
+                directory.ViewMode = value;
+        }
+    }
+    
+    private FileSortMode SortMode
+    {
+        get;
+        set
+        {
+            if (!SetProperty(ref field, value))
+                return;
+
+            OnPropertyChanged(nameof(IsSortedAToZ));
+            OnPropertyChanged(nameof(IsSortedZToA));
+            OnPropertyChanged(nameof(IsSortedNewestFirst));
+            OnPropertyChanged(nameof(IsSortedOldestFirst));
+            OnPropertyChanged(nameof(IsSortedBySize));
+            OnPropertyChanged(nameof(IsSortedByType));
+
+            if (CurrentPage is DirectoryViewModel directory)
+                directory.Sort = FileSort.Of(value);
+
+            // Saved like ShowHiddenFiles; the check also keeps OnSettingsChanged from saving it back
+            var current = _settings.Current;
+            var basic = current.Basic!;
+            var stored = ToSortOrder(value);
+            if (basic.SortOrder != stored)
+                _ = SaveSettingsAsync(current with { Basic = basic with { SortOrder = stored } });
+        }
+    }
+
+    public MainViewModel(IDialogService dialogService, ISettingsService settings, IDesktopService desktopService)
     {
         _dialogService = dialogService;
         _settings = settings;
+        _desktopService = desktopService;
         _appliedSettings = settings.Current;
 
         var basic = _appliedSettings.Basic!;
@@ -169,13 +179,6 @@ public partial class MainViewModel : ViewModelBase, INavigator
         AddressBar.Update(start);
 
         _settings.Changed += OnSettingsChanged;
-    }
-
-    /// <summary>What the content area shows. Replaced (and the old one disposed) on every navigation.</summary>
-    public PageViewModel CurrentPage
-    {
-        get => _currentPage;
-        private set => SetProperty(ref _currentPage, value);
     }
 
     /// <summary>Opens <paramref name="location"/> as a new history entry. Clears Forward.</summary>
@@ -263,6 +266,13 @@ public partial class MainViewModel : ViewModelBase, INavigator
         // A fresh one per opening: it reads the stored settings when created
         using var settings = new SettingsViewModel(_settings);
         await _dialogService.ShowDialogAsync<SettingsViewModel, bool>(settings);
+    }
+
+    [RelayCommand]
+    private async Task CreateDesktopFile(CancellationToken cancellationToken = default)
+    {
+        _desktopService.BuildDesktopFile();
+        await _desktopService.SaveDesktopFileAsync(cancellationToken);
     }
 
     /// <summary>Settings are saved as they change; this applies each save to the running window.</summary>

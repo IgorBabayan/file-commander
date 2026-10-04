@@ -149,6 +149,28 @@
             <Setter Property="Background" Value="Transparent" />
         </Style>
 
+        <!-- Link pinned to the bottom of the sidebar: plain text link, no background in any state -->
+        <Style Selector="HyperlinkButton.sidebar-link">
+            <Setter Property="Margin" Value="24,0,12,16" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="HyperlinkButton.sidebar-link /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="HyperlinkButton.sidebar-link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{StaticResource FcAccentHoverBrush}" />
+        </Style>
+        <Style Selector="HyperlinkButton.sidebar-link:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{StaticResource FcAccentPressedBrush}" />
+        </Style>
+
         <Style Selector="Button.eject">
             <Setter Property="Width" Value="22" />
             <Setter Property="Height" Value="22" />
@@ -348,41 +370,48 @@
             <Grid Grid.Row="1" ColumnDefinitions="200,*">
                 <!-- Sidebar -->
                 <Border Grid.Column="0" Background="{StaticResource FcSidebarBrush}">
-                    <ListBox Classes="sidebar"
-                             ItemsSource="{Binding Sidebar.Entries}"
-                             SelectedItem="{Binding Sidebar.SelectedEntry}"
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                        <ListBox.DataTemplates>
-                            <DataTemplate DataType="shell:SidebarHeader">
-                                <TextBlock Text="{Binding Title}"
-                                           FontSize="14"
-                                           Foreground="{StaticResource FcHeaderTextBrush}"
-                                           VerticalAlignment="Center" />
-                            </DataTemplate>
-
-                            <DataTemplate DataType="shell:SidebarItem">
-                                <Grid ColumnDefinitions="Auto,*,Auto" ToolTip.Tip="{Binding Location}">
-                                    <avalonia:MaterialIcon Grid.Column="0"
-                                                           Kind="{Binding Icon}"
-                                                           Width="18" Height="18"
-                                                           Margin="0,0,12,0"
-                                                           VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding Title}"
+                    <DockPanel>
+                        <HyperlinkButton DockPanel.Dock="Bottom"
+                                         Classes="sidebar-link"
+                                         IsVisible="{Binding HasDesktopFile}"
+                                         Command="{Binding CreateDesktopFileCommand}"
+                                         Content="Create desktop file" />
+                        <ListBox Classes="sidebar"
+                                 ItemsSource="{Binding Sidebar.Entries}"
+                                 SelectedItem="{Binding Sidebar.SelectedEntry}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.DataTemplates>
+                                <DataTemplate DataType="shell:SidebarHeader">
+                                    <TextBlock Text="{Binding Title}"
                                                FontSize="14"
-                                               VerticalAlignment="Center"
-                                               TextTrimming="CharacterEllipsis" />
-                                    <Button Grid.Column="2"
-                                            Classes="eject"
-                                            IsVisible="{Binding CanEject}"
-                                            Foreground="{Binding $parent[ContentPresenter].Foreground}"
-                                            ToolTip.Tip="Eject">
-                                        <avalonia:MaterialIcon Kind="Eject" Width="14" Height="14" />
-                                    </Button>
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.DataTemplates>
-                    </ListBox>
+                                               Foreground="{StaticResource FcHeaderTextBrush}"
+                                               VerticalAlignment="Center" />
+                                </DataTemplate>
+
+                                <DataTemplate DataType="shell:SidebarItem">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ToolTip.Tip="{Binding Location}">
+                                        <avalonia:MaterialIcon Grid.Column="0"
+                                                               Kind="{Binding Icon}"
+                                                               Width="18" Height="18"
+                                                               Margin="0,0,12,0"
+                                                               VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Title}"
+                                                   FontSize="14"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <Button Grid.Column="2"
+                                                Classes="eject"
+                                                IsVisible="{Binding CanEject}"
+                                                Foreground="{Binding $parent[ContentPresenter].Foreground}"
+                                                ToolTip.Tip="Eject">
+                                            <avalonia:MaterialIcon Kind="Eject" Width="14" Height="14" />
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.DataTemplates>
+                        </ListBox>
+                    </DockPanel>
                 </Border>
 
                 <!-- Current page -->
