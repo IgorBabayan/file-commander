@@ -51,11 +51,14 @@ public partial class DirectoryView : UserControl
         FileTree.DoubleTapped += OnTreeDoubleTapped;
         // handledEventsToo: TreeView may consume Enter itself
         FileTree.AddHandler(KeyDownEvent, OnTreeKeyDown, RoutingStrategies.Bubble, handledEventsToo: true);
+
+        InitializeRubberBand();
     }
 
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
+        EndBand();
         Subscribe(DataContext as DirectoryViewModel);
         FitColumns();
     }
@@ -293,6 +296,10 @@ public partial class DirectoryView : UserControl
     /// <summary>Settings → Open file: Click. Ctrl/Shift+click still only selects (several entries).</summary>
     private void OnEntryTapped(object? sender, TappedEventArgs e)
     {
+        // The end of a rubber-band drag, not a click
+        if (ConsumeSuppressedTap())
+            return;
+
         if (DataContext is DirectoryViewModel { OpenOnSingleClick: true } vm
             && e.KeyModifiers == KeyModifiers.None
             && (e.Source as StyledElement)?.DataContext is FileEntryViewModel entry)
@@ -323,6 +330,9 @@ public partial class DirectoryView : UserControl
     /// <summary>Single-click mode: a click opens a file. Folders still expand with the arrow or a double click.</summary>
     private void OnTreeTapped(object? sender, TappedEventArgs e)
     {
+        if (ConsumeSuppressedTap())
+            return;
+
         if (DataContext is DirectoryViewModel { OpenOnSingleClick: true } vm
             && e.KeyModifiers == KeyModifiers.None
             && (e.Source as StyledElement)?.DataContext is FileTreeNodeViewModel { Entry: { IsDirectory: false } entry })

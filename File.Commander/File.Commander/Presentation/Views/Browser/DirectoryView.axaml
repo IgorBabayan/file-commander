@@ -222,6 +222,17 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
         </Style>
+        <!-- ===== Rubber band (DirectoryView.RubberBand.cs): accent outline over a faint accent fill ===== -->
+        <Style Selector="Border.rubber-band">
+            <Setter Property="BorderBrush" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="2" />
+        </Style>
+        <Style Selector="Border.rubber-band-fill">
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Opacity" Value="0.18" />
+        </Style>
+
         <Style Selector="avalonia|MaterialIcon.sort-arrow">
             <Setter Property="Width" Value="12" />
             <Setter Property="Height" Value="12" />
@@ -434,6 +445,13 @@
                     </TreeDataTemplate>
                 </TreeView.ItemTemplate>
             </TreeView>
+
+            <!-- Over the views, never hit: the pointer events stay with the view being dragged on -->
+            <Canvas x:Name="RubberBandLayer" IsHitTestVisible="False" ClipToBounds="True">
+                <Border x:Name="RubberBand" Classes="rubber-band" IsVisible="False">
+                    <Border Classes="rubber-band-fill" />
+                </Border>
+            </Canvas>
         </Panel>
 
         <TextBlock Grid.Row="1"
