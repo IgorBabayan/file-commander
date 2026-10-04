@@ -108,7 +108,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
     public bool IsNotHyprland => !DesktopEnvironmentHelper.IsHyprland();
 #pragma warning restore CA1822
 
-    public bool HasDesktopFile => _desktopService.HasDesktopFile;
+    public bool HasNotDesktopFile => !_desktopService.HasDesktopFile;
     
     private DirectoryViewMode ViewMode
     {

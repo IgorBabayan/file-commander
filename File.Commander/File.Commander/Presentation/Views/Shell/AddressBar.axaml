@@ -5,7 +5,7 @@
              xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              x:Class="File.Commander.Presentation.Views.Shell.AddressBar"
              x:DataType="shell:AddressBarViewModel">
-    <!-- Fc* brushes live in MainWindow.Resources: DynamicResource, since this control is parsed on its own -->
+    <!-- Fc* brushes follow the theme: DynamicResource, so they update when it changes -->
     <UserControl.Styles>
         <!-- ===== Bar ===== -->
         <Style Selector="Border.address-bar">

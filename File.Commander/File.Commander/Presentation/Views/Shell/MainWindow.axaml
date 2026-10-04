@@ -14,55 +14,12 @@
         x:DataType="shell:MainViewModel"
         Width="1100" Height="700"
         MinWidth="820" MinHeight="520"
-        RequestedThemeVariant="Dark"
         Icon="/Assets/logo.png"
         Title="{Binding CurrentPage.Title, StringFormat='{}{0} — File Commander'}">
-    <Window.Resources>
-        <!-- Semantic aliases over the Catppuccin Mocha palette from Theme.axaml -->
-        <SolidColorBrush x:Key="FcTitleBarBrush" Color="{StaticResource Mantle}" />
-        <SolidColorBrush x:Key="FcSidebarBrush" Color="{StaticResource Mantle}" />
-        <SolidColorBrush x:Key="FcContentBrush" Color="{StaticResource Base}" />
-        <SolidColorBrush x:Key="FcCardBrush" Color="{StaticResource Surface0}" />
-        <SolidColorBrush x:Key="FcCardHoverBrush" Color="{StaticResource Surface1}" />
-        <SolidColorBrush x:Key="FcCardPressedBrush" Color="{StaticResource Surface2}" />
-        <SolidColorBrush x:Key="FcAccentBrush" Color="{StaticResource Blue}" />
-        <SolidColorBrush x:Key="FcAccentHoverBrush" Color="{StaticResource Lavender}" />
-        <SolidColorBrush x:Key="FcAccentPressedBrush" Color="{StaticResource Sapphire}" />
-        <SolidColorBrush x:Key="FcOnAccentBrush" Color="{StaticResource Crust}" />
-        <SolidColorBrush x:Key="FcTextBrush" Color="{StaticResource Text}" />
-        <SolidColorBrush x:Key="FcSubtleTextBrush" Color="{StaticResource Subtext0}" />
-        <SolidColorBrush x:Key="FcHeaderTextBrush" Color="{StaticResource Overlay1}" />
-        <SolidColorBrush x:Key="FcDisabledTextBrush" Color="{StaticResource Overlay0}" />
-        <SolidColorBrush x:Key="FcDividerBrush" Color="{StaticResource Surface0}" />
-        <SolidColorBrush x:Key="FcTrackBrush" Color="{StaticResource Surface1}" />
-        <SolidColorBrush x:Key="FcNavGroupBrush" Color="{StaticResource Surface0}" />
-        <SolidColorBrush x:Key="FcHoverBrush" Color="{StaticResource Surface1}" />
-        <SolidColorBrush x:Key="FcPressedBrush" Color="{StaticResource Surface2}" />
-        <!-- Translucent overlays for controls that sit on both plain and accent backgrounds -->
-        <SolidColorBrush x:Key="FcOverlayHoverBrush" Color="#26000000" />
-        <SolidColorBrush x:Key="FcOverlayPressedBrush" Color="#40000000" />
-
-        <LinearGradientBrush x:Key="FcFolderBodyBrush" StartPoint="0%,0%" EndPoint="0%,100%">
-            <GradientStop Offset="0" Color="{StaticResource Sapphire}" />
-            <GradientStop Offset="1" Color="{StaticResource Blue}" />
-        </LinearGradientBrush>
-        <SolidColorBrush x:Key="FcFolderTabBrush" Color="{StaticResource Lavender}" />
-        <SolidColorBrush x:Key="FcFolderBadgeBrush" Color="{StaticResource Base}" />
-
-        <LinearGradientBrush x:Key="FcUsageNormalBrush" StartPoint="0%,0%" EndPoint="100%,0%">
-            <GradientStop Offset="0" Color="{StaticResource Sapphire}" />
-            <GradientStop Offset="1" Color="{StaticResource Blue}" />
-        </LinearGradientBrush>
-        <LinearGradientBrush x:Key="FcUsageWarningBrush" StartPoint="0%,0%" EndPoint="100%,0%">
-            <GradientStop Offset="0" Color="{StaticResource Peach}" />
-            <GradientStop Offset="1" Color="{StaticResource Yellow}" />
-        </LinearGradientBrush>
-    </Window.Resources>
-
     <Window.Styles>
         <!-- ===== Title bar: back / forward pill ===== -->
         <Style Selector="Border.nav-group">
-            <Setter Property="Background" Value="{StaticResource FcNavGroupBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcNavGroupBrush}" />
             <Setter Property="CornerRadius" Value="8" />
             <Setter Property="ClipToBounds" Value="True" />
         </Style>
@@ -72,21 +29,21 @@
             <Setter Property="Padding" Value="0" />
             <Setter Property="CornerRadius" Value="0" />
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
         <Style Selector="Button.nav:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource FcHoverBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
         </Style>
         <Style Selector="Button.nav:pressed /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource FcPressedBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
         </Style>
         <Style Selector="Button.nav:disabled /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{StaticResource FcDisabledTextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcDisabledTextBrush}" />
         </Style>
 
         <!-- ===== Title bar: blue "Computer" view button ===== -->
@@ -95,18 +52,18 @@
             <Setter Property="Height" Value="36" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Background" Value="{StaticResource FcAccentBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FcOnAccentBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
         <Style Selector="Button.view-toggle:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource FcAccentHoverBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FcOnAccentBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcAccentHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
         </Style>
         <Style Selector="Button.view-toggle:pressed /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource FcAccentPressedBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FcOnAccentBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcAccentPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
         </Style>
 
         <!-- ===== Sidebar ===== -->
@@ -122,27 +79,27 @@
             <Setter Property="Margin" Value="0,1" />
             <Setter Property="CornerRadius" Value="8" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
         </Style>
         <Style Selector="ListBox.sidebar ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource FcHoverBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
         </Style>
         <Style Selector="ListBox.sidebar ListBoxItem:pressed /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource FcPressedBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
         </Style>
         <Style Selector="ListBox.sidebar ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource FcAccentBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FcOnAccentBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
         </Style>
         <Style Selector="ListBox.sidebar ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource FcAccentHoverBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FcOnAccentBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcAccentHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
         </Style>
         <Style Selector="ListBox.sidebar ListBoxItem:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource FcAccentPressedBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FcOnAccentBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcAccentPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
         </Style>
         <!-- Section headers are disabled items: keep them flat, no hover. -->
         <Style Selector="ListBox.sidebar ListBoxItem:disabled /template/ ContentPresenter#PART_ContentPresenter">
@@ -157,18 +114,18 @@
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="{StaticResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
         </Style>
         <Style Selector="HyperlinkButton.sidebar-link /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="Transparent" />
         </Style>
         <Style Selector="HyperlinkButton.sidebar-link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{StaticResource FcAccentHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentHoverBrush}" />
         </Style>
         <Style Selector="HyperlinkButton.sidebar-link:pressed /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{StaticResource FcAccentPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentPressedBrush}" />
         </Style>
 
         <Style Selector="Button.eject">
@@ -181,11 +138,11 @@
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
         <Style Selector="Button.eject:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource FcOverlayHoverBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcOverlayHoverBrush}" />
             <Setter Property="Foreground" Value="{TemplateBinding Foreground}" />
         </Style>
         <Style Selector="Button.eject:pressed /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource FcOverlayPressedBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcOverlayPressedBrush}" />
             <Setter Property="Foreground" Value="{TemplateBinding Foreground}" />
         </Style>
 
@@ -193,24 +150,24 @@
         <Style Selector="TextBlock.section-title">
             <Setter Property="FontSize" Value="20" />
             <Setter Property="FontWeight" Value="Medium" />
-            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
             <Setter Property="Margin" Value="0,0,0,20" />
         </Style>
 
         <Style Selector="Button.card">
-            <Setter Property="Background" Value="{StaticResource FcCardBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="CornerRadius" Value="12" />
             <Setter Property="Cursor" Value="Hand" />
         </Style>
         <Style Selector="Button.card:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource FcCardHoverBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcCardHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
         </Style>
         <Style Selector="Button.card:pressed /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource FcCardPressedBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FcTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcCardPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
         </Style>
 
         <Style Selector="Button.directory-card">
@@ -233,35 +190,25 @@
 
         <!-- Drive glyph -->
         <Style Selector="Border.disk-body">
-            <Setter Property="Background">
-                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
-                    <GradientStop Offset="0" Color="{StaticResource Green}" />
-                    <GradientStop Offset="1" Color="{StaticResource Teal}" />
-                </LinearGradientBrush>
-            </Setter>
+            <Setter Property="Background" Value="{DynamicResource FcDiskBodyBrush}" />
         </Style>
         <Style Selector="Border.disk-body.removable">
-            <Setter Property="Background">
-                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
-                    <GradientStop Offset="0" Color="{StaticResource Lavender}" />
-                    <GradientStop Offset="1" Color="{StaticResource Mauve}" />
-                </LinearGradientBrush>
-            </Setter>
+            <Setter Property="Background" Value="{DynamicResource FcDiskBodyRemovableBrush}" />
         </Style>
         <Style Selector="Border.disk-base">
-            <Setter Property="Background" Value="{StaticResource Surface1Brush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource Surface2Brush}" />
+            <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Surface2Brush}" />
             <Setter Property="BorderThickness" Value="1,0,1,1" />
         </Style>
         <Style Selector="Border.disk-base.removable">
-            <Setter Property="Background" Value="{StaticResource Surface1Brush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource MauveBrush}" />
+            <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource MauveBrush}" />
         </Style>
         <Style Selector="Ellipse.disk-led">
-            <Setter Property="Fill" Value="{StaticResource GreenBrush}" />
+            <Setter Property="Fill" Value="{DynamicResource GreenBrush}" />
         </Style>
         <Style Selector="Ellipse.disk-led.removable">
-            <Setter Property="Fill" Value="{StaticResource MauveBrush}" />
+            <Setter Property="Fill" Value="{DynamicResource MauveBrush}" />
         </Style>
 
         <!-- Usage bar -->
@@ -272,19 +219,19 @@
             <Setter Property="CornerRadius" Value="3" />
             <Setter Property="Minimum" Value="0" />
             <Setter Property="Maximum" Value="100" />
-            <Setter Property="Background" Value="{StaticResource FcTrackBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FcUsageNormalBrush}" />
+            <Setter Property="Background" Value="{DynamicResource FcTrackBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcUsageNormalBrush}" />
         </Style>
         <Style Selector="ProgressBar.usage.warning">
-            <Setter Property="Foreground" Value="{StaticResource FcUsageWarningBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcUsageWarningBrush}" />
         </Style>
     </Window.Styles>
 
-    <Border Background="{StaticResource FcContentBrush}">
+    <Border Background="{DynamicResource FcContentBrush}">
         <Grid RowDefinitions="52,*">
             <!-- ================= Title bar ================= -->
             <Border Grid.Row="0"
-                    Background="{StaticResource FcTitleBarBrush}"
+                    Background="{DynamicResource FcTitleBarBrush}"
                     PointerPressed="OnPointerPressed">
                 <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto" Margin="12,0,10,0">
                     <Image Grid.Column="0"
@@ -369,11 +316,11 @@
             <!-- ================= Body ================= -->
             <Grid Grid.Row="1" ColumnDefinitions="200,*">
                 <!-- Sidebar -->
-                <Border Grid.Column="0" Background="{StaticResource FcSidebarBrush}">
+                <Border Grid.Column="0" Background="{DynamicResource FcSidebarBrush}">
                     <DockPanel>
                         <HyperlinkButton DockPanel.Dock="Bottom"
                                          Classes="sidebar-link"
-                                         IsVisible="{Binding HasDesktopFile}"
+                                         IsVisible="{Binding HasNotDesktopFile}"
                                          Command="{Binding CreateDesktopFileCommand}"
                                          Content="Create desktop file" />
                         <ListBox Classes="sidebar"
@@ -384,7 +331,7 @@
                                 <DataTemplate DataType="shell:SidebarHeader">
                                     <TextBlock Text="{Binding Title}"
                                                FontSize="14"
-                                               Foreground="{StaticResource FcHeaderTextBrush}"
+                                               Foreground="{DynamicResource FcHeaderTextBrush}"
                                                VerticalAlignment="Center" />
                                 </DataTemplate>
 
@@ -441,20 +388,20 @@
                                                                         CornerRadius="4,4,0,0"
                                                                         HorizontalAlignment="Left"
                                                                         VerticalAlignment="Top"
-                                                                        Background="{StaticResource FcFolderTabBrush}" />
+                                                                        Background="{DynamicResource FcFolderTabBrush}" />
                                                                 <Border Margin="0,5,0,0"
                                                                         CornerRadius="6"
-                                                                        Background="{StaticResource FcFolderBodyBrush}"
+                                                                        Background="{DynamicResource FcFolderBodyBrush}"
                                                                         BoxShadow="0 2 6 0 #66000000">
                                                                     <Border Width="24" Height="24"
                                                                             Margin="0,4,0,0"
                                                                             CornerRadius="12"
-                                                                            Background="{StaticResource FcFolderBadgeBrush}"
+                                                                            Background="{DynamicResource FcFolderBadgeBrush}"
                                                                             HorizontalAlignment="Center"
                                                                             VerticalAlignment="Center">
                                                                         <avalonia:MaterialIcon Kind="{Binding Badge}"
                                                                                                Width="14" Height="14"
-                                                                                               Foreground="{StaticResource FcAccentBrush}" />
+                                                                                               Foreground="{DynamicResource FcAccentBrush}" />
                                                                     </Border>
                                                                 </Border>
                                                             </Panel>
@@ -493,7 +440,7 @@
                                                                         <avalonia:MaterialIcon Kind="{Binding Glyph}"
                                                                                                IsVisible="{Binding HasGlyph}"
                                                                                                Width="24" Height="24"
-                                                                                               Foreground="{StaticResource FcOnAccentBrush}" />
+                                                                                               Foreground="{DynamicResource FcOnAccentBrush}" />
                                                                     </Border>
                                                                     <Border Grid.Row="1"
                                                                             Classes="disk-base"
@@ -509,26 +456,16 @@
                                                                             <Border Grid.Column="2"
                                                                                     Width="12" Height="3"
                                                                                     CornerRadius="1"
-                                                                                    Background="{StaticResource Overlay0Brush}" />
+                                                                                    Background="{DynamicResource Overlay0Brush}" />
                                                                         </Grid>
                                                                     </Border>
                                                                 </Grid>
 
                                                                 <!-- Optical disc -->
                                                                 <Panel Width="54" Height="54" IsVisible="{Binding IsOptical}">
-                                                                    <Ellipse>
-                                                                        <Ellipse.Fill>
-                                                                            <ConicGradientBrush Center="50%,50%">
-                                                                                <GradientStop Offset="0.00" Color="{StaticResource Sky}" />
-                                                                                <GradientStop Offset="0.25" Color="{StaticResource Pink}" />
-                                                                                <GradientStop Offset="0.50" Color="{StaticResource Rosewater}" />
-                                                                                <GradientStop Offset="0.75" Color="{StaticResource Lavender}" />
-                                                                                <GradientStop Offset="1.00" Color="{StaticResource Sky}" />
-                                                                            </ConicGradientBrush>
-                                                                        </Ellipse.Fill>
-                                                                    </Ellipse>
-                                                                    <Ellipse Width="20" Height="20" Fill="{StaticResource Surface2Brush}" />
-                                                                    <Ellipse Width="10" Height="10" Fill="{StaticResource FcCardBrush}" />
+                                                                    <Ellipse Fill="{DynamicResource FcOpticalDiscBrush}" />
+                                                                    <Ellipse Width="20" Height="20" Fill="{DynamicResource Surface2Brush}" />
+                                                                    <Ellipse Width="10" Height="10" Fill="{DynamicResource FcCardBrush}" />
                                                                 </Panel>
                                                             </Panel>
 
@@ -541,7 +478,7 @@
                                                                            TextTrimming="CharacterEllipsis" />
                                                                 <TextBlock Text="{Binding UsageText}"
                                                                            FontSize="12"
-                                                                           Foreground="{StaticResource FcSubtleTextBrush}" />
+                                                                           Foreground="{DynamicResource FcSubtleTextBrush}" />
                                                                 <ProgressBar Classes="usage"
                                                                              Classes.warning="{Binding IsAlmostFull}"
                                                                              Value="{Binding UsedPercent}"
@@ -564,11 +501,11 @@
                                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <avalonia:MaterialIcon Kind="{Binding Icon}"
                                                            Width="56" Height="56"
-                                                           Foreground="{StaticResource FcHeaderTextBrush}" />
+                                                           Foreground="{DynamicResource FcHeaderTextBrush}" />
                                     <TextBlock Text="{Binding Message}"
                                                FontSize="14"
                                                HorizontalAlignment="Center"
-                                               Foreground="{StaticResource FcSubtleTextBrush}" />
+                                               Foreground="{DynamicResource FcSubtleTextBrush}" />
                                 </StackPanel>
                             </DataTemplate>
                         </ContentControl.DataTemplates>
@@ -577,11 +514,11 @@
                     <!-- Status bar -->
                     <Border Grid.Row="1"
                             Height="32"
-                            BorderBrush="{StaticResource FcDividerBrush}"
+                            BorderBrush="{DynamicResource FcDividerBrush}"
                             BorderThickness="0,1,0,0">
                         <TextBlock Text="{Binding CurrentPage.StatusText}"
                                    FontSize="12"
-                                   Foreground="{StaticResource FcSubtleTextBrush}"
+                                   Foreground="{DynamicResource FcSubtleTextBrush}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
                     </Border>

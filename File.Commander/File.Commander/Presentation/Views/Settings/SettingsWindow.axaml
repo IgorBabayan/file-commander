@@ -12,27 +12,13 @@
         CanResize="False"
         ShowInTaskbar="False"
         Background="Transparent"
-        TransparencyLevelHint="Transparent"
-        RequestedThemeVariant="Dark">
+        TransparencyLevelHint="Transparent">
     <!-- DialogService sizes this window to cover the owner; the card is centered on a dimmed backdrop -->
-
-    <Window.Resources>
-        <!-- Check boxes in the palette's accent instead of the system accent -->
-        <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillChecked" Color="{StaticResource Blue}" />
-        <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPointerOver" Color="{StaticResource Lavender}" />
-        <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPressed" Color="{StaticResource Sapphire}" />
-        <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeChecked" Color="{StaticResource Blue}" />
-        <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPointerOver" Color="{StaticResource Lavender}" />
-        <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPressed" Color="{StaticResource Sapphire}" />
-        <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundChecked" Color="{StaticResource Crust}" />
-        <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPointerOver" Color="{StaticResource Crust}" />
-        <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPressed" Color="{StaticResource Crust}" />
-    </Window.Resources>
 
     <Window.Styles>
         <Style Selector="Border.card">
-            <Setter Property="Background" Value="{StaticResource BaseBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource Surface0Brush}" />
+            <Setter Property="Background" Value="{DynamicResource BaseBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Surface0Brush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="12" />
             <Setter Property="BoxShadow" Value="0 12 40 0 #66000000" />
@@ -47,22 +33,22 @@
         <Style Selector="ListBox.settings-nav ListBoxItem">
             <Setter Property="Padding" Value="10,6" />
             <Setter Property="Margin" Value="0,1" />
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
         </Style>
         <Style Selector="ListBox.settings-nav ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="CornerRadius" Value="8" />
         </Style>
         <Style Selector="ListBox.settings-nav ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource Surface0Brush}" />
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
         </Style>
         <Style Selector="ListBox.settings-nav ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource BlueBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource CrustBrush}" />
+            <Setter Property="Background" Value="{DynamicResource BlueBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
         </Style>
         <Style Selector="ListBox.settings-nav ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource LavenderBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource CrustBrush}" />
+            <Setter Property="Background" Value="{DynamicResource LavenderBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
         </Style>
 
         <Style Selector="TextBlock.nav-group">
@@ -72,16 +58,16 @@
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Margin" Value="18,0,0,0" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-            <Setter Property="Foreground" Value="{StaticResource Subtext1Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext1Brush}" />
         </Style>
         <Style Selector="ListBoxItem:selected TextBlock.nav-section">
-            <Setter Property="Foreground" Value="{StaticResource CrustBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
         </Style>
 
         <!-- ===== Content ===== -->
         <Style Selector="TextBlock.group-title">
             <Setter Property="FontSize" Value="20" />
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
             <Setter Property="Margin" Value="0,28,0,0" />
         </Style>
         <Style Selector="TextBlock.group-title.first">
@@ -89,14 +75,14 @@
         </Style>
         <Style Selector="TextBlock.section-title">
             <Setter Property="FontSize" Value="16" />
-            <Setter Property="Foreground" Value="{StaticResource Subtext1Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext1Brush}" />
             <Setter Property="Margin" Value="2,18,0,8" />
         </Style>
         <Style Selector="StackPanel.section">
             <Setter Property="Spacing" Value="2" />
         </Style>
         <Style Selector="Border.setting-row">
-            <Setter Property="Background" Value="{StaticResource Surface0Brush}" />
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
             <Setter Property="CornerRadius" Value="8" />
             <Setter Property="Padding" Value="10,4" />
             <Setter Property="MinHeight" Value="40" />
@@ -104,12 +90,12 @@
         <Style Selector="TextBlock.setting-label">
             <Setter Property="FontSize" Value="14" />
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
         </Style>
         <Style Selector="CheckBox.setting">
             <Setter Property="FontSize" Value="14" />
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
         </Style>
         <Style Selector="ComboBox.setting">
             <Setter Property="Width" Value="260" />
@@ -117,12 +103,12 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Background" Value="{StaticResource Surface1Brush}" />
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
         </Style>
         <Style Selector="TextBlock.save-error">
             <Setter Property="FontSize" Value="12" />
-            <Setter Property="Foreground" Value="{StaticResource RedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource RedBrush}" />
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
@@ -130,7 +116,7 @@
 
     <Panel>
         <!-- Clicking the dimmed area closes the window -->
-        <Border Background="#8C11111B" PointerPressed="OnBackdropPressed" />
+        <Border Background="{DynamicResource FcBackdropBrush}" PointerPressed="OnBackdropPressed" />
 
         <Border Classes="card" MaxWidth="780" MaxHeight="600" Margin="32">
             <Grid ColumnDefinitions="210,*" RowDefinitions="44,*">
@@ -168,7 +154,7 @@
                 <!-- ================= Content ================= -->
                 <!-- Every heading's Tag is the Key of its navigation entry -->
                 <Border Grid.Row="1" Grid.Column="1"
-                        Background="{StaticResource MantleBrush}"
+                        Background="{DynamicResource MantleBrush}"
                         CornerRadius="10"
                         Margin="0,0,12,12"
                         ClipToBounds="True">
@@ -177,6 +163,18 @@
 
                             <!-- ===== Basic ===== -->
                             <TextBlock Classes="group-title first" Text="Basic" Tag="basic" />
+
+                            <TextBlock Classes="section-title" Text="Appearance" Tag="appearance" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="setting-label" Text="Theme:" />
+                                        <ComboBox Grid.Column="1" Classes="setting"
+                                                  ItemsSource="{Binding ThemeOptions}"
+                                                  SelectedItem="{Binding Theme}" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
 
                             <TextBlock Classes="section-title" Text="Open behavior" Tag="open-behavior" />
                             <StackPanel Classes="section">

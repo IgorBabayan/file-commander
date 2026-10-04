@@ -17,8 +17,16 @@ class DesktopService : IDesktopService
     private const string DESKTOP_FILE_NAME = "file-commander.desktop";
     
     private readonly StringBuilder _builder = new();
-    
-    public bool HasDesktopFile => IOFile.Exists(GetAppPath());
+
+    public bool HasDesktopFile
+    {
+        get
+        {
+            var directory = GetApplicationsDirectory();
+            var path = IOPath.Combine(directory, DESKTOP_FILE_NAME);
+            return IOFile.Exists(path);
+        }
+    }
     
     public void BuildDesktopFile()
     {

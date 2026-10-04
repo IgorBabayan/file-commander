@@ -5,8 +5,8 @@
              xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              x:Class="File.Commander.Presentation.Views.Browser.DirectoryView"
              x:DataType="browser:DirectoryViewModel">
-    <!-- Fc* brushes live in MainWindow.Resources, so they must be DynamicResource here:
-         a UserControl is parsed on its own and StaticResource can't see the window. -->
+    <!-- Fc* brushes live in the theme dictionaries (Presentation/Styles/Theme*.axaml), so they must be
+         DynamicResource here: a StaticResource would keep the old colors after the theme changes. -->
     <UserControl.Styles>
         <!-- ===== List and grid: same items, same selection look ===== -->
         <Style Selector="ListBox.files">

@@ -5,7 +5,7 @@
              xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              x:Class="File.Commander.Presentation.Views.Shell.SortButton"
              x:DataType="shell:MainViewModel">
-    <!-- Sort button with its drop-down. Fc* brushes live in MainWindow.Resources: DynamicResource -->
+    <!-- Sort button with its drop-down. Fc* brushes follow the theme: DynamicResource -->
     <UserControl.Styles>
         <!-- Same look as the view-mode buttons next to it -->
         <Style Selector="Button.sort">

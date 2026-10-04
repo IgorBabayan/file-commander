@@ -4,7 +4,7 @@
              xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              x:Class="File.Commander.Presentation.Views.Shell.ViewModeSwitcher"
              x:DataType="shell:MainViewModel">
-    <!-- Grid / list / tree buttons. Fc* brushes live in MainWindow.Resources: DynamicResource -->
+    <!-- Grid / list / tree buttons. Fc* brushes follow the theme: DynamicResource -->
     <UserControl.Styles>
         <!-- Order matters: later styles win, so .selected and :disabled come last -->
         <Style Selector="Button.view-mode">

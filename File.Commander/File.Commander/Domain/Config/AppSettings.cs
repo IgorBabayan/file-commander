@@ -35,6 +35,9 @@ public record AppSettings
 /// <summary>Settings → Basic.</summary>
 public sealed record BasicSettings
 {
+    /// <summary>The color theme. Applied to every window as soon as it changes.</summary>
+    public AppTheme Theme { get; init; } = AppTheme.Mocha;
+
     public bool AlwaysOpenFolderInNewWindow { get; init; }
     public OpenFileMode OpenFile { get; init; } = OpenFileMode.DoubleClick;
 

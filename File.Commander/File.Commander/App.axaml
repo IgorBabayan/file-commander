@@ -2,14 +2,23 @@
              
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:themes="clr-namespace:File.Commander.Presentation.Themes"
              x:Class="File.Commander.App"
-             RequestedThemeVariant="Default">
-    <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+             RequestedThemeVariant="{x:Static themes:CatppuccinThemes.Mocha}">
+    <!-- Mocha until the stored setting is read; App.axaml.cs then follows Settings → Basic → Appearance -->
     <Application.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceInclude Source="avares://File.Commander/Presentation/Styles/Theme.axaml" />
-            </ResourceDictionary.MergedDictionaries>
+            <!-- One palette per Catppuccin flavor, same keys in all: switching RequestedThemeVariant swaps them -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceInclude x:Key="{x:Static themes:CatppuccinThemes.Latte}"
+                                 Source="avares://File.Commander/Presentation/Styles/ThemeLatte.axaml" />
+                <ResourceInclude x:Key="{x:Static themes:CatppuccinThemes.Frappe}"
+                                 Source="avares://File.Commander/Presentation/Styles/ThemeFrappe.axaml" />
+                <ResourceInclude x:Key="{x:Static themes:CatppuccinThemes.Macchiato}"
+                                 Source="avares://File.Commander/Presentation/Styles/ThemeMacchiato.axaml" />
+                <ResourceInclude x:Key="{x:Static themes:CatppuccinThemes.Mocha}"
+                                 Source="avares://File.Commander/Presentation/Styles/ThemeMocha.axaml" />
+            </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
     </Application.Resources>
 

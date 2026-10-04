@@ -4,6 +4,16 @@ namespace File.Commander.Domain.Config;
 
 // Stored by name, so reordering the members doesn't change what a saved file means
 
+/// <summary>Settings → Basic → Appearance: the Catppuccin flavor. Latte is light, the others are dark.</summary>
+[JsonConverter(typeof(AppThemeJsonConverter))]
+public enum AppTheme
+{
+    Latte,
+    Frappe,
+    Macchiato,
+    Mocha
+}
+
 [JsonConverter(typeof(JsonStringEnumConverter<OpenFileMode>))]
 public enum OpenFileMode
 {

@@ -23,6 +23,14 @@ public sealed record SettingsNavSection(string Key, string Title) : SettingsNavI
 /// </summary>
 public sealed partial class SettingsViewModel : ViewModelBase
 {
+    private static readonly Choice<AppTheme>[] ThemeChoices =
+    [
+        new(AppTheme.Latte, "Catppuccin Latte"),
+        new(AppTheme.Frappe, "Catppuccin Frappé"),
+        new(AppTheme.Macchiato, "Catppuccin Macchiato"),
+        new(AppTheme.Mocha, "Catppuccin Mocha"),
+    ];
+
     private static readonly Choice<OpenFileMode>[] OpenFileChoices =
     [
         new(OpenFileMode.Click, "Click"),
@@ -63,6 +71,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         var current = settings.Current;
 
         var basic = current.Basic!;
+        Theme = Pick(ThemeChoices, basic.Theme);
         AlwaysOpenFolderInNewWindow = basic.AlwaysOpenFolderInNewWindow;
         OpenFile = Pick(OpenFileChoices, basic.OpenFile);
         StartLocation = Pick(StartLocationChoices, basic.StartLocation);
@@ -104,6 +113,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public IReadOnlyList<SettingsNavItem> NavItems { get; } =
     [
         new SettingsNavGroup("basic", "Basic"),
+        new SettingsNavSection("appearance", "Appearance"),
         new SettingsNavSection("open-behavior", "Open behavior"),
         new SettingsNavSection("new-window-tab", "New window and tab"),
         new SettingsNavSection("files-folders", "Files and folders"),
@@ -129,12 +139,14 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     public bool HasSaveError => SaveError is not null;
 
+    public IReadOnlyList<Choice<AppTheme>> ThemeOptions => ThemeChoices;
     public IReadOnlyList<Choice<OpenFileMode>> OpenFileOptions => OpenFileChoices;
     public IReadOnlyList<Choice<StartLocation>> StartLocationOptions => StartLocationChoices;
     public IReadOnlyList<Choice<NewTabLocation>> NewTabOptions => NewTabChoices;
     public IReadOnlyList<Choice<FolderViewMode>> ViewOptions => ViewChoices;
 
     // ===== Basic =====
+    [ObservableProperty] public partial Choice<AppTheme> Theme { get; set; }
     [ObservableProperty] public partial bool AlwaysOpenFolderInNewWindow { get; set; }
     [ObservableProperty] public partial Choice<OpenFileMode> OpenFile { get; set; }
     [ObservableProperty] public partial Choice<StartLocation> StartLocation { get; set; }
@@ -197,6 +209,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         // Copied, not rebuilt: Basic also holds the sort menu's order, which this window doesn't edit
         Basic = _settings.Current.Basic! with
         {
+            Theme = Theme.Value,
             AlwaysOpenFolderInNewWindow = AlwaysOpenFolderInNewWindow,
             OpenFile = OpenFile.Value,
             StartLocation = StartLocation.Value,
