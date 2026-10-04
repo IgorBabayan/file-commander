@@ -7,6 +7,17 @@
              x:DataType="browser:DirectoryViewModel">
     <!-- Fc* brushes live in the theme dictionaries (Presentation/Styles/Theme*.axaml), so they must be
          DynamicResource here: a StaticResource would keep the old colors after the theme changes. -->
+    <!-- Detail column widths. DirectoryView.axaml.cs shrinks them when the view is narrow (split view),
+         so the cells trim their text instead of overlapping -->
+    <UserControl.Resources>
+        <x:Double x:Key="ColSizeWidth">76</x:Double>
+        <x:Double x:Key="ColTypeWidth">110</x:Double>
+        <x:Double x:Key="ColModifiedWidth">128</x:Double>
+        <x:Double x:Key="ColCreatedWidth">128</x:Double>
+        <x:Double x:Key="ColAccessedWidth">128</x:Double>
+        <x:Double x:Key="ColPermissionsWidth">84</x:Double>
+    </UserControl.Resources>
+
     <UserControl.Styles>
         <!-- ===== List and grid: same items, same selection look ===== -->
         <Style Selector="ListBox.files">
@@ -122,25 +133,25 @@
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
         <Style Selector=":is(Control).col-size">
-            <Setter Property="Width" Value="76" />
+            <Setter Property="Width" Value="{DynamicResource ColSizeWidth}" />
         </Style>
         <Style Selector="TextBlock.col-size">
             <Setter Property="TextAlignment" Value="Right" />
         </Style>
         <Style Selector=":is(Control).col-type">
-            <Setter Property="Width" Value="110" />
+            <Setter Property="Width" Value="{DynamicResource ColTypeWidth}" />
         </Style>
         <Style Selector=":is(Control).col-modified">
-            <Setter Property="Width" Value="128" />
+            <Setter Property="Width" Value="{DynamicResource ColModifiedWidth}" />
         </Style>
         <Style Selector=":is(Control).col-created">
-            <Setter Property="Width" Value="128" />
+            <Setter Property="Width" Value="{DynamicResource ColCreatedWidth}" />
         </Style>
         <Style Selector=":is(Control).col-accessed">
-            <Setter Property="Width" Value="128" />
+            <Setter Property="Width" Value="{DynamicResource ColAccessedWidth}" />
         </Style>
         <Style Selector=":is(Control).col-permissions">
-            <Setter Property="Width" Value="84" />
+            <Setter Property="Width" Value="{DynamicResource ColPermissionsWidth}" />
         </Style>
 
         <!-- Columns turned off in the header's context menu (classes set on the root grid) -->
@@ -160,6 +171,26 @@
             <Setter Property="IsVisible" Value="False" />
         </Style>
         <Style Selector="Grid.hide-permissions :is(Control).col-permissions">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+
+        <!-- Columns that don't fit even when shrunk (classes set by DirectoryView.axaml.cs): rightmost go first -->
+        <Style Selector="Grid.drop-size :is(Control).col-size">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.drop-type :is(Control).col-type">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.drop-modified :is(Control).col-modified">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.drop-created :is(Control).col-created">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.drop-accessed :is(Control).col-accessed">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.drop-permissions :is(Control).col-permissions">
             <Setter Property="IsVisible" Value="False" />
         </Style>
 
@@ -198,7 +229,8 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto,*"
+    <Grid x:Name="Root"
+          RowDefinitions="Auto,*"
           Classes.hide-size="{Binding !Columns.ShowSize}"
           Classes.hide-type="{Binding !Columns.ShowType}"
           Classes.hide-modified="{Binding !Columns.ShowModified}"
