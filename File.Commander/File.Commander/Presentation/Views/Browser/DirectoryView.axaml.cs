@@ -1,8 +1,10 @@
 using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Selection;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using File.Commander.Presentation.ViewModels.Browser;
 
 namespace File.Commander.Presentation.Views.Browser;
@@ -18,6 +20,16 @@ public partial class DirectoryView : UserControl
 
     private DirectoryViewModel? _viewModel;
 
+    // The page asked for a selection that isn't applied yet: the controls' own changes until then
+    // (a new ItemsSource clearing them) must not overwrite it
+    private bool _selectionPending;
+
+    // Applying the page's selection: the controls report every step of it
+    private bool _applyingSelection;
+
+    // The layout changed: show the restored selection
+    private bool _scrollToSelection;
+
     public DirectoryView()
     {
         InitializeComponent();
@@ -27,12 +39,14 @@ public partial class DirectoryView : UserControl
         // List and grid show the same entries, so they share the handlers
         foreach (var list in new[] { FileList, GridList })
         {
+            list.SelectionChanged += OnListSelectionChanged;
             list.Tapped += OnEntryTapped;
             list.DoubleTapped += OnEntryDoubleTapped;
             // handledEventsToo: ListBox may consume Enter itself
             list.AddHandler(KeyDownEvent, OnListKeyDown, RoutingStrategies.Bubble, handledEventsToo: true);
         }
 
+        FileTree.SelectionChanged += OnTreeSelectionChanged;
         FileTree.Tapped += OnTreeTapped;
         FileTree.DoubleTapped += OnTreeDoubleTapped;
         // handledEventsToo: TreeView may consume Enter itself
@@ -69,6 +83,7 @@ public partial class DirectoryView : UserControl
         {
             _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
             _viewModel.Columns.PropertyChanged -= OnColumnsPropertyChanged;
+            _viewModel.SelectionRequested -= OnSelectionRequested;
         }
 
         _viewModel = viewModel;
@@ -77,13 +92,160 @@ public partial class DirectoryView : UserControl
         {
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
             _viewModel.Columns.PropertyChanged += OnColumnsPropertyChanged;
+            _viewModel.SelectionRequested += OnSelectionRequested;
         }
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(DirectoryViewModel.ViewMode))
-            FitColumns();
+        if (e.PropertyName is not nameof(DirectoryViewModel.ViewMode))
+            return;
+
+        FitColumns();
+        _scrollToSelection = true;
+    }
+
+    /// <summary>
+    /// The page set its selection. Applied once the bindings are done: a new order or another view
+    /// gives the control a new ItemsSource first.
+    /// </summary>
+    private void OnSelectionRequested(object? sender, EventArgs e)
+    {
+        if (_selectionPending)
+            return;
+
+        _selectionPending = true;
+        Dispatcher.UIThread.Post(ApplySelection, DispatcherPriority.Background);
+    }
+
+    private void OnListSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        // The hidden list and grid follow nothing: each one is set when it is shown
+        if (!ReferenceEquals(e.Source, sender) || _selectionPending || _applyingSelection
+            || _viewModel is not { IsTreeView: false } vm || !ReferenceEquals(sender, ActiveList(vm)))
+            return;
+
+        ReadSelection(vm);
+    }
+
+    private void OnTreeSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (!ReferenceEquals(e.Source, sender) || _selectionPending || _applyingSelection
+            || _viewModel is not { IsTreeView: true } vm)
+            return;
+
+        ReadSelection(vm);
+    }
+
+    private ListBox ActiveList(DirectoryViewModel vm) => vm.IsGridView ? GridList : FileList;
+
+    /// <summary>Tells the page what the shown control has selected.</summary>
+    private void ReadSelection(DirectoryViewModel vm)
+    {
+        if (vm.IsTreeView)
+        {
+            vm.SelectedTreeNode = FileTree.SelectedItem as FileTreeNodeViewModel;
+            vm.UpdateSelection(FileTree.SelectedItems
+                .OfType<FileTreeNodeViewModel>()
+                .Where(n => n.Entry is not null)
+                .Select(n => n.Entry!)
+                .ToList());
+            return;
+        }
+
+        var list = ActiveList(vm);
+        vm.SelectedEntry = list.SelectedItem as FileEntryViewModel;
+        vm.UpdateSelection(list.Selection.SelectedItems.OfType<FileEntryViewModel>().ToList());
+    }
+
+    /// <summary>Shows the page's <see cref="DirectoryViewModel.SelectedEntries"/> in the shown control.</summary>
+    private void ApplySelection()
+    {
+        _selectionPending = false;
+        var scroll = _scrollToSelection;
+        _scrollToSelection = false;
+
+        if (_viewModel is not { } vm)
+            return;
+
+        var wanted = vm.SelectedEntries.ToHashSet();
+
+        _applyingSelection = true;
+        try
+        {
+            if (vm.IsTreeView)
+                ApplyToTree(vm, wanted, scroll);
+            else
+                ApplyToList(ActiveList(vm), wanted, scroll);
+        }
+        finally
+        {
+            _applyingSelection = false;
+        }
+
+        // What the control could take: e.g. a row that is gone
+        ReadSelection(vm);
+    }
+
+    private static void ApplyToList(ListBox list, HashSet<FileEntryViewModel> wanted, bool scroll)
+    {
+        var selection = list.Selection;
+        var first = -1;
+
+        using (selection.BatchUpdate())
+        {
+            selection.Clear();
+
+            if (wanted.Count > 0 && list.ItemsSource is IReadOnlyList<FileEntryViewModel> items)
+            {
+                for (var i = 0; i < items.Count; i++)
+                {
+                    if (!wanted.Contains(items[i]))
+                        continue;
+
+                    selection.Select(i);
+                    if (first < 0)
+                        first = i;
+                }
+            }
+        }
+
+        if (scroll && first >= 0)
+            list.ScrollIntoView(first);
+    }
+
+    private void ApplyToTree(DirectoryViewModel vm, HashSet<FileEntryViewModel> wanted, bool scroll)
+    {
+        var selected = FileTree.SelectedItems;
+        selected.Clear();
+
+        FileTreeNodeViewModel? first = null;
+        if (wanted.Count > 0)
+        {
+            foreach (var node in vm.VisibleTreeNodes())
+            {
+                if (!wanted.Contains(node.Entry!))
+                    continue;
+
+                selected.Add(node);
+                first ??= node;
+            }
+        }
+
+        // Only a root has an index of the tree's own: rows in subfolders belong to their TreeViewItem
+        if (scroll && first is not null && IndexOf(vm.TreeRoots, first) is var index and >= 0)
+            FileTree.ScrollIntoView(index);
+    }
+
+    private static int IndexOf(IReadOnlyList<FileTreeNodeViewModel> nodes, FileTreeNodeViewModel node)
+    {
+        for (var i = 0; i < nodes.Count; i++)
+        {
+            if (ReferenceEquals(nodes[i], node))
+                return i;
+        }
+
+        return -1;
     }
 
     private void OnColumnsPropertyChanged(object? sender, PropertyChangedEventArgs e) => FitColumns();
@@ -128,7 +290,7 @@ public partial class DirectoryView : UserControl
         return shown;
     }
 
-    /// <summary>Settings → Open file: Click. Ctrl/Shift+click still only selects.</summary>
+    /// <summary>Settings → Open file: Click. Ctrl/Shift+click still only selects (several entries).</summary>
     private void OnEntryTapped(object? sender, TappedEventArgs e)
     {
         if (DataContext is DirectoryViewModel { OpenOnSingleClick: true } vm
@@ -151,9 +313,9 @@ public partial class DirectoryView : UserControl
         if (e.Key != Key.Enter || e.KeyModifiers != KeyModifiers.None)
             return;
 
-        if (DataContext is DirectoryViewModel { SelectedEntry: { } entry } vm)
+        if (DataContext is DirectoryViewModel { HasSelection: true } vm)
         {
-            vm.OpenCommand.Execute(entry);
+            vm.OpenSelectionCommand.Execute(null);
             e.Handled = true;
         }
     }
@@ -175,15 +337,15 @@ public partial class DirectoryView : UserControl
             vm.OpenCommand.Execute(entry);
     }
 
-    /// <summary>Enter opens a file or goes into a folder, as in the list.</summary>
+    /// <summary>Enter opens a file or goes into a folder, as in the list; several selected open their files.</summary>
     private void OnTreeKeyDown(object? sender, KeyEventArgs e)
     {
         if (e.Key != Key.Enter || e.KeyModifiers != KeyModifiers.None)
             return;
 
-        if (DataContext is DirectoryViewModel vm && FileTree.SelectedItem is FileTreeNodeViewModel { Entry: { } entry })
+        if (DataContext is DirectoryViewModel { HasSelection: true } vm)
         {
-            vm.OpenCommand.Execute(entry);
+            vm.OpenSelectionCommand.Execute(null);
             e.Handled = true;
         }
     }

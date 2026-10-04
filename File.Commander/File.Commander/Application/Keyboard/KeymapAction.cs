@@ -19,6 +19,7 @@ public sealed record KeymapAction(
 public static class KeymapActions
 {
     public const string ActionsGroup = "Actions";
+    public const string SelectionGroup = "Selection";
     public const string NavigationGroup = "Navigation";
     public const string ViewGroup = "View";
     public const string AppearanceGroup = "Appearance";
@@ -27,6 +28,10 @@ public static class KeymapActions
     public const string Refresh = "actions.refresh";
     public const string OpenSettings = "actions.open-settings";
     public const string ToggleInfoPanel = "actions.toggle-info-panel";
+
+    public const string SelectAll = "selection.select-all";
+    public const string SelectNone = "selection.select-none";
+    public const string InvertSelection = "selection.invert";
 
     public const string EditPath = "navigation.edit-path";
     public const string GoBack = "navigation.back";
@@ -46,7 +51,7 @@ public static class KeymapActions
 
     /// <summary>The order the groups are shown in.</summary>
     public static IReadOnlyList<string> Groups { get; } =
-        [ActionsGroup, NavigationGroup, ViewGroup, AppearanceGroup];
+        [ActionsGroup, SelectionGroup, NavigationGroup, ViewGroup, AppearanceGroup];
 
     public static IReadOnlyList<KeymapAction> All { get; } =
     [
@@ -56,6 +61,14 @@ public static class KeymapActions
         new(OpenSettings, ActionsGroup, "Open settings", [new(Key.OemComma, KeyModifiers.Control)]),
         // Like Finder's Quick Look. Never while typing: Space belongs to the text box there.
         new(ToggleInfoPanel, ActionsGroup, "Show info panel", [new(Key.Space)], WorksWhileTyping: false),
+
+        // Never while typing: Ctrl+A selects the text of a text box there.
+        // Esc also clears the selection when it isn't bound and the info panel is closed.
+        new(SelectAll, SelectionGroup, "Select all", [new(Key.A, KeyModifiers.Control)], WorksWhileTyping: false),
+        new(SelectNone, SelectionGroup, "Select none",
+            [new(Key.A, KeyModifiers.Control | KeyModifiers.Shift)], WorksWhileTyping: false),
+        new(InvertSelection, SelectionGroup, "Invert selection",
+            [new(Key.I, KeyModifiers.Control | KeyModifiers.Shift)], WorksWhileTyping: false),
 
         new(EditPath, NavigationGroup, "Edit path",
             [new(Key.L, KeyModifiers.Control), new(Key.D, KeyModifiers.Alt)]),

@@ -331,12 +331,15 @@
                      VerticalAlignment="Bottom"
                      Height="2" MinHeight="2" />
 
+        <!-- Multiple selection: Ctrl+click toggles, Shift+click and Shift+arrows select a range.
+             No SelectedItem bindings: written back while several items are selected, they would
+             collapse the selection to one. DirectoryView.axaml.cs syncs the selection both ways instead. -->
         <Panel Grid.Row="1" IsVisible="{Binding !HasError}">
             <!-- ===== List ===== -->
             <ListBox x:Name="FileList"
                      Classes="files file-list"
                      ItemsSource="{Binding Entries}"
-                     SelectedItem="{Binding SelectedEntry}"
+                     SelectionMode="Multiple"
                      IsVisible="{Binding IsListView}"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListBox.ItemTemplate>
@@ -368,7 +371,7 @@
             <ListBox x:Name="GridList"
                      Classes="files file-grid"
                      ItemsSource="{Binding GridEntries}"
-                     SelectedItem="{Binding SelectedEntry}"
+                     SelectionMode="Multiple"
                      IsVisible="{Binding IsGridView}"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListBox.ItemsPanel>
@@ -400,7 +403,7 @@
             <TreeView x:Name="FileTree"
                       Classes="file-tree"
                       ItemsSource="{Binding TreeRoots}"
-                      SelectedItem="{Binding SelectedTreeNode, Mode=TwoWay}"
+                      SelectionMode="Multiple"
                       IsVisible="{Binding IsTreeView}"
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <TreeView.ItemTemplate>

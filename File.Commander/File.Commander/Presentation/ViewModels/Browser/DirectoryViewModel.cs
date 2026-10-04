@@ -2,6 +2,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using File.Commander.Presentation.Services;
+using File.Commander.Presentation.ViewModels.Helpers;
 using File.Commander.Presentation.ViewModels.Pages;
 using Material.Icons;
 
@@ -79,18 +80,36 @@ public sealed partial class DirectoryViewModel : PageViewModel
     [ObservableProperty]
     public partial IReadOnlyList<FileTreeNodeViewModel> TreeRoots { get; set; } = [];
 
-    /// <summary>Selection of the list and the grid.</summary>
+    /// <summary>
+    /// The focused selection of the list and the grid (the first selected entry). Set by the view:
+    /// several entries may be selected, see <see cref="SelectedEntries"/>.
+    /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CurrentEntry))]
     public partial FileEntryViewModel? SelectedEntry { get; set; }
 
-    /// <summary>Selection of the tree: may be inside a subfolder, or a placeholder row.</summary>
+    /// <summary>The focused selection of the tree: may be inside a subfolder, or a placeholder row. Set by the view.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CurrentEntry))]
     public partial FileTreeNodeViewModel? SelectedTreeNode { get; set; }
 
     /// <summary>What is selected in the view shown now. Null when nothing (or a placeholder) is. Read by the info panel.</summary>
     public FileEntryViewModel? CurrentEntry => IsTreeView ? SelectedTreeNode?.Entry : SelectedEntry;
+
+    /// <summary>
+    /// Everything selected in the view shown now (Ctrl/Shift+click, Shift+arrows, Ctrl+A…), in view order.
+    /// Never holds placeholders. The view reports it through <see cref="UpdateSelection"/>.
+    /// </summary>
+    public IReadOnlyList<FileEntryViewModel> SelectedEntries { get; private set; } = [];
+
+    public bool HasSelection => SelectedEntries.Count > 0;
+
+    /// <summary>
+    /// This page changed <see cref="SelectedEntries"/> itself (select all, a view switch, a new order):
+    /// the view should show that selection. Raised before the bindings see a new
+    /// <see cref="Entries"/> or <see cref="ViewMode"/>, so the view applies it later.
+    /// </summary>
+    public event EventHandler? SelectionRequested;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusText), nameof(IsEmpty))]
@@ -108,7 +127,102 @@ public sealed partial class DirectoryViewModel : PageViewModel
         ? "Loading…"
         : Error is not null
             ? string.Empty
-            : Entries.Count == 1 ? "1 item" : $"{Entries.Count} items";
+            : SelectedEntries.Count == 0
+                ? ItemsText
+                : $"{ItemsText} · {SelectionText()}";
+
+    private string ItemsText => Entries.Count == 1 ? "1 item" : $"{Entries.Count} items";
+
+    /// <summary>"3 selected (4.2 MB)": the size counts files only, as the Size column does.</summary>
+    private string SelectionText()
+    {
+        long bytes = 0;
+        var hasSize = false;
+        foreach (var entry in SelectedEntries)
+        {
+            if (entry is { IsDirectory: false, Size: { } size })
+            {
+                bytes += size;
+                hasSize = true;
+            }
+        }
+
+        var text = $"{SelectedEntries.Count} selected";
+        return hasSize ? $"{text} ({SizeFormatter.Format(bytes)})" : text;
+    }
+
+    /// <summary>Called by the view whenever its selection changes. Doesn't raise <see cref="SelectionRequested"/>.</summary>
+    public void UpdateSelection(IReadOnlyList<FileEntryViewModel> entries)
+    {
+        if (entries.Count == 0 && SelectedEntries.Count == 0)
+            return;
+
+        SelectedEntries = entries;
+        OnPropertyChanged(nameof(SelectedEntries));
+        OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(StatusText));
+    }
+
+    /// <summary>Every entry of the list or grid; in the tree, every visible row (folders already expanded).</summary>
+    public void SelectAll() => RequestSelection(SelectableEntries());
+
+    public void SelectNone() => RequestSelection([]);
+
+    /// <summary>Selects what isn't selected, among what <see cref="SelectAll"/> would select.</summary>
+    public void InvertSelection()
+    {
+        var selected = SelectedEntries.ToHashSet();
+        RequestSelection(SelectableEntries().Where(e => !selected.Contains(e)).ToList());
+    }
+
+    /// <summary>
+    /// The tree's rows as drawn, top to bottom: the roots, and the children of every expanded folder.
+    /// Placeholders are skipped.
+    /// </summary>
+    public IEnumerable<FileTreeNodeViewModel> VisibleTreeNodes() => VisibleNodes(TreeRoots);
+
+    private static IEnumerable<FileTreeNodeViewModel> VisibleNodes(IEnumerable<FileTreeNodeViewModel> nodes)
+    {
+        foreach (var node in nodes)
+        {
+            if (node.IsPlaceholder)
+                continue;
+
+            yield return node;
+
+            if (!node.IsExpanded)
+                continue;
+
+            foreach (var child in VisibleNodes(node.Children))
+                yield return child;
+        }
+    }
+
+    private IReadOnlyList<FileEntryViewModel> SelectableEntries() =>
+        IsTreeView ? VisibleTreeNodes().Select(n => n.Entry!).ToList() : Entries;
+
+    private void RequestSelection(IReadOnlyList<FileEntryViewModel> entries)
+    {
+        UpdateSelection(entries);
+        SelectionRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// After a view switch or a new <see cref="Entries"/>: keeps what is still shown. The same entries
+    /// survive a new order; a subfolder's entries don't survive leaving the tree.
+    /// </summary>
+    private void KeepSelection()
+    {
+        if (SelectedEntries.Count == 0)
+        {
+            // Still asks the view: a view that was hidden may hold an older selection
+            SelectionRequested?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
+        var shown = SelectableEntries().ToHashSet();
+        RequestSelection(SelectedEntries.Where(shown.Contains).ToList());
+    }
 
     /// <summary>Reads the folder on a background thread. Never throws.</summary>
     public async Task LoadAsync()
@@ -152,6 +266,23 @@ public sealed partial class DirectoryViewModel : PageViewModel
         }
     }
 
+    /// <summary>
+    /// Enter. One entry opens as on a double click. Several open every file among them; folders are
+    /// skipped, as there is only one view to go into.
+    /// </summary>
+    [RelayCommand]
+    private void OpenSelection()
+    {
+        if (SelectedEntries.Count <= 1)
+        {
+            Open(SelectedEntries.Count == 1 ? SelectedEntries[0] : CurrentEntry);
+            return;
+        }
+
+        foreach (var entry in SelectedEntries.Where(e => !e.IsDirectory).ToList())
+            Open(entry);
+    }
+
     [RelayCommand]
     private void Open(FileEntryViewModel? entry)
     {
@@ -182,9 +313,17 @@ public sealed partial class DirectoryViewModel : PageViewModel
     [RelayCommand]
     private void SortBy(FileSortColumn column) => Sort = Sort.ClickedOn(column);
 
-    partial void OnViewModeChanged(DirectoryViewMode value) => EnsureTree();
+    partial void OnViewModeChanged(DirectoryViewMode value)
+    {
+        EnsureTree();
+        KeepSelection();
+    }
 
-    partial void OnEntriesChanged(IReadOnlyList<FileEntryViewModel> value) => EnsureTree();
+    partial void OnEntriesChanged(IReadOnlyList<FileEntryViewModel> value)
+    {
+        EnsureTree();
+        KeepSelection();
+    }
 
     partial void OnSortChanged(FileSort value)
     {

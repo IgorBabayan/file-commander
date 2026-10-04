@@ -268,6 +268,18 @@ public partial class MainViewModel : ViewModelBase, INavigator
     [RelayCommand(CanExecute = nameof(IsFolderPage))]
     private void ToggleInfoPanel() => InfoPanel.IsOpen = !InfoPanel.IsOpen;
 
+    /// <summary>Ctrl+A by default. Selects every entry of the active view (in the tree: every visible row).</summary>
+    [RelayCommand(CanExecute = nameof(IsFolderPage))]
+    private void SelectAll() => (CurrentPage as DirectoryViewModel)?.SelectAll();
+
+    /// <summary>Ctrl+Shift+A by default; Esc too while the info panel is closed.</summary>
+    [RelayCommand(CanExecute = nameof(IsFolderPage))]
+    private void SelectNone() => (CurrentPage as DirectoryViewModel)?.SelectNone();
+
+    /// <summary>Ctrl+Shift+I by default.</summary>
+    [RelayCommand(CanExecute = nameof(IsFolderPage))]
+    private void InvertSelection() => (CurrentPage as DirectoryViewModel)?.InvertSelection();
+
     /// <summary>Ctrl+H. Works on any page; the choice applies to the next folder opened.</summary>
     [RelayCommand]
     private void ToggleHiddenFiles() => ShowHiddenFiles = !ShowHiddenFiles;
@@ -293,7 +305,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
             return false;
 
         if (_keymap.Current.Find(chord) is not { } action)
-            return TryCloseInfoPanel(chord, isTyping);
+            return TryHandleEscape(chord, isTyping);
 
         if (isTyping && (!action.WorksWhileTyping || !chord.IsCommandChord))
             return false;
@@ -306,14 +318,28 @@ public partial class MainViewModel : ViewModelBase, INavigator
         return true;
     }
 
-    /// <summary>Esc closes the info panel, unless Esc is bound to something else or a text box has it.</summary>
-    private bool TryCloseInfoPanel(KeyChord chord, bool isTyping)
+    /// <summary>
+    /// Esc, unless it is bound to something else or a text box has it: closes the info panel,
+    /// or, while that is closed, clears the active view's selection.
+    /// </summary>
+    private bool TryHandleEscape(KeyChord chord, bool isTyping)
     {
-        if (isTyping || chord != new KeyChord(Key.Escape) || !InfoPanel.IsShown)
+        if (isTyping || chord != new KeyChord(Key.Escape))
             return false;
 
-        InfoPanel.IsOpen = false;
-        return true;
+        if (InfoPanel.IsShown)
+        {
+            InfoPanel.IsOpen = false;
+            return true;
+        }
+
+        if (CurrentPage is DirectoryViewModel { HasSelection: true } page)
+        {
+            page.SelectNone();
+            return true;
+        }
+
+        return false;
     }
 
     private (ICommand? Command, object? Parameter) CommandFor(string actionId) => actionId switch
@@ -322,6 +348,9 @@ public partial class MainViewModel : ViewModelBase, INavigator
         KeymapActions.Refresh => (RefreshCommand, null),
         KeymapActions.OpenSettings => (SettingsCommand, null),
         KeymapActions.ToggleInfoPanel => (ToggleInfoPanelCommand, null),
+        KeymapActions.SelectAll => (SelectAllCommand, null),
+        KeymapActions.SelectNone => (SelectNoneCommand, null),
+        KeymapActions.InvertSelection => (InvertSelectionCommand, null),
         KeymapActions.EditPath => (AddressBar.BeginEditCommand, null),
         KeymapActions.GoBack => (GoBackCommand, null),
         KeymapActions.GoForward => (GoForwardCommand, null),
@@ -538,6 +567,9 @@ public partial class MainViewModel : ViewModelBase, INavigator
         ShowListViewCommand.NotifyCanExecuteChanged();
         ShowTreeViewCommand.NotifyCanExecuteChanged();
         ToggleInfoPanelCommand.NotifyCanExecuteChanged();
+        SelectAllCommand.NotifyCanExecuteChanged();
+        SelectNoneCommand.NotifyCanExecuteChanged();
+        InvertSelectionCommand.NotifyCanExecuteChanged();
     }
 
     private void NotifyViewModeChanged()
