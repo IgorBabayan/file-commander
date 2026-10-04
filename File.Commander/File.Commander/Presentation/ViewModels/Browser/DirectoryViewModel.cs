@@ -47,7 +47,8 @@ public sealed partial class DirectoryViewModel : PageViewModel
 
     /// <summary>Set by the shell when the user picks another layout.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsGridView), nameof(IsListView), nameof(IsTreeView), nameof(GridEntries))]
+    [NotifyPropertyChangedFor(nameof(IsGridView), nameof(IsListView), nameof(IsTreeView), nameof(GridEntries),
+        nameof(CurrentEntry))]
     public partial DirectoryViewMode ViewMode { get; set; }
 
     public bool IsGridView => ViewMode == DirectoryViewMode.Grid;
@@ -78,8 +79,18 @@ public sealed partial class DirectoryViewModel : PageViewModel
     [ObservableProperty]
     public partial IReadOnlyList<FileTreeNodeViewModel> TreeRoots { get; set; } = [];
 
+    /// <summary>Selection of the list and the grid.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CurrentEntry))]
     public partial FileEntryViewModel? SelectedEntry { get; set; }
+
+    /// <summary>Selection of the tree: may be inside a subfolder, or a placeholder row.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CurrentEntry))]
+    public partial FileTreeNodeViewModel? SelectedTreeNode { get; set; }
+
+    /// <summary>What is selected in the view shown now. Null when nothing (or a placeholder) is. Read by the info panel.</summary>
+    public FileEntryViewModel? CurrentEntry => IsTreeView ? SelectedTreeNode?.Entry : SelectedEntry;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusText), nameof(IsEmpty))]

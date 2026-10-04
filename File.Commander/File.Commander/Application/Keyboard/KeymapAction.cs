@@ -26,6 +26,7 @@ public static class KeymapActions
     public const string ToggleHiddenFiles = "actions.toggle-hidden-files";
     public const string Refresh = "actions.refresh";
     public const string OpenSettings = "actions.open-settings";
+    public const string ToggleInfoPanel = "actions.toggle-info-panel";
 
     public const string EditPath = "navigation.edit-path";
     public const string GoBack = "navigation.back";
@@ -52,6 +53,8 @@ public static class KeymapActions
             [new(Key.H, KeyModifiers.Control)], WorksWhileTyping: false),
         new(Refresh, ActionsGroup, "Refresh", [new(Key.F5)]),
         new(OpenSettings, ActionsGroup, "Open settings", [new(Key.OemComma, KeyModifiers.Control)]),
+        // Like Finder's Quick Look. Never while typing: Space belongs to the text box there.
+        new(ToggleInfoPanel, ActionsGroup, "Show info panel", [new(Key.Space)], WorksWhileTyping: false),
 
         new(EditPath, NavigationGroup, "Edit path",
             [new(Key.L, KeyModifiers.Control), new(Key.D, KeyModifiers.Alt)]),

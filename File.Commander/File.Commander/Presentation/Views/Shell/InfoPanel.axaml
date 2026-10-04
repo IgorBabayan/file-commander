@@ -1,0 +1,331 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="clr-namespace:File.Commander.Presentation.ViewModels.Shell"
+             xmlns:info="clr-namespace:File.Commander.Presentation.ViewModels.Info"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             x:Class="File.Commander.Presentation.Views.Shell.InfoPanel"
+             x:DataType="shell:InfoPanelViewModel">
+    <!-- Details of the selected item, like Finder's Get Info. Fc* brushes come from the theme
+         dictionaries: DynamicResource, so a theme change recolors it. Nothing here takes focus,
+         so the arrow keys keep moving the selection in the file view while the panel follows. -->
+    <UserControl.Styles>
+        <Style Selector="avalonia|MaterialIcon.entry-icon">
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <Style Selector="avalonia|MaterialIcon.entry-icon.folder">
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+
+        <!-- ===== Disclosure headers: "▸ General:" ===== -->
+        <Style Selector="ToggleButton.section">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="0,8" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="BorderThickness" Value="0,1,0,0" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcDividerBrush}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="ToggleButton.section /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BorderBrush" Value="{DynamicResource FcDividerBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.section:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcDividerBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.section:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcDividerBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.section:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcDividerBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.section:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcDividerBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.section avalonia|MaterialIcon.chevron">
+            <Setter Property="Width" Value="16" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="RenderTransform" Value="rotate(0deg)" />
+        </Style>
+        <Style Selector="ToggleButton.section:checked avalonia|MaterialIcon.chevron">
+            <Setter Property="RenderTransform" Value="rotate(90deg)" />
+        </Style>
+
+        <!-- ===== "Kind:  PNG image" rows ===== -->
+        <Style Selector="StackPanel.section-body">
+            <Setter Property="Spacing" Value="6" />
+            <Setter Property="Margin" Value="22,0,0,12" />
+        </Style>
+        <Style Selector="TextBlock.label">
+            <Setter Property="Width" Value="82" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.value">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.value.path">
+            <!-- Paths have no spaces to break at -->
+            <Setter Property="TextWrapping" Value="WrapWithOverflow" />
+        </Style>
+
+        <Style Selector="Button.close">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.close:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Border Background="{DynamicResource FcSidebarBrush}"
+            BorderBrush="{DynamicResource FcDividerBrush}"
+            BorderThickness="1,0,0,0">
+        <DockPanel>
+            <!-- ===== Header: title + close (Space or Esc close it too) ===== -->
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Height="44" Margin="16,0,10,0">
+                <TextBlock Grid.Column="0"
+                           Text="Info"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource FcHeaderTextBrush}"
+                           VerticalAlignment="Center" />
+                <Button Grid.Column="1"
+                        Classes="close"
+                        ToolTip.Tip="Close (Space)"
+                        Command="{Binding CloseCommand}">
+                    <avalonia:MaterialIcon Kind="Close" Width="16" Height="16" />
+                </Button>
+            </Grid>
+
+            <ScrollViewer IsVisible="{Binding HasItem}"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="16,0,16,16">
+
+                    <!-- ===== Preview: the image itself, or the item's icon ===== -->
+                    <Border Height="190"
+                            CornerRadius="10"
+                            ClipToBounds="True"
+                            Background="{DynamicResource FcCardBrush}">
+                        <Panel>
+                            <Image Source="{Binding Item.Preview}"
+                                   IsVisible="{Binding Item.HasPreview}"
+                                   Stretch="Uniform"
+                                   Margin="8"
+                                   RenderOptions.BitmapInterpolationMode="HighQuality" />
+                            <avalonia:MaterialIcon Classes="entry-icon"
+                                                   Classes.folder="{Binding Item.IsDirectory}"
+                                                   Kind="{Binding Item.Icon}"
+                                                   IsVisible="{Binding Item.HasIcon}"
+                                                   Width="96" Height="96"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                        </Panel>
+                    </Border>
+
+                    <!-- ===== Name, size, modified ===== -->
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,14,0,2">
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding Item.Name}"
+                                   ToolTip.Tip="{Binding Item.FullPath}"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"
+                                   MaxLines="3"
+                                   TextTrimming="CharacterEllipsis"
+                                   Foreground="{DynamicResource FcTextBrush}" />
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Item.HeaderSizeText}"
+                                   FontSize="14"
+                                   Margin="12,1,0,0"
+                                   VerticalAlignment="Top"
+                                   Foreground="{DynamicResource FcTextBrush}" />
+                    </Grid>
+                    <TextBlock Text="{Binding Item.HeaderModifiedText}"
+                               FontSize="12"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,14"
+                               Foreground="{DynamicResource FcSubtleTextBrush}" />
+
+                    <!-- ===== General ===== -->
+                    <ToggleButton Classes="section" IsChecked="{Binding IsGeneralExpanded}">
+                        <StackPanel Orientation="Horizontal">
+                            <avalonia:MaterialIcon Classes="chevron" Kind="ChevronRight" />
+                            <TextBlock Text="General:" />
+                        </StackPanel>
+                    </ToggleButton>
+                    <StackPanel Classes="section-body" IsVisible="{Binding IsGeneralExpanded}">
+                        <DockPanel>
+                            <TextBlock Classes="label" Text="Kind:" />
+                            <TextBlock Classes="value" Text="{Binding Item.KindText}" />
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Classes="label" Text="Size:" />
+                            <TextBlock Classes="value" Text="{Binding Item.SizeText}" />
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Classes="label" Text="Where:" />
+                            <TextBlock Classes="value path" Text="{Binding Item.WhereText}" />
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Classes="label" Text="Created:" />
+                            <TextBlock Classes="value" Text="{Binding Item.CreatedText}" />
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Classes="label" Text="Modified:" />
+                            <TextBlock Classes="value" Text="{Binding Item.ModifiedText}" />
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Classes="label" Text="Opened:" />
+                            <TextBlock Classes="value" Text="{Binding Item.AccessedText}" />
+                        </DockPanel>
+                    </StackPanel>
+
+                    <!-- ===== More Info: image size, symlink target ===== -->
+                    <StackPanel IsVisible="{Binding Item.HasMoreInfo}">
+                        <ToggleButton Classes="section" IsChecked="{Binding IsMoreInfoExpanded}">
+                            <StackPanel Orientation="Horizontal">
+                                <avalonia:MaterialIcon Classes="chevron" Kind="ChevronRight" />
+                                <TextBlock Text="More Info:" />
+                            </StackPanel>
+                        </ToggleButton>
+                        <StackPanel Classes="section-body" IsVisible="{Binding IsMoreInfoExpanded}">
+                            <DockPanel IsVisible="{Binding Item.HasDimensions}">
+                                <TextBlock Classes="label" Text="Dimensions:" />
+                                <TextBlock Classes="value" Text="{Binding Item.DimensionsText}" />
+                            </DockPanel>
+                            <DockPanel IsVisible="{Binding Item.HasLinkTarget}">
+                                <TextBlock Classes="label" Text="Link to:" />
+                                <TextBlock Classes="value path" Text="{Binding Item.LinkTarget}" />
+                            </DockPanel>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- ===== Name & Extension ===== -->
+                    <ToggleButton Classes="section" IsChecked="{Binding IsNameExpanded}">
+                        <StackPanel Orientation="Horizontal">
+                            <avalonia:MaterialIcon Classes="chevron" Kind="ChevronRight" />
+                            <TextBlock Text="Name &amp; Extension:" />
+                        </StackPanel>
+                    </ToggleButton>
+                    <StackPanel Classes="section-body" IsVisible="{Binding IsNameExpanded}">
+                        <DockPanel>
+                            <TextBlock Classes="label" Text="Name:" />
+                            <TextBlock Classes="value path" Text="{Binding Item.Name}" />
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Classes="label" Text="Extension:" />
+                            <TextBlock Classes="value" Text="{Binding Item.ExtensionText}" />
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Classes="label" Text="Hidden:" />
+                            <TextBlock Classes="value" Text="{Binding Item.HiddenText}" />
+                        </DockPanel>
+                    </StackPanel>
+
+                    <!-- ===== Sharing & Permissions ===== -->
+                    <StackPanel IsVisible="{Binding Item.HasPermissions}">
+                        <ToggleButton Classes="section" IsChecked="{Binding IsPermissionsExpanded}">
+                            <StackPanel Orientation="Horizontal">
+                                <avalonia:MaterialIcon Classes="chevron" Kind="ChevronRight" />
+                                <TextBlock Text="Sharing &amp; Permissions:" />
+                            </StackPanel>
+                        </ToggleButton>
+                        <StackPanel Spacing="8" Margin="0,0,0,12" IsVisible="{Binding IsPermissionsExpanded}">
+                            <TextBlock Text="{Binding Item.AccessSummary}"
+                                       IsVisible="{Binding Item.HasAccessSummary}"
+                                       FontSize="12"
+                                       Margin="22,0,0,0"
+                                       Foreground="{DynamicResource FcTextBrush}" />
+
+                            <Border CornerRadius="8"
+                                    ClipToBounds="True"
+                                    BorderThickness="1"
+                                    BorderBrush="{DynamicResource FcDividerBrush}"
+                                    Background="{DynamicResource FcContentBrush}">
+                                <StackPanel>
+                                    <Grid ColumnDefinitions="*,110"
+                                          Height="28"
+                                          Background="{DynamicResource FcCardBrush}">
+                                        <TextBlock Grid.Column="0" Text="Name"
+                                                   FontSize="12" Margin="34,0,0,0" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource FcHeaderTextBrush}" />
+                                        <TextBlock Grid.Column="1" Text="Privilege"
+                                                   FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource FcHeaderTextBrush}" />
+                                    </Grid>
+                                    <ItemsControl ItemsSource="{Binding Item.PermissionRows}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="info:PermissionRowViewModel">
+                                                <Grid ColumnDefinitions="*,110" Height="28">
+                                                    <StackPanel Grid.Column="0"
+                                                                Orientation="Horizontal"
+                                                                Margin="10,0,0,0"
+                                                                Spacing="8"
+                                                                VerticalAlignment="Center">
+                                                        <avalonia:MaterialIcon Kind="{Binding Icon}"
+                                                                               Width="16" Height="16"
+                                                                               Foreground="{DynamicResource FcSubtleTextBrush}" />
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   FontSize="12"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   Foreground="{DynamicResource FcTextBrush}" />
+                                                    </StackPanel>
+                                                    <Border Grid.Column="1"
+                                                            BorderThickness="1,0,0,0"
+                                                            BorderBrush="{DynamicResource FcDividerBrush}">
+                                                        <TextBlock Text="{Binding Privilege}"
+                                                                   FontSize="12"
+                                                                   Margin="8,0,0,0"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="{DynamicResource FcTextBrush}" />
+                                                    </Border>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <DockPanel Margin="0,2,0,0">
+                                <TextBlock Classes="label" Width="60" Text="Mode:" />
+                                <TextBlock Classes="value" FontFamily="monospace" Text="{Binding Item.ModeText}" />
+                            </DockPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+    </Border>
+</UserControl>

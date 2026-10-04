@@ -34,6 +34,9 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
     public AddressBarViewModel AddressBar { get; }
 
+    /// <summary>The details panel on the right, toggled with Space.</summary>
+    public InfoPanelViewModel InfoPanel { get; } = new();
+
     public bool IsGridView => ViewMode == DirectoryViewMode.Grid;
 
     public bool IsListView => ViewMode == DirectoryViewMode.List;
@@ -181,6 +184,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
         var start = StartLocationOf(basic.StartLocation);
         _currentPage = CreatePage(start);
+        InfoPanel.Attach(_currentPage);
         Sidebar.Select(start);
         AddressBar.Update(start);
 
@@ -244,6 +248,10 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
     private bool CanChangeViewMode() => IsFolderPage;
 
+    /// <summary>Space by default. Only folder pages have files to describe.</summary>
+    [RelayCommand(CanExecute = nameof(IsFolderPage))]
+    private void ToggleInfoPanel() => InfoPanel.IsOpen = !InfoPanel.IsOpen;
+
     /// <summary>Ctrl+H. Works on any page; the choice applies to the next folder opened.</summary>
     [RelayCommand]
     private void ToggleHiddenFiles() => ShowHiddenFiles = !ShowHiddenFiles;
@@ -265,9 +273,11 @@ public partial class MainViewModel : ViewModelBase, INavigator
     /// <returns>True when an action ran, so the key press is consumed.</returns>
     public bool HandleKey(Key key, KeyModifiers modifiers, bool isTyping)
     {
-        if (KeyChord.FromKeyPress(key, modifiers) is not { } chord
-            || _keymap.Current.Find(chord) is not { } action)
+        if (KeyChord.FromKeyPress(key, modifiers) is not { } chord)
             return false;
+
+        if (_keymap.Current.Find(chord) is not { } action)
+            return TryCloseInfoPanel(chord, isTyping);
 
         if (isTyping && (!action.WorksWhileTyping || !chord.IsCommandChord))
             return false;
@@ -280,11 +290,22 @@ public partial class MainViewModel : ViewModelBase, INavigator
         return true;
     }
 
+    /// <summary>Esc closes the info panel, unless Esc is bound to something else or a text box has it.</summary>
+    private bool TryCloseInfoPanel(KeyChord chord, bool isTyping)
+    {
+        if (isTyping || chord != new KeyChord(Key.Escape) || !InfoPanel.IsShown)
+            return false;
+
+        InfoPanel.IsOpen = false;
+        return true;
+    }
+
     private (ICommand? Command, object? Parameter) CommandFor(string actionId) => actionId switch
     {
         KeymapActions.ToggleHiddenFiles => (ToggleHiddenFilesCommand, null),
         KeymapActions.Refresh => (RefreshCommand, null),
         KeymapActions.OpenSettings => (SettingsCommand, null),
+        KeymapActions.ToggleInfoPanel => (ToggleInfoPanelCommand, null),
         KeymapActions.EditPath => (AddressBar.BeginEditCommand, null),
         KeymapActions.GoBack => (GoBackCommand, null),
         KeymapActions.GoForward => (GoForwardCommand, null),
@@ -428,6 +449,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
     protected override void OnDispose()
     {
         _settings.Changed -= OnSettingsChanged;
+        InfoPanel.Dispose();
         CurrentPage.Dispose();
         base.OnDispose();
     }
@@ -436,6 +458,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
     {
         var previous = CurrentPage;
         CurrentPage = CreatePage(location);
+        InfoPanel.Attach(CurrentPage);
         previous.Dispose();
 
         Sidebar.Select(location);
@@ -447,6 +470,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
         ShowGridViewCommand.NotifyCanExecuteChanged();
         ShowListViewCommand.NotifyCanExecuteChanged();
         ShowTreeViewCommand.NotifyCanExecuteChanged();
+        ToggleInfoPanelCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(IsFolderPage));
     }
 

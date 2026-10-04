@@ -368,6 +368,7 @@
             <TreeView x:Name="FileTree"
                       Classes="file-tree"
                       ItemsSource="{Binding TreeRoots}"
+                      SelectedItem="{Binding SelectedTreeNode, Mode=TwoWay}"
                       IsVisible="{Binding IsTreeView}"
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <TreeView.ItemTemplate>

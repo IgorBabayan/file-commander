@@ -66,6 +66,14 @@
             <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
         </Style>
 
+        <!-- ===== Info panel host: closed = no width, so the page gets the whole row ===== -->
+        <Style Selector="Border.info-panel">
+            <Setter Property="Width" Value="0" />
+        </Style>
+        <Style Selector="Border.info-panel.open">
+            <Setter Property="Width" Value="300" />
+        </Style>
+
         <!-- ===== Sidebar ===== -->
         <Style Selector="ListBox.sidebar">
             <Setter Property="Background" Value="Transparent" />
@@ -361,8 +369,8 @@
                     </DockPanel>
                 </Border>
 
-                <!-- Current page -->
-                <Grid Grid.Column="1" RowDefinitions="*,Auto">
+                <!-- Current page, with the info panel (Space) on its right -->
+                <Grid Grid.Column="1" RowDefinitions="*,Auto" ColumnDefinitions="*,Auto">
                     <ContentControl Grid.Row="0" Content="{Binding CurrentPage}">
                         <ContentControl.DataTemplates>
                             <DataTemplate DataType="computer:ComputerViewModel">
@@ -521,6 +529,23 @@
                                    Foreground="{DynamicResource FcSubtleTextBrush}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
+                    </Border>
+
+                    <!-- Info panel: slides in from the right by growing from 0 to its full width.
+                         The panel itself keeps its width and sticks to the right edge, so it moves in
+                         rather than squeezing its text while the host grows. -->
+                    <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"
+                            Classes="info-panel"
+                            Classes.open="{Binding InfoPanel.IsShown}"
+                            ClipToBounds="True">
+                        <Border.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Width" Duration="0:0:0.18" Easing="CubicEaseOut" />
+                            </Transitions>
+                        </Border.Transitions>
+                        <shellViews:InfoPanel Width="300"
+                                              HorizontalAlignment="Right"
+                                              DataContext="{Binding InfoPanel}" />
                     </Border>
                 </Grid>
             </Grid>
