@@ -53,44 +53,12 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Ctrl+L / Alt+D: type a path, F5: refresh, Ctrl+1 / Ctrl+2 / Ctrl+3: grid / list / tree,
-    /// Ctrl+H: show/hide hidden files, Alt+Left / Alt+Right / Alt+Up and Backspace: history and "up".
+    /// Shortcuts of Settings → Basic → Keymap (Ctrl+L, F5, Ctrl+1/2/3, Alt+Left… by default).
+    /// While the user types (address bar, a future search box) Backspace, arrows and plain keys stay with the text box.
     /// </summary>
     private void OnNavigationKeyDown(object? sender, KeyEventArgs e)
     {
-        if (ViewModel is not { } vm)
-            return;
-
-        var global = (e.Key, e.KeyModifiers) switch
-        {
-            (Key.L, KeyModifiers.Control) or (Key.D, KeyModifiers.Alt) => vm.AddressBar.BeginEditCommand,
-            (Key.F5, KeyModifiers.None) => vm.RefreshCommand,
-            (Key.D1 or Key.NumPad1, KeyModifiers.Control) => vm.ShowGridViewCommand,
-            (Key.D2 or Key.NumPad2, KeyModifiers.Control) => vm.ShowListViewCommand,
-            (Key.D3 or Key.NumPad3, KeyModifiers.Control) => vm.ShowTreeViewCommand,
-            _ => null,
-        };
-
-        if (TryExecute(global))
-        {
-            e.Handled = true;
-            return;
-        }
-
-        // Leave Backspace and arrows alone while the user types (address bar, a future search box)
-        if (e.Source is TextBox)
-            return;
-
-        var command = (e.Key, e.KeyModifiers) switch
-        {
-            (Key.Left, KeyModifiers.Alt) => vm.GoBackCommand,
-            (Key.Right, KeyModifiers.Alt) => vm.GoForwardCommand,
-            (Key.Up, KeyModifiers.Alt) or (Key.Back, KeyModifiers.None) => vm.GoUpCommand,
-            (Key.H, KeyModifiers.Control) => vm.ToggleHiddenFilesCommand,
-            _ => null,
-        };
-
-        if (TryExecute(command))
+        if (ViewModel is { } vm && vm.HandleKey(e.Key, e.KeyModifiers, isTyping: e.Source is TextBox))
             e.Handled = true;
     }
 

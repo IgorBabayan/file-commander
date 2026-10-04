@@ -72,6 +72,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
         var basic = current.Basic!;
         Theme = Pick(ThemeChoices, basic.Theme);
+        Keymap = new KeymapSettingsViewModel(current.Keymap, () => _ = SaveAsync());
         AlwaysOpenFolderInNewWindow = basic.AlwaysOpenFolderInNewWindow;
         OpenFile = Pick(OpenFileChoices, basic.OpenFile);
         StartLocation = Pick(StartLocationChoices, basic.StartLocation);
@@ -114,6 +115,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [
         new SettingsNavGroup("basic", "Basic"),
         new SettingsNavSection("appearance", "Appearance"),
+        new SettingsNavSection("keymap", "Keymap"),
         new SettingsNavSection("open-behavior", "Open behavior"),
         new SettingsNavSection("new-window-tab", "New window and tab"),
         new SettingsNavSection("files-folders", "Files and folders"),
@@ -147,6 +149,10 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     // ===== Basic =====
     [ObservableProperty] public partial Choice<AppTheme> Theme { get; set; }
+
+    /// <summary>Saves through <see cref="SaveAsync"/> itself: its changes aren't properties of this view model.</summary>
+    public KeymapSettingsViewModel Keymap { get; }
+
     [ObservableProperty] public partial bool AlwaysOpenFolderInNewWindow { get; set; }
     [ObservableProperty] public partial Choice<OpenFileMode> OpenFile { get; set; }
     [ObservableProperty] public partial Choice<StartLocation> StartLocation { get; set; }
@@ -247,6 +253,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
             ConfirmPermanentDelete = ConfirmPermanentDelete,
             ShowOperationProgress = ShowOperationProgress,
         },
+        Keymap = this.Keymap.ToOverrides(),
     };
 
     private static Choice<T> Pick<T>(Choice<T>[] choices, T value)

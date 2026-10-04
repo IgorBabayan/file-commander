@@ -1,3 +1,4 @@
+using File.Commander.Application.Keyboard;
 using File.Commander.Application.Settings;
 using File.Commander.Presentation.Services;
 using File.Commander.Presentation.Views.Settings;
@@ -57,6 +58,7 @@ static class ServiceCollectionExtensions
                 .AddSingleton<IDesktopService, DesktopService>()    
                 .AddSingleton<IDialogService, DialogService>()
                 .AddSingleton<ISettingsService>(_ => new SettingsService(SettingsService.DefaultPath))
+                .AddSingleton<IKeymapService, KeymapService>()
                 .AddTransient<SettingsWindow>();
         }
         

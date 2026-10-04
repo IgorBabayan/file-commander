@@ -4,6 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:File.Commander.Presentation.ViewModels.Settings"
         xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:sys="using:System"
         mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
         x:Class="File.Commander.Presentation.Views.Settings.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
@@ -106,6 +107,108 @@
             <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
         </Style>
+        <!-- ===== Keymap ===== -->
+        <Style Selector="TextBlock.keymap-hint">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="2,0,0,6" />
+        </Style>
+        <Style Selector="TextBlock.keymap-notice">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource PeachBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="2,0,0,6" />
+        </Style>
+        <Style Selector="Border.keymap-panel">
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="4" />
+        </Style>
+
+        <Style Selector="ToggleButton.keymap-group">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="6,5" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource BlueBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.keymap-group:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource BlueBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.keymap-group:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BlueBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.keymap-group:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Surface2Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BlueBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.keymap-group avalonia|MaterialIcon.chevron">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+            <Setter Property="RenderTransform" Value="rotate(0deg)" />
+        </Style>
+        <Style Selector="ToggleButton.keymap-group:checked avalonia|MaterialIcon.chevron">
+            <Setter Property="RenderTransform" Value="rotate(90deg)" />
+        </Style>
+
+        <Style Selector="Border.keymap-row">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="Margin" Value="26,0,0,0" />
+            <Setter Property="MinHeight" Value="32" />
+        </Style>
+        <Style Selector="Border.keymap-row:pointerover">
+            <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+        </Style>
+        <Style Selector="Border.keymap-row.selected">
+            <Setter Property="Background" Value="{DynamicResource Surface2Brush}" />
+        </Style>
+        <Style Selector="Border.keymap-row.recording">
+            <Setter Property="BorderBrush" Value="{DynamicResource BlueBrush}" />
+        </Style>
+        <Style Selector="TextBlock.keymap-title">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.keymap-unassigned">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontStyle" Value="Italic" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+        </Style>
+        <Style Selector="TextBlock.keymap-recording">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource BlueBrush}" />
+        </Style>
+        <Style Selector="Border.key-cap">
+            <Setter Property="MinWidth" Value="22" />
+            <Setter Property="Padding" Value="6,1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Overlay0Brush}" />
+            <Setter Property="Background" Value="{DynamicResource BaseBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Border.key-cap TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext1Brush}" />
+        </Style>
+
         <Style Selector="TextBlock.save-error">
             <Setter Property="FontSize" Value="12" />
             <Setter Property="Foreground" Value="{DynamicResource RedBrush}" />
@@ -173,6 +276,84 @@
                                                   ItemsSource="{Binding ThemeOptions}"
                                                   SelectedItem="{Binding Theme}" />
                                     </Grid>
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Keymap" Tag="keymap" />
+                            <StackPanel Classes="section">
+                                <TextBlock Classes="keymap-hint"
+                                           Text="Right-click a shortcut to change, add, remove or reset it. Double-click changes it." />
+                                <TextBlock Classes="keymap-notice"
+                                           Text="{Binding Keymap.Notice}"
+                                           IsVisible="{Binding Keymap.HasNotice}" />
+                                <!-- No Tag inside: Tags mark the navigation anchors -->
+                                <Border Classes="keymap-panel">
+                                    <ItemsControl x:Name="KeymapGroups" ItemsSource="{Binding Keymap.Groups}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="vm:KeymapGroupViewModel">
+                                                <StackPanel Spacing="1">
+                                                    <ToggleButton Classes="keymap-group" IsChecked="{Binding IsExpanded}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <avalonia:MaterialIcon Classes="chevron" Kind="ChevronRight"
+                                                                                   Width="16" Height="16" />
+                                                            <avalonia:MaterialIcon Kind="Folder" Width="16" Height="16" />
+                                                            <TextBlock Text="{Binding Title}" FontSize="14"
+                                                                       VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </ToggleButton>
+
+                                                    <ItemsControl ItemsSource="{Binding Items}" IsVisible="{Binding IsExpanded}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate DataType="vm:KeymapItemViewModel">
+                                                                <Border Classes="keymap-row"
+                                                                        Classes.selected="{Binding IsSelected}"
+                                                                        Classes.recording="{Binding IsRecording}">
+                                                                    <Border.ContextMenu>
+                                                                        <ContextMenu x:DataType="vm:KeymapItemViewModel">
+                                                                            <MenuItem Header="Change keybinding…" Command="{Binding EditCommand}" />
+                                                                            <MenuItem Header="Add keybinding…" Command="{Binding AddCommand}" />
+                                                                            <MenuItem Header="Remove keybinding" Command="{Binding RemoveCommand}" />
+                                                                            <Separator />
+                                                                            <MenuItem Header="Reset to default" Command="{Binding ResetCommand}" />
+                                                                        </ContextMenu>
+                                                                    </Border.ContextMenu>
+                                                                    <Grid ColumnDefinitions="*,Auto">
+                                                                        <TextBlock Classes="keymap-title" Text="{Binding Title}" />
+
+                                                                        <ItemsControl Grid.Column="1"
+                                                                                      ItemsSource="{Binding Keys}"
+                                                                                      IsVisible="{Binding ShowKeys}">
+                                                                            <ItemsControl.ItemsPanel>
+                                                                                <ItemsPanelTemplate>
+                                                                                    <StackPanel Orientation="Horizontal" Spacing="4" />
+                                                                                </ItemsPanelTemplate>
+                                                                            </ItemsControl.ItemsPanel>
+                                                                            <ItemsControl.ItemTemplate>
+                                                                                <DataTemplate x:DataType="sys:String">
+                                                                                    <Border Classes="key-cap">
+                                                                                        <TextBlock Text="{Binding}" />
+                                                                                    </Border>
+                                                                                </DataTemplate>
+                                                                            </ItemsControl.ItemTemplate>
+                                                                        </ItemsControl>
+
+                                                                        <TextBlock Grid.Column="1"
+                                                                                   Classes="keymap-unassigned"
+                                                                                   Text="Unassigned"
+                                                                                   IsVisible="{Binding ShowUnassigned}" />
+                                                                        <TextBlock Grid.Column="1"
+                                                                                   Classes="keymap-recording"
+                                                                                   Text="Press a key combination… (Esc to cancel)"
+                                                                                   IsVisible="{Binding IsRecording}" />
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                 </Border>
                             </StackPanel>
 

@@ -29,6 +29,13 @@ public record AppSettings
     [JsonPropertyName(nameof(Advanced))]
     public AdvancedSettings? Advanced { get; set; } = new();
 
+    /// <summary>
+    /// Settings → Basic → Keymap: action id → its shortcuts (e.g. "Ctrl+Shift+V"), replacing the defaults.
+    /// Only changed actions are stored, so new defaults reach everyone else; an empty list unbinds the action.
+    /// </summary>
+    [JsonPropertyName(nameof(Keymap))]
+    public Dictionary<string, List<string>>? Keymap { get; set; } = new();
+
     public bool IsAddonEnabled(string key) => !Addons!.TryGetValue(key, out var enabled) || enabled;
 }
 

@@ -83,6 +83,7 @@ sealed class SettingsService(string filePath) : ISettingsService
             Sidebar = settings.Sidebar ?? new(),
             Workspace = settings.Workspace ?? new(),
             Advanced = settings.Advanced ?? new(),
+            Keymap = settings.Keymap ?? new(),
         };
 
     private void RaiseChanged(AppSettings settings)

@@ -1,4 +1,7 @@
+using System.Windows.Input;
+using Avalonia.Input;
 using CommunityToolkit.Mvvm.Input;
+using File.Commander.Application.Keyboard;
 using File.Commander.Application.Path;
 using File.Commander.Application.Settings;
 using File.Commander.Presentation.Services;
@@ -22,6 +25,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
     private readonly IDialogService _dialogService;
     private readonly ISettingsService _settings;
     private readonly IDesktopService _desktopService;
+    private readonly IKeymapService _keymap;
 
     // What the shell currently runs with; compared on every save to apply only what changed
     private AppSettings _appliedSettings;
@@ -154,11 +158,13 @@ public partial class MainViewModel : ViewModelBase, INavigator
         }
     }
 
-    public MainViewModel(IDialogService dialogService, ISettingsService settings, IDesktopService desktopService)
+    public MainViewModel(IDialogService dialogService, ISettingsService settings, IDesktopService desktopService,
+        IKeymapService keymap)
     {
         _dialogService = dialogService;
         _settings = settings;
         _desktopService = desktopService;
+        _keymap = keymap;
         _appliedSettings = settings.Current;
 
         var basic = _appliedSettings.Basic!;
@@ -241,6 +247,58 @@ public partial class MainViewModel : ViewModelBase, INavigator
     /// <summary>Ctrl+H. Works on any page; the choice applies to the next folder opened.</summary>
     [RelayCommand]
     private void ToggleHiddenFiles() => ShowHiddenFiles = !ShowHiddenFiles;
+
+    /// <summary>Ctrl+Alt+1…4 by default. Saved like a pick in Settings; App applies the stored theme.</summary>
+    [RelayCommand]
+    private void SelectTheme(AppTheme theme)
+    {
+        var current = _settings.Current;
+        var basic = current.Basic!;
+        if (basic.Theme != theme)
+            _ = SaveSettingsAsync(current with { Basic = basic with { Theme = theme } });
+    }
+
+    /// <summary>
+    /// Runs the action bound to this key press in Settings → Keymap.
+    /// </summary>
+    /// <param name="isTyping">A text box has focus: only actions that don't fight typing run.</param>
+    /// <returns>True when an action ran, so the key press is consumed.</returns>
+    public bool HandleKey(Key key, KeyModifiers modifiers, bool isTyping)
+    {
+        if (KeyChord.FromKeyPress(key, modifiers) is not { } chord
+            || _keymap.Current.Find(chord) is not { } action)
+            return false;
+
+        if (isTyping && (!action.WorksWhileTyping || !chord.IsCommandChord))
+            return false;
+
+        var (command, parameter) = CommandFor(action.Id);
+        if (command is null || !command.CanExecute(parameter))
+            return false;
+
+        command.Execute(parameter);
+        return true;
+    }
+
+    private (ICommand? Command, object? Parameter) CommandFor(string actionId) => actionId switch
+    {
+        KeymapActions.ToggleHiddenFiles => (ToggleHiddenFilesCommand, null),
+        KeymapActions.Refresh => (RefreshCommand, null),
+        KeymapActions.OpenSettings => (SettingsCommand, null),
+        KeymapActions.EditPath => (AddressBar.BeginEditCommand, null),
+        KeymapActions.GoBack => (GoBackCommand, null),
+        KeymapActions.GoForward => (GoForwardCommand, null),
+        KeymapActions.GoUp => (GoUpCommand, null),
+        KeymapActions.GoComputer => (GoComputerCommand, null),
+        KeymapActions.GridView => (ShowGridViewCommand, null),
+        KeymapActions.ListView => (ShowListViewCommand, null),
+        KeymapActions.TreeView => (ShowTreeViewCommand, null),
+        KeymapActions.ThemeLatte => (SelectThemeCommand, AppTheme.Latte),
+        KeymapActions.ThemeFrappe => (SelectThemeCommand, AppTheme.Frappe),
+        KeymapActions.ThemeMacchiato => (SelectThemeCommand, AppTheme.Macchiato),
+        KeymapActions.ThemeMocha => (SelectThemeCommand, AppTheme.Mocha),
+        _ => (null, null),
+    };
 
     private void PickSort(bool picked, FileSortMode mode)
     {

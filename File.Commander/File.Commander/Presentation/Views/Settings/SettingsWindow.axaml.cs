@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using File.Commander.Presentation.ViewModels.Settings;
 
 namespace File.Commander.Presentation.Views.Settings;
@@ -27,12 +28,21 @@ public partial class SettingsWindow : Window
 
         Navigation.SelectionChanged += OnNavigationSelectionChanged;
         ContentScroll.ScrollChanged += OnContentScrollChanged;
+
+        // Tunnel: a recording keymap row gets the keys before Esc closes the window or Tab moves focus
+        AddHandler(KeyDownEvent, OnRecordingKeyDown, RoutingStrategies.Tunnel);
+        AddHandler(PointerPressedEvent, OnWindowPointerPressed, RoutingStrategies.Tunnel);
+        KeymapGroups.AddHandler(PointerPressedEvent, OnKeymapPointerPressed, RoutingStrategies.Tunnel);
+        KeymapGroups.AddHandler(DoubleTappedEvent, OnKeymapDoubleTapped);
     }
 
     private SettingsViewModel? ViewModel => DataContext as SettingsViewModel;
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
+        if (e.Handled)
+            return;
+
         if (e.Key == Key.Escape && e.KeyModifiers == KeyModifiers.None)
         {
             Close();
@@ -42,6 +52,48 @@ public partial class SettingsWindow : Window
 
         base.OnKeyDown(e);
     }
+
+    /// <summary>While a keymap row records, every key goes to it: Esc cancels, anything else is the new shortcut.</summary>
+    private void OnRecordingKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (ViewModel?.Keymap is not { IsRecording: true } keymap)
+            return;
+
+        e.Handled = true;
+
+        if (e.Key == Key.Escape && e.KeyModifiers == KeyModifiers.None)
+            keymap.CancelRecording();
+        else
+            keymap.Capture(e.Key, e.KeyModifiers);
+    }
+
+    /// <summary>A click anywhere stops recording; the context menu starts it only after its own click.</summary>
+    private void OnWindowPointerPressed(object? sender, PointerPressedEventArgs e)
+        => ViewModel?.Keymap.CancelRecording();
+
+    /// <summary>Left or right click selects the row, so the context menu visibly acts on it.</summary>
+    private void OnKeymapPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (ViewModel is { } vm && KeymapItemAt(e.Source) is { } item)
+            vm.Keymap.Selected = item;
+    }
+
+    private void OnKeymapDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (KeymapItemAt(e.Source) is not { } item)
+            return;
+
+        item.EditCommand.Execute(null);
+        e.Handled = true;
+    }
+
+    // Every element of a row inherits the row's DataContext; the key caps' own is the key text
+    private static KeymapItemViewModel? KeymapItemAt(object? source)
+        => (source as Visual)?.GetSelfAndVisualAncestors()
+            .OfType<StyledElement>()
+            .Select(element => element.DataContext)
+            .OfType<KeymapItemViewModel>()
+            .FirstOrDefault();
 
     private void OnCloseClick(object? sender, RoutedEventArgs e) => Close();
 
