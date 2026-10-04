@@ -12,7 +12,17 @@ namespace File.Commander.Presentation.Views.Shell;
 
 public partial class MainWindow : Window
 {
+    /// <summary>How far (in px) the pointer moves with the button down before a click becomes a drag.</summary>
+    private const double DragThreshold = 4;
+
+    private const string DraggingClass = "dragging";
+
     private MainViewModel? _subscribed;
+
+    // Sidebar drag: the pressed item, where it was pressed, and whether the pointer went past the threshold
+    private SidebarItem? _dragItem;
+    private Avalonia.Point _dragStart;
+    private bool _dragging;
 
     public MainWindow()
     {
@@ -24,6 +34,12 @@ public partial class MainWindow : Window
 
         // Tab into a view: it becomes the active one, like a click
         AddHandler(GotFocusEvent, (_, e) => ActivatePaneOf(e.Source));
+
+        // Tunnel: the press must not reach the ListBoxItem, or it would select (navigate) on mouse down
+        SidebarList.AddHandler(PointerPressedEvent, OnSidebarPointerPressed, RoutingStrategies.Tunnel);
+        SidebarList.AddHandler(PointerMovedEvent, OnSidebarPointerMoved, RoutingStrategies.Tunnel);
+        SidebarList.AddHandler(PointerReleasedEvent, OnSidebarPointerReleased, RoutingStrategies.Tunnel);
+        SidebarList.AddHandler(PointerCaptureLostEvent, OnSidebarPointerCaptureLost);
     }
 
     private MainViewModel? ViewModel => DataContext as MainViewModel;
@@ -126,6 +142,108 @@ public partial class MainWindow : Window
         if (TryExecute(command))
             e.Handled = true;
     }
+
+    /// <summary>
+    /// Sidebar items open on release, so a press can still turn into a drag. A drag reorders the
+    /// items inside their section as the pointer moves; the order is saved on release.
+    /// </summary>
+    private void OnSidebarPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Touch keeps the ListBox's own behavior: a drag there is a scroll
+        if (ViewModel is null || e.Pointer.Type == PointerType.Touch || e.KeyModifiers != KeyModifiers.None)
+            return;
+
+        var point = e.GetCurrentPoint(SidebarList);
+        if (!point.Properties.IsLeftButtonPressed || e.Source is not Avalonia.Visual source)
+            return;
+
+        // The eject button handles its own clicks
+        if (source.FindAncestorOfType<Button>(includeSelf: true) is not null || SidebarItemAt(source) is not { } item)
+            return;
+
+        _dragItem = item;
+        _dragStart = point.Position;
+        _dragging = false;
+
+        e.Pointer.Capture(SidebarList);
+        e.Handled = true;
+    }
+
+    private void OnSidebarPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (_dragItem is not { } item || ViewModel is not { } vm)
+            return;
+
+        var position = e.GetPosition(SidebarList);
+        if (!_dragging)
+        {
+            var delta = position - _dragStart;
+            if (Math.Abs(delta.X) < DragThreshold && Math.Abs(delta.Y) < DragThreshold)
+                return;
+
+            _dragging = true;
+            SidebarList.Cursor = new Cursor(StandardCursorType.DragMove);
+        }
+
+        // All items have the same height: after a move the pointer is over the dragged item, so it doesn't jitter
+        if (SidebarList.InputHitTest(position) is Avalonia.Visual hit && SidebarItemAt(hit) is { } target)
+            vm.Sidebar.MoveTo(item, target);
+
+        // Every time: a move can give the dragged item another container
+        MarkDragged(item);
+        e.Handled = true;
+    }
+
+    private void OnSidebarPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_dragItem is not { } item || ViewModel is not { } vm)
+            return;
+
+        var dragged = _dragging;
+        EndSidebarDrag();
+        e.Pointer.Capture(null);
+        e.Handled = true;
+
+        if (dragged)
+        {
+            vm.Sidebar.CommitOrder();
+            return;
+        }
+
+        // A plain click: what the ListBox would have done on press
+        SidebarList.ContainerFromItem(item)?.Focus(NavigationMethod.Pointer);
+        vm.Sidebar.SelectedEntry = item;
+    }
+
+    /// <summary>The window lost the pointer mid-drag (e.g. it was deactivated): keep where the item got to.</summary>
+    private void OnSidebarPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        if (_dragItem is null)
+            return;
+
+        var dragged = _dragging;
+        EndSidebarDrag();
+
+        if (dragged)
+            ViewModel?.Sidebar.CommitOrder();
+    }
+
+    private void EndSidebarDrag()
+    {
+        _dragItem = null;
+        _dragging = false;
+        SidebarList.Cursor = null;
+        MarkDragged(null);
+    }
+
+    private void MarkDragged(SidebarItem? item)
+    {
+        foreach (var container in SidebarList.GetRealizedContainers())
+            container.Classes.Set(DraggingClass, item is not null && ReferenceEquals(container.DataContext, item));
+    }
+
+    private static SidebarItem? SidebarItemAt(Avalonia.Visual visual)
+        => visual.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext as SidebarItem;
 
     /// <summary>Split view: makes the view that contains <paramref name="source"/> the active one (selected tab only).</summary>
     private void ActivatePaneOf(object? source)

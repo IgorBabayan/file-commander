@@ -517,6 +517,15 @@
                                 <Border Classes="setting-row">
                                     <CheckBox Classes="setting" Content="Network" IsChecked="{Binding ShowNetwork}" />
                                 </Border>
+                                <Border Classes="setting-row">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="setting-label"
+                                                   Text="Drag items on the sidebar to reorder them" />
+                                        <Button Grid.Column="1"
+                                                Content="Reset order"
+                                                Command="{Binding ResetSidebarOrderCommand}" />
+                                    </Grid>
+                                </Border>
                             </StackPanel>
 
                             <!-- ===== Workspace ===== -->

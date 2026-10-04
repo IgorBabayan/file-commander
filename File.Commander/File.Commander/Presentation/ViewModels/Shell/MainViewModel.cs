@@ -185,6 +185,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
         Sidebar = new SidebarViewModel(SystemLocations.GetUserDirectories(), SystemLocations.GetVolumes(),
             _appliedSettings.Sidebar!);
         Sidebar.NavigationRequested += (_, location) => Navigate(location);
+        Sidebar.OrderChanged += OnSidebarOrderChanged;
         AddressBar = new AddressBarViewModel(this);
 
         // Before the first page: it is created with this order
@@ -501,6 +502,18 @@ public partial class MainViewModel : ViewModelBase, INavigator
         if (reloadFolders || reloadComputer)
             RefreshPanes(page => (reloadFolders && page is DirectoryViewModel)
                                  || (reloadComputer && page is ComputerViewModel));
+    }
+
+    /// <summary>An item was dragged to a new place on the sidebar: store the order.</summary>
+    private void OnSidebarOrderChanged(object? sender, IReadOnlyList<string> order)
+    {
+        var current = _settings.Current;
+        var sidebar = current.Sidebar! with { ItemOrder = order };
+
+        // The sidebar already shows this order: applying the same instance first keeps
+        // OnSettingsChanged from rebuilding the sidebar (and losing the highlight) after the save
+        _appliedSettings = _appliedSettings with { Sidebar = sidebar };
+        _ = SaveSettingsAsync(current with { Sidebar = sidebar });
     }
 
     private async Task SaveSettingsAsync(AppSettings settings)

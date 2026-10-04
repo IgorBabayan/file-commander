@@ -72,6 +72,13 @@ public sealed record SidebarSettings
     public bool ShowComputer { get; init; } = true;
     public bool ShowPartitions { get; init; } = true;
     public bool ShowNetwork { get; init; } = true;
+
+    /// <summary>
+    /// Locations of sidebar items in the order the user dragged them to. Null: the built-in order.
+    /// Items that aren't listed (a new drive, a folder that came back) go to the end of their section.
+    /// Replace the list, never mutate it: the shell compares settings by reference.
+    /// </summary>
+    public IReadOnlyList<string>? ItemOrder { get; init; }
 }
 
 /// <summary>Settings → Workspace.</summary>

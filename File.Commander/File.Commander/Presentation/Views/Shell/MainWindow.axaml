@@ -169,6 +169,11 @@
             <Setter Property="Background" Value="{DynamicResource FcAccentPressedBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
         </Style>
+        <!-- The item being dragged (set from code-behind). After :selected so it wins while dragging. -->
+        <Style Selector="ListBox.sidebar ListBoxItem.dragging /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
         <!-- Section headers are disabled items: keep them flat, no hover. -->
         <Style Selector="ListBox.sidebar ListBoxItem:disabled /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="Transparent" />
@@ -391,7 +396,8 @@
                                          IsVisible="{Binding HasNotDesktopFile}"
                                          Command="{Binding CreateDesktopFileCommand}"
                                          Content="Create desktop file" />
-                        <ListBox Classes="sidebar"
+                        <ListBox x:Name="SidebarList"
+                                 Classes="sidebar"
                                  ItemsSource="{Binding Sidebar.Entries}"
                                  SelectedItem="{Binding Sidebar.SelectedEntry}"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">

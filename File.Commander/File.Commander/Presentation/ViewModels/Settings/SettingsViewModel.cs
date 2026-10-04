@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using File.Commander.Application.Settings;
 
 namespace File.Commander.Presentation.ViewModels.Settings;
@@ -195,6 +196,26 @@ public sealed partial class SettingsViewModel : ViewModelBase
             _ = SaveAsync();
     }
 
+    /// <summary>Puts the sidebar items back in the built-in order. Visibility is kept.</summary>
+    [RelayCommand]
+    private async Task ResetSidebarOrder()
+    {
+        var current = _settings.Current;
+        if (current.Sidebar!.ItemOrder is null)
+            return;
+
+        try
+        {
+            await _settings.SaveAsync(current with { Sidebar = current.Sidebar! with { ItemOrder = null } });
+            SaveError = null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Trace.WriteLine($"Can't save settings: {ex}");
+            SaveError = $"Settings weren't saved: {ex.Message}";
+        }
+    }
+
     private async Task SaveAsync()
     {
         try
@@ -224,7 +245,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
             ShowFileExtensions = ShowFileExtensions,
             MixFilesAndFolders = MixFilesAndFolders,
         },
-        Sidebar = new SidebarSettings
+        // Copied, not rebuilt: Sidebar also holds the order dragged on the sidebar
+        Sidebar = _settings.Current.Sidebar! with
         {
             ShowRecent = ShowRecent,
             ShowHome = ShowHome,
