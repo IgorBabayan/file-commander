@@ -734,16 +734,16 @@ public partial class MainViewModel : ViewModelBase, INavigator
             {
                 // Read on every visit, so the list is never stale
                 var history = _appliedSettings.Advanced!;
-                var recent = DirectoryViewModel.ForRecent(pane.ViewMode, CurrentFolderOptions(), _columns, pane,
-                    history.FileHistoryDays, history.ShowRecentFolders);
+                var recent = Watch(DirectoryViewModel.ForRecent(pane.ViewMode, CurrentFolderOptions(), _columns, pane,
+                    history.FileHistoryDays, history.ShowRecentFolders));
                 _ = recent.LoadAsync(); // never throws, reports errors through Error
                 return recent;
             }
             case Locations.Trash:
             {
                 // Read on every visit, like Recent: what's in the trash folders Empty trash would empty
-                var trash = DirectoryViewModel.ForTrash(pane.ViewMode, FileSort.Of(SortMode), CurrentFolderOptions(),
-                    _columns, pane, _appliedSettings.Advanced!.EmptyTrashOnAllDrives);
+                var trash = Watch(DirectoryViewModel.ForTrash(pane.ViewMode, FileSort.Of(SortMode), CurrentFolderOptions(),
+                    _columns, pane, _appliedSettings.Advanced!.EmptyTrashOnAllDrives));
                 _ = trash.LoadAsync(); // never throws, reports errors through Error
                 return trash;
             }
@@ -751,7 +751,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
                 return new PlaceholderPageViewModel(location, "Network", MaterialIconKind.LanConnect);
         }
 
-        var directory = new DirectoryViewModel(location, pane.ViewMode, FileSort.Of(SortMode), CurrentFolderOptions(), _columns, pane);
+        var directory = Watch(new DirectoryViewModel(location, pane.ViewMode, FileSort.Of(SortMode), CurrentFolderOptions(), _columns, pane));
         _ = directory.LoadAsync(); // never throws, reports errors through Error
         return directory;
     }

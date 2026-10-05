@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using File.Commander.Presentation.Services;
@@ -144,6 +143,9 @@ public sealed partial class DirectoryViewModel : PageViewModel
     public IReadOnlyList<FileEntryViewModel> SelectedEntries { get; private set; } = [];
 
     public bool HasSelection => SelectedEntries.Count > 0;
+
+    /// <summary>A file couldn't be opened, e.g. no app is registered for its type. The shell tells the user.</summary>
+    public event EventHandler<OpenFailedEventArgs>? OpenFailed;
 
     /// <summary>
     /// This page changed <see cref="SelectedEntries"/> itself (select all, a view switch, a new order):
@@ -348,15 +350,20 @@ public sealed partial class DirectoryViewModel : PageViewModel
             return;
         }
 
-        try
-        {
-            // On Linux UseShellExecute goes through xdg-open, i.e. the user's default app
-            Process.Start(new ProcessStartInfo(entry.FullPath) { UseShellExecute = true })?.Dispose();
-        }
-        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
-        {
-            Trace.WriteLine($"Can't open '{entry.FullPath}': {ex.Message}");
-        }
+        _ = OpenFileAsync(entry);
+    }
+
+    /// <summary>
+    /// In the app registered for its type (mimeapps.list), never executed, never handed to xdg-open, which falls
+    /// back to the web browser outside GNOME and KDE. Looked up off the UI thread: it reads the desktop files.
+    /// </summary>
+    private async Task OpenFileAsync(FileEntryViewModel entry)
+    {
+        var path = entry.FullPath;
+        var problem = await Task.Run(() => FileLauncher.Open(path));
+
+        if (problem is not null)
+            OpenFailed?.Invoke(this, new OpenFailedEventArgs(entry.Name, problem));
     }
 
     /// <summary>
@@ -475,4 +482,12 @@ public sealed partial class DirectoryViewModel : PageViewModel
         result.Sort(comparer);
         return result;
     }
+}
+
+/// <summary>Which file couldn't be opened, and why.</summary>
+public sealed class OpenFailedEventArgs(string name, string problem) : EventArgs
+{
+    public string Name { get; } = name;
+
+    public string Problem { get; } = problem;
 }

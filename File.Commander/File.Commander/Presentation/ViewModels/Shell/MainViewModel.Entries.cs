@@ -241,6 +241,16 @@ public partial class MainViewModel
 
     // ===== Helpers =====
 
+    /// <summary>A folder page's files that can't be opened (no app registered…) are reported in a notice.</summary>
+    private DirectoryViewModel Watch(DirectoryViewModel page)
+    {
+        page.OpenFailed += OnOpenFailed;
+        return page;
+    }
+
+    private void OnOpenFailed(object? sender, OpenFailedEventArgs e)
+        => _ = ShowNoticeAsync($"Can't open “{e.Name}”", e.Problem);
+
     private async Task TransferToPickedAsync(IReadOnlyList<FileEntryViewModel> entries, bool move)
     {
         if (entries.Count == 0)
