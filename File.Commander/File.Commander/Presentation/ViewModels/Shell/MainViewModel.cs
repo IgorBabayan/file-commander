@@ -707,7 +707,12 @@ public partial class MainViewModel : ViewModelBase, INavigator
                 return new ComputerViewModel(SystemLocations.GetUserDirectories(), shown, pane);
             }
             case Locations.Recent:
-                return new PlaceholderPageViewModel(location, "Recent", MaterialIconKind.ClockOutline);
+            {
+                // Read on every visit, so the list is never stale
+                var recent = DirectoryViewModel.ForRecent(pane.ViewMode, CurrentFolderOptions(), _columns, pane);
+                _ = recent.LoadAsync(); // never throws, reports errors through Error
+                return recent;
+            }
             case Locations.Trash:
                 return new PlaceholderPageViewModel(location, "Trash", MaterialIconKind.TrashCanOutline);
             case Locations.Network:

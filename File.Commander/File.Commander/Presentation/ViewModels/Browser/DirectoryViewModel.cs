@@ -21,24 +21,49 @@ public sealed partial class DirectoryViewModel : PageViewModel
     private readonly FolderOptions _options;
     private readonly CancellationTokenSource _cts = new();
 
+    // Where the entries come from: the folder at Location, or another list such as Recent
+    private readonly Func<IComparer<FileEntryViewModel>, FolderOptions, CancellationToken, IReadOnlyList<FileEntryViewModel>> _read;
+
     // The entries TreeRoots was built from: switching views keeps the expanded folders
     private IReadOnlyList<FileEntryViewModel>? _treeSource;
 
     public DirectoryViewModel(string path, DirectoryViewMode viewMode, FileSort sort, FolderOptions options,
         FileColumnsViewModel columns, INavigator navigator)
+        : this(Locations.Normalize(path), null, null, "This folder is empty", viewMode, sort, options, columns, navigator)
+    {
+    }
+
+    private DirectoryViewModel(string location, string? title,
+        Func<IComparer<FileEntryViewModel>, FolderOptions, CancellationToken, IReadOnlyList<FileEntryViewModel>>? read,
+        string emptyText, DirectoryViewMode viewMode, FileSort sort, FolderOptions options,
+        FileColumnsViewModel columns, INavigator navigator)
     {
         _navigator = navigator;
         _options = options;
+        _read = read ?? ((comparer, folderOptions, token) => ReadEntries(location, comparer, folderOptions, token));
         Columns = columns;
-        Location = Locations.Normalize(path);
-        Title = Location == "/" ? "/" : IOPath.GetFileName(Location);
+        Location = location;
+        Title = title ?? (location == "/" ? "/" : IOPath.GetFileName(location));
+        EmptyText = emptyText;
         ViewMode = viewMode;
         Sort = sort;
     }
 
+    /// <summary>
+    /// The Recent page: the same views, filled with recently used files from all over instead of one folder.
+    /// Opens newest first, whatever the sort menu says; the menu and the headers still re-sort it.
+    /// </summary>
+    public static DirectoryViewModel ForRecent(DirectoryViewMode viewMode, FolderOptions options,
+        FileColumnsViewModel columns, INavigator navigator)
+        => new(Locations.Recent, "Recent", ReadRecent, "No recent files", viewMode,
+            FileSort.Of(FileSortMode.NewestFirst), options, columns, navigator);
+
     public override string Location { get; }
 
     public override string Title { get; }
+
+    /// <summary>Shown when there are no entries: "This folder is empty", "No recent files".</summary>
+    public string EmptyText { get; }
 
     /// <summary>Shared with the shell and every other folder page.</summary>
     public FileColumnsViewModel Columns { get; }
@@ -233,10 +258,10 @@ public sealed partial class DirectoryViewModel : PageViewModel
 
         try
         {
-            var path = Location;
+            var read = _read;
             var comparer = CurrentComparer();
             var options = _options;
-            var entries = await Task.Run(() => ReadEntries(path, comparer, options, token), token);
+            var entries = await Task.Run(() => read(comparer, options, token), token);
 
             // The order may have changed while the folder was being read
             if (CurrentComparer() is var current && !ReferenceEquals(current, comparer))
@@ -370,6 +395,25 @@ public sealed partial class DirectoryViewModel : PageViewModel
         foreach (var info in directory.EnumerateFileSystemInfos("*", options.ShowHidden ? WithHidden : WithoutHidden))
         {
             token.ThrowIfCancellationRequested();
+            result.Add(FileEntryViewModel.From(info, options.ShowExtensions));
+        }
+
+        result.Sort(comparer);
+        return result;
+    }
+
+    private static IReadOnlyList<FileEntryViewModel> ReadRecent(IComparer<FileEntryViewModel> comparer,
+        FolderOptions options, CancellationToken token)
+    {
+        var result = new List<FileEntryViewModel>();
+        foreach (var info in RecentFiles.Read(token))
+        {
+            token.ThrowIfCancellationRequested();
+
+            // Same rule as in folders: dot files only while hidden files are shown
+            if (!options.ShowHidden && info.Name.StartsWith('.'))
+                continue;
+
             result.Add(FileEntryViewModel.From(info, options.ShowExtensions));
         }
 

@@ -84,7 +84,14 @@ public sealed partial class InfoPanelViewModel : ViewModelBase
         if (!IsShown || _page is null)
             return;
 
-        var entry = _page.CurrentEntry ?? FolderEntry(_page.Location);
+        // Nothing selected on a page that isn't a folder (Recent): there is nothing to describe
+        var entry = _page.CurrentEntry
+                    ?? (Locations.IsVirtual(_page.Location) ? null : FolderEntry(_page.Location));
+        if (entry is null)
+        {
+            Item = null;
+            return;
+        }
 
         // Same entry again (e.g. re-selected): keep the counted size and the decoded preview
         if (ReferenceEquals(Item?.Entry, entry))
