@@ -19,6 +19,10 @@ class DialogService : IDialogService
         Window dialog = viewModel switch
         {
             SettingsViewModel => _serviceProvider.GetRequiredService<SettingsWindow>(),
+            global::File.Commander.Presentation.ViewModels.Dialogs.PromptViewModel
+                => _serviceProvider.GetRequiredService<global::File.Commander.Presentation.Views.Dialogs.PromptWindow>(),
+            global::File.Commander.Presentation.ViewModels.Dialogs.PropertiesViewModel
+                => _serviceProvider.GetRequiredService<global::File.Commander.Presentation.Views.Dialogs.PropertiesWindow>(),
             /*ConfirmDialogViewModel => _serviceProvider.GetRequiredService<ConfirmDialogWindow>(),
             ImportFolderViewModel => _serviceProvider.GetRequiredService<ImportFolderWindow>(),
             PluginSettingsDialogViewModel => _serviceProvider.GetRequiredService<PluginSettingsDialogWindow>(),*/

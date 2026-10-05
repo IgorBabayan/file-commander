@@ -611,6 +611,34 @@
                                               IsChecked="{Binding ShowOperationProgress}" />
                                 </Border>
                             </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="File history" Tag="file-history" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="setting-label" Text="Show files used:" />
+                                        <ComboBox Grid.Column="1" Classes="setting"
+                                                  ItemsSource="{Binding FileHistoryOptions}"
+                                                  SelectedItem="{Binding FileHistoryDays}" />
+                                    </Grid>
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Show recently used folders"
+                                              IsChecked="{Binding ShowRecentFolders}" />
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Trash" Tag="trash" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Ask before emptying the trash"
+                                              IsChecked="{Binding ConfirmEmptyTrash}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Empty the trash of other drives too"
+                                              IsChecked="{Binding EmptyTrashOnAllDrives}" />
+                                </Border>
+                            </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
                 </Border>

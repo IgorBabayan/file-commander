@@ -16,16 +16,21 @@ public static class RecentFiles
     /// Local files and folders that still exist, most recently used first. A source that is missing,
     /// unreadable or half-written is skipped, so this never throws for it.
     /// </summary>
-    public static IReadOnlyList<FileSystemInfo> Read(CancellationToken token)
+    /// <param name="usedSince">UTC. Only what was used at or after it; null: any time.</param>
+    public static IReadOnlyList<FileSystemInfo> Read(CancellationToken token, DateTime? usedSince = null)
     {
         var used = new Dictionary<string, DateTime>(StringComparer.Ordinal);
         ReadXbel(used, token);
         ReadKdeRecentDocuments(used, token);
 
         var result = new List<FileSystemInfo>();
-        foreach (var (path, _) in used.OrderByDescending(pair => pair.Value))
+        foreach (var (path, time) in used.OrderByDescending(pair => pair.Value))
         {
             token.ThrowIfCancellationRequested();
+
+            // Newest first: everything after this one is older still
+            if (time < usedSince)
+                break;
 
             // Deleted, moved, or on a drive that isn't mounted now
             if (Directory.Exists(path))

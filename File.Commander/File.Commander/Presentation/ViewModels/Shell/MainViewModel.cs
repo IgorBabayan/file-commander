@@ -465,6 +465,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
         var (basic, wasBasic) = (settings.Basic, previous.Basic);
         var reloadFolders = false;
         var reloadComputer = false;
+        var reloadRecent = false;
 
         // The field, not the property: the property would save the setting back and reload on its own
         if (basic!.ShowHiddenFiles != wasBasic!.ShowHiddenFiles
@@ -479,6 +480,11 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
         if (settings.Workspace!.HideSystemDisk != previous.Workspace!.HideSystemDisk)
             reloadComputer = true;
+
+        // Settings → File history filters what the Recent page lists
+        if (settings.Advanced!.FileHistoryDays != previous.Advanced!.FileHistoryDays
+            || settings.Advanced.ShowRecentFolders != previous.Advanced.ShowRecentFolders)
+            reloadRecent = true;
 
         // Only a change of the default itself: Ctrl+1/2/3 choices survive unrelated saves.
         // A new default applies to every view of every tab.
@@ -500,9 +506,10 @@ public partial class MainViewModel : ViewModelBase, INavigator
             Sidebar.Select(CurrentPage.Location);
         }
 
-        if (reloadFolders || reloadComputer)
+        if (reloadFolders || reloadComputer || reloadRecent)
             RefreshPanes(page => (reloadFolders && page is DirectoryViewModel)
-                                 || (reloadComputer && page is ComputerViewModel));
+                                 || (reloadComputer && page is ComputerViewModel)
+                                 || (reloadRecent && page.Location == Locations.Recent));
     }
 
     /// <summary>An item was dragged to a new place on the sidebar: store the order.</summary>
@@ -521,7 +528,10 @@ public partial class MainViewModel : ViewModelBase, INavigator
     private void OnSidebarFavoritesChanged(object? sender, IReadOnlyList<string> favorites)
     {
         var current = _settings.Current;
-        var sidebar = current.Sidebar! with { Favorites = favorites };
+
+        // Stored together with the list, so a rename or a removal is one save
+        var names = Sidebar.FavoriteNames;
+        var sidebar = current.Sidebar! with { Favorites = favorites, FavoriteNames = names.Count == 0 ? null : names };
 
         // As for the order: the sidebar already shows these favorites, don't rebuild it after the save
         _appliedSettings = _appliedSettings with { Sidebar = sidebar };
@@ -709,7 +719,9 @@ public partial class MainViewModel : ViewModelBase, INavigator
             case Locations.Recent:
             {
                 // Read on every visit, so the list is never stale
-                var recent = DirectoryViewModel.ForRecent(pane.ViewMode, CurrentFolderOptions(), _columns, pane);
+                var history = _appliedSettings.Advanced!;
+                var recent = DirectoryViewModel.ForRecent(pane.ViewMode, CurrentFolderOptions(), _columns, pane,
+                    history.FileHistoryDays, history.ShowRecentFolders);
                 _ = recent.LoadAsync(); // never throws, reports errors through Error
                 return recent;
             }

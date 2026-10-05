@@ -53,10 +53,13 @@ public sealed partial class DirectoryViewModel : PageViewModel
     /// The Recent page: the same views, filled with recently used files from all over instead of one folder.
     /// Opens newest first, whatever the sort menu says; the menu and the headers still re-sort it.
     /// </summary>
+    /// <param name="maxAgeDays">Settings → File history: only what was used in this many days. 0: any time.</param>
+    /// <param name="includeFolders">Settings → File history: list recently used folders too.</param>
     public static DirectoryViewModel ForRecent(DirectoryViewMode viewMode, FolderOptions options,
-        FileColumnsViewModel columns, INavigator navigator)
-        => new(Locations.Recent, "Recent", ReadRecent, "No recent files", viewMode,
-            FileSort.Of(FileSortMode.NewestFirst), options, columns, navigator);
+        FileColumnsViewModel columns, INavigator navigator, int maxAgeDays = 0, bool includeFolders = true)
+        => new(Locations.Recent, "Recent",
+            (comparer, folderOptions, token) => ReadRecent(comparer, folderOptions, maxAgeDays, includeFolders, token),
+            "No recent files", viewMode, FileSort.Of(FileSortMode.NewestFirst), options, columns, navigator);
 
     public override string Location { get; }
 
@@ -403,12 +406,17 @@ public sealed partial class DirectoryViewModel : PageViewModel
     }
 
     private static IReadOnlyList<FileEntryViewModel> ReadRecent(IComparer<FileEntryViewModel> comparer,
-        FolderOptions options, CancellationToken token)
+        FolderOptions options, int maxAgeDays, bool includeFolders, CancellationToken token)
     {
+        DateTime? usedSince = maxAgeDays > 0 ? DateTime.UtcNow.AddDays(-maxAgeDays) : null;
+
         var result = new List<FileEntryViewModel>();
-        foreach (var info in RecentFiles.Read(token))
+        foreach (var info in RecentFiles.Read(token, usedSince))
         {
             token.ThrowIfCancellationRequested();
+
+            if (!includeFolders && info is DirectoryInfo)
+                continue;
 
             // Same rule as in folders: dot files only while hidden files are shown
             if (!options.ShowHidden && info.Name.StartsWith('.'))

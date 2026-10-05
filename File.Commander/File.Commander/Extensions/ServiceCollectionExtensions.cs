@@ -59,7 +59,9 @@ static class ServiceCollectionExtensions
                 .AddSingleton<IDialogService, DialogService>()
                 .AddSingleton<ISettingsService>(_ => new SettingsService(SettingsService.DefaultPath))
                 .AddSingleton<IKeymapService, KeymapService>()
-                .AddTransient<SettingsWindow>();
+                .AddTransient<SettingsWindow>()
+                .AddTransient<global::File.Commander.Presentation.Views.Dialogs.PromptWindow>()
+                .AddTransient<global::File.Commander.Presentation.Views.Dialogs.PropertiesWindow>();
         }
         
         private static AppSettings LoadStartupSettings()

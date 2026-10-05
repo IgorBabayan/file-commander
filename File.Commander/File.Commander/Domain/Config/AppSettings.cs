@@ -85,6 +85,12 @@ public sealed record SidebarSettings
     /// Replace the list, never mutate it: the shell compares settings by reference.
     /// </summary>
     public IReadOnlyList<string>? Favorites { get; init; }
+
+    /// <summary>
+    /// Names given to favorites with Rename, by location. A favorite that isn't listed shows its folder's name.
+    /// Replace the dictionary, never mutate it: the shell compares settings by reference.
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? FavoriteNames { get; init; }
 }
 
 /// <summary>Settings → Workspace.</summary>
@@ -109,6 +115,18 @@ public sealed record AdvancedSettings
 
     public bool AutoMount { get; init; } = true;
     public bool OpenAfterAutoMount { get; init; }
+
+    /// <summary>Settings → Advanced → File history: Recent lists only what was used in this many days. 0: any time.</summary>
+    public int FileHistoryDays { get; init; }
+
+    /// <summary>Recent lists recently used folders too, not only files.</summary>
+    public bool ShowRecentFolders { get; init; } = true;
+
+    /// <summary>Settings → Advanced → Trash: Empty trash asks first.</summary>
+    public bool ConfirmEmptyTrash { get; init; } = true;
+
+    /// <summary>Empty trash also empties the trash folders of other drives ($topdir/.Trash-$uid).</summary>
+    public bool EmptyTrashOnAllDrives { get; init; } = true;
 
     public bool ConfirmPermanentDelete { get; init; } = true;
     public bool ShowOperationProgress { get; init; } = true;

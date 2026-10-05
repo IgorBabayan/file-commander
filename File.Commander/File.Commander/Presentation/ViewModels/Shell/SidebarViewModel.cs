@@ -17,6 +17,9 @@ public partial class SidebarViewModel : ViewModelBase
     // The stored favorites (SidebarSettings.Favorites), in the order they were added
     private IReadOnlyList<string> _favorites;
 
+    // Names given with Rename (SidebarSettings.FavoriteNames), by location
+    private IReadOnlyDictionary<string, string> _favoriteNames;
+
     // What Build shows: kept so the entries can be rebuilt when a favorite is added or removed
     private SidebarSettings _visibility;
 
@@ -31,6 +34,7 @@ public partial class SidebarViewModel : ViewModelBase
         _visibility = visibility;
         _order = visibility.ItemOrder ?? [];
         _favorites = visibility.Favorites ?? [];
+        _favoriteNames = visibility.FavoriteNames ?? new Dictionary<string, string>();
         Entries = new ObservableCollection<SidebarEntry>(Build(visibility));
     }
 
@@ -50,6 +54,12 @@ public partial class SidebarViewModel : ViewModelBase
     public event EventHandler<IReadOnlyList<string>>? FavoritesChanged;
 
     public ObservableCollection<SidebarEntry> Entries { get; }
+
+    /// <summary>
+    /// The current <see cref="SidebarSettings.FavoriteNames"/>: read it when <see cref="FavoritesChanged"/> is raised,
+    /// so a rename is stored with the list. A new instance after every change.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> FavoriteNames => _favoriteNames;
 
     /// <summary>Bound to the ListBox. Setting it (i.e. a click or arrow key) navigates.</summary>
     public SidebarEntry? SelectedEntry
@@ -77,6 +87,7 @@ public partial class SidebarViewModel : ViewModelBase
         _visibility = visibility;
         _order = visibility.ItemOrder ?? [];
         _favorites = visibility.Favorites ?? [];
+        _favoriteNames = visibility.FavoriteNames ?? new Dictionary<string, string>();
 
         Entries.Clear();
         foreach (var entry in Build(visibility))
@@ -166,8 +177,42 @@ public partial class SidebarViewModel : ViewModelBase
         if (favorites.Count == _favorites.Count)
             return false;
 
+        // Added again later, it starts with its folder's name
+        _favoriteNames = WithName(item.Location, null);
         UpdateFavorites(favorites);
         return true;
+    }
+
+    /// <summary>
+    /// Gives <paramref name="item"/> the name <paramref name="name"/> on the sidebar; the folder itself isn't renamed.
+    /// An empty name, or the folder's own, goes back to the folder's name. Raises <see cref="FavoritesChanged"/>.
+    /// </summary>
+    /// <returns>False when <paramref name="item"/> isn't a favorite or the name didn't change.</returns>
+    public bool RenameFavorite(SidebarItem item, string? name)
+    {
+        if (!item.IsFavorite)
+            return false;
+
+        var trimmed = name?.Trim() ?? string.Empty;
+        var custom = trimmed.Length == 0 || trimmed == FolderName(item.Location) ? null : trimmed;
+        if (custom == (_favoriteNames.TryGetValue(item.Location, out var stored) ? stored : null))
+            return false;
+
+        _favoriteNames = WithName(item.Location, custom);
+        UpdateFavorites(_favorites);
+        return true;
+    }
+
+    /// <summary>Which context menu <paramref name="item"/> gets. A favorite is a favorite wherever it points.</summary>
+    public static SidebarItemKind KindOf(SidebarItem item)
+    {
+        if (item.IsFavorite)
+            return SidebarItemKind.Favorite;
+
+        if (Locations.AreEqual(item.Location, Locations.Recent))
+            return SidebarItemKind.Recent;
+
+        return Locations.AreEqual(item.Location, Locations.Trash) ? SidebarItemKind.Trash : SidebarItemKind.Regular;
     }
 
     /// <summary>A drag ended: raises <see cref="OrderChanged"/> if the order differs from the stored one.</summary>
@@ -328,11 +373,29 @@ public partial class SidebarViewModel : ViewModelBase
         return items.OrderBy(item => rank.GetValueOrDefault(item.Location, int.MaxValue));
     }
 
-    private static SidebarItem ToFavorite(string location)
+    private SidebarItem ToFavorite(string location)
+    {
+        var name = _favoriteNames.TryGetValue(location, out var custom) ? custom : FolderName(location);
+        return new SidebarItem(name, MaterialIconKind.FolderStarOutline, location, isFavorite: true);
+    }
+
+    // "/" for the root
+    private static string FolderName(string location)
     {
         var name = IOPath.GetFileName(location);
-        return new SidebarItem(name.Length == 0 ? location : name, MaterialIconKind.FolderStarOutline, location,
-            isFavorite: true);
+        return name.Length == 0 ? location : name;
+    }
+
+    // A copy of the names with location's set (or removed, for null)
+    private IReadOnlyDictionary<string, string> WithName(string location, string? name)
+    {
+        var names = new Dictionary<string, string>(_favoriteNames, StringComparer.Ordinal);
+        if (name is null)
+            names.Remove(location);
+        else
+            names[location] = name;
+
+        return names;
     }
 
     private static SidebarItem ToItem(UserDirectory directory) =>

@@ -59,6 +59,20 @@ public sealed partial class SettingsViewModel : ViewModelBase
         new(FolderViewMode.Tree, "Tree"),
     ];
 
+    private static readonly Choice<int>[] FileHistoryChoices =
+    [
+        new(0, "Any time"),
+        new(1, "Today"),
+        new(7, "1 week"),
+        new(30, "1 month"),
+        new(90, "3 months"),
+        new(365, "1 year"),
+    ];
+
+    /// <summary>Navigation keys the window can be opened at, e.g. from the sidebar's context menu.</summary>
+    public const string FileHistorySection = "file-history";
+    public const string TrashSection = "trash";
+
     // Changing these is not a settings change
     private static readonly HashSet<string> NotSettings =
         [nameof(SelectedNavItem), nameof(SaveError), nameof(HasSaveError)];
@@ -66,7 +80,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly ISettingsService _settings;
     private readonly bool _loaded;
 
-    public SettingsViewModel(ISettingsService settings)
+    /// <param name="section">Key of the navigation entry to open at (e.g. <see cref="TrashSection"/>). Null: the top.</param>
+    public SettingsViewModel(ISettingsService settings, string? section = null)
     {
         _settings = settings;
         var current = settings.Current;
@@ -107,10 +122,18 @@ public sealed partial class SettingsViewModel : ViewModelBase
         OpenAfterAutoMount = advanced.OpenAfterAutoMount;
         ConfirmPermanentDelete = advanced.ConfirmPermanentDelete;
         ShowOperationProgress = advanced.ShowOperationProgress;
+        ShowRecentFolders = advanced.ShowRecentFolders;
+        FileHistoryDays = Pick(FileHistoryChoices, advanced.FileHistoryDays);
+        ConfirmEmptyTrash = advanced.ConfirmEmptyTrash;
+        EmptyTrashOnAllDrives = advanced.EmptyTrashOnAllDrives;
 
-        SelectedNavItem = NavItems[0];
+        InitialNavItem = section is null ? null : NavItems.FirstOrDefault(item => item.Key == section);
+        SelectedNavItem = InitialNavItem ?? NavItems[0];
         _loaded = true;
     }
+
+    /// <summary>The entry the window was asked to open at. The window scrolls to it once laid out.</summary>
+    public SettingsNavItem? InitialNavItem { get; }
 
     public IReadOnlyList<SettingsNavItem> NavItems { get; } =
     [
@@ -130,6 +153,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
         new SettingsNavSection("search", "Search"),
         new SettingsNavSection("mount", "Mount"),
         new SettingsNavSection("dialog", "Dialog"),
+        new SettingsNavSection(FileHistorySection, "File history"),
+        new SettingsNavSection(TrashSection, "Trash"),
     ];
 
     /// <summary>Picked in the navigation (scrolls the content) or updated while the content scrolls.</summary>
@@ -147,6 +172,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public IReadOnlyList<Choice<StartLocation>> StartLocationOptions => StartLocationChoices;
     public IReadOnlyList<Choice<NewTabLocation>> NewTabOptions => NewTabChoices;
     public IReadOnlyList<Choice<FolderViewMode>> ViewOptions => ViewChoices;
+    public IReadOnlyList<Choice<int>> FileHistoryOptions => FileHistoryChoices;
 
     // ===== Basic =====
     [ObservableProperty] public partial Choice<AppTheme> Theme { get; set; }
@@ -187,6 +213,10 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] public partial bool OpenAfterAutoMount { get; set; }
     [ObservableProperty] public partial bool ConfirmPermanentDelete { get; set; }
     [ObservableProperty] public partial bool ShowOperationProgress { get; set; }
+    [ObservableProperty] public partial bool ShowRecentFolders { get; set; }
+    [ObservableProperty] public partial Choice<int> FileHistoryDays { get; set; }
+    [ObservableProperty] public partial bool ConfirmEmptyTrash { get; set; }
+    [ObservableProperty] public partial bool EmptyTrashOnAllDrives { get; set; }
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
     {
@@ -274,6 +304,10 @@ public sealed partial class SettingsViewModel : ViewModelBase
             OpenAfterAutoMount = OpenAfterAutoMount,
             ConfirmPermanentDelete = ConfirmPermanentDelete,
             ShowOperationProgress = ShowOperationProgress,
+            ShowRecentFolders = ShowRecentFolders,
+            FileHistoryDays = FileHistoryDays.Value,
+            ConfirmEmptyTrash = ConfirmEmptyTrash,
+            EmptyTrashOnAllDrives = EmptyTrashOnAllDrives,
         },
         Keymap = this.Keymap.ToOverrides(),
     };

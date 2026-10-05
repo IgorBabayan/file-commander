@@ -49,13 +49,15 @@ public partial class MainWindow : Window
         SidebarList.AddHandler(PointerReleasedEvent, OnSidebarPointerReleased, RoutingStrategies.Tunnel);
         SidebarList.AddHandler(PointerCaptureLostEvent, OnSidebarPointerCaptureLost);
 
-        // Folders dragged from a view are dropped on the sidebar as favorites; right click removes one
+        // Folders dragged from a view are dropped on the sidebar as favorites
         DragDrop.SetAllowDrop(SidebarList, true);
         DragDrop.AddDragEnterHandler(SidebarList, OnSidebarDragOver);
         DragDrop.AddDragOverHandler(SidebarList, OnSidebarDragOver);
         DragDrop.AddDragLeaveHandler(SidebarList, OnSidebarDragLeave);
         DragDrop.AddDropHandler(SidebarList, OnSidebarDrop);
-        SidebarList.ContextRequested += OnSidebarContextRequested;
+
+        // Right click and the menu key on an item (MainWindow.SidebarMenu.cs)
+        InitializeSidebarMenu();
     }
 
     private MainViewModel? ViewModel => DataContext as MainViewModel;
@@ -293,23 +295,6 @@ public partial class MainWindow : Window
         _dropData = null;
         _dropAddsFavorite = false;
         SidebarList.Classes.Set(DropTargetClass, false);
-    }
-
-    /// <summary>Right click on a favorite: offers to remove it from the sidebar (the folder itself stays).</summary>
-    private void OnSidebarContextRequested(object? sender, ContextRequestedEventArgs e)
-    {
-        if (ViewModel is not { } vm
-            || e.Source is not Avalonia.Visual source
-            || source.FindAncestorOfType<ListBoxItem>(includeSelf: true) is not { DataContext: SidebarItem { IsFavorite: true } item } container)
-            return;
-
-        var remove = new MenuItem { Header = "Remove from Favorites" };
-        remove.Click += (_, _) => vm.Sidebar.RemoveFavorite(item);
-
-        var menu = new ContextMenu();
-        menu.Items.Add(remove);
-        menu.Open(container);
-        e.Handled = true;
     }
 
     private static SidebarItem? SidebarItemAt(Avalonia.Visual visual)

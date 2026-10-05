@@ -40,6 +40,36 @@ public partial class SettingsWindow : Window
 
     private SettingsViewModel? ViewModel => DataContext as SettingsViewModel;
 
+    /// <summary>
+    /// Opened at a section (e.g. "Trash settings" on the sidebar): once the content is laid out, scrolls to it
+    /// and selects it again, in case the first layout's scroll event moved the selection back to the top.
+    /// </summary>
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+
+        if (ViewModel?.InitialNavItem is not { } item)
+            return;
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (ViewModel is not { } vm)
+                return;
+
+            ScrollTo(item);
+
+            _syncingNavigation = true;
+            try
+            {
+                vm.SelectedNavItem = item;
+            }
+            finally
+            {
+                _syncingNavigation = false;
+            }
+        }, DispatcherPriority.Loaded);
+    }
+
     protected override void OnKeyDown(KeyEventArgs e)
     {
         if (e.Handled)
@@ -118,6 +148,12 @@ public partial class SettingsWindow : Window
         if (_syncingNavigation || Navigation.SelectedItem is not SettingsNavItem item)
             return;
 
+        ScrollTo(item);
+    }
+
+    /// <summary>Puts the heading of <paramref name="item"/> at the top, or as close to it as the content allows.</summary>
+    private void ScrollTo(SettingsNavItem item)
+    {
         if (TopOf(item.Key) is not { } top)
             return;
 
