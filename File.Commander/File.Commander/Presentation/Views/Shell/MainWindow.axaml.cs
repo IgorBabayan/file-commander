@@ -32,6 +32,9 @@ public partial class MainWindow : Window
     private IDataTransfer? _dropData;
     private bool _dropAddsFavorite;
 
+    // Closing was confirmed while actions ran in the Action center: the second Close goes through
+    private bool _closeConfirmed;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -61,6 +64,32 @@ public partial class MainWindow : Window
     }
 
     private MainViewModel? ViewModel => DataContext as MainViewModel;
+
+    /// <summary>Actions still running in the Action center: asks first, then cancels them and closes.</summary>
+    protected override async void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+
+        if (e.Cancel || _closeConfirmed || ViewModel is not { ActionCenter.HasRunning: true } vm)
+            return;
+
+        // Before the first await: the window has to stay open while the question is asked
+        e.Cancel = true;
+
+        try
+        {
+            if (!await vm.ConfirmCloseWithRunningActionsAsync())
+                return;
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"Can't ask before closing: {ex}");
+        }
+
+        _closeConfirmed = true;
+        vm.ActionCenter.CancelAll();
+        Close();
+    }
 
     protected override void OnDataContextChanged(EventArgs e)
     {

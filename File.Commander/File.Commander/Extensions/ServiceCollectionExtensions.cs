@@ -11,7 +11,9 @@ static class ServiceCollectionExtensions
     extension(IServiceCollection services)
     {
         public IServiceCollection RegisterViewModels() 
-            => services.AddSingleton<MainViewModel>();
+            => services
+                .AddSingleton<global::File.Commander.Presentation.ViewModels.ActionCenter.ActionCenterViewModel>()
+                .AddSingleton<MainViewModel>();
 
         public IServiceCollection RegisterPlugins()
         {

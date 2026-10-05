@@ -1,4 +1,5 @@
 using File.Commander.Presentation.Services;
+using File.Commander.Presentation.ViewModels.ActionCenter;
 using File.Commander.Presentation.ViewModels.Dialogs;
 using File.Commander.Presentation.ViewModels.Settings;
 
@@ -42,15 +43,25 @@ public partial class MainViewModel
     /// <summary>Trash → Trash settings.</summary>
     public Task OpenTrashSettingsAsync() => OpenSettingsAtAsync(SettingsViewModel.TrashSection);
 
-    /// <summary>Whether Empty trash is enabled: something is in one of the trash folders it would empty.</summary>
-    public bool CanEmptyTrash() => TrashBins.HasItems(TrashBins.Find(_appliedSettings.Advanced!.EmptyTrashOnAllDrives));
+    /// <summary>
+    /// Whether Empty trash is enabled: something is in one of the trash folders it would empty,
+    /// and the trash isn't already being emptied in the Action center.
+    /// </summary>
+    public bool CanEmptyTrash() => !IsEmptyingTrash
+                                   && TrashBins.HasItems(TrashBins.Find(_appliedSettings.Advanced!.EmptyTrashOnAllDrives));
 
-    /// <summary>Trash → Empty trash. Deletes everything in the trash for good, after asking (Settings → Trash).</summary>
+    private bool IsEmptyingTrash => ActionCenter.Operations.Any(operation =>
+        operation is { IsRunning: true, Kind: OperationKind.EmptyTrash });
+
+    /// <summary>
+    /// Trash → Empty trash. Deletes everything in the trash for good, after asking (Settings → Trash),
+    /// as an action in the Action center.
+    /// </summary>
     public async Task EmptyTrashAsync()
     {
         var advanced = _appliedSettings.Advanced!;
         var bins = TrashBins.Find(advanced.EmptyTrashOnAllDrives);
-        if (!TrashBins.HasItems(bins))
+        if (IsEmptyingTrash || !TrashBins.HasItems(bins))
             return;
 
         if (advanced.ConfirmEmptyTrash)
@@ -65,22 +76,15 @@ public partial class MainViewModel
                 return;
         }
 
-        var failed = await Task.Run(() => TrashBins.Empty(bins));
+        // Runs in the Action center: progress there, Cancel stops before the next item, and items that
+        // couldn't be deleted are listed there (the panel opens by itself when that happens)
+        var details = bins.Count == 1 ? bins[0] : $"{bins[0]} and {bins.Count - 1} more";
+        await ActionCenter.RunAsync(OperationKind.EmptyTrash, OperationTitles.EmptyTrash, details,
+            progress => TrashBins.Empty(bins, progress));
 
         // A view showing the trash (or a folder inside a trash folder) would list what's gone
         RefreshPanes(page => page.Location == Locations.Trash
                              || bins.Any(bin => page.Location.StartsWith(bin, StringComparison.Ordinal)));
-
-        if (failed > 0)
-        {
-            using var notice = PromptViewModel.ForNotice(
-                "The trash wasn't emptied completely",
-                failed == 1
-                    ? "1 item couldn't be deleted. Check that you're allowed to delete it."
-                    : $"{failed:N0} items couldn't be deleted. Check that you're allowed to delete them.");
-
-            await _dialogService.ShowDialogAsync<PromptViewModel, bool>(notice);
-        }
     }
 
     /// <summary>Properties: what the item is, where it is and how much it holds.</summary>

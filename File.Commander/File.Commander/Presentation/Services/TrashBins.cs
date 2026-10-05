@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Runtime.InteropServices;
+using File.Commander.Application.Operations;
 
 namespace File.Commander.Presentation.Services;
 
@@ -45,28 +46,54 @@ public static class TrashBins
     });
 
     /// <summary>Deletes every item of <paramref name="bins"/> for good. Never throws.</summary>
+    /// <param name="progress">
+    /// The Action center: told how many items there are and each one deleted. Canceling stops before the next
+    /// item; what's left stays in the trash, restorable.
+    /// </param>
     /// <returns>How many items couldn't be deleted; they keep their info file, so they can still be restored.</returns>
-    public static int Empty(IReadOnlyList<string> bins)
+    public static int Empty(IReadOnlyList<string> bins, IOperationProgress? progress = null)
     {
+        // Listed up front, so the Action center knows how much there is to do
+        var contents = bins.Select(bin => (Bin: bin, Items: Entries(IOPath.Combine(bin, "files")))).ToList();
+        progress?.SetTotal(contents.Sum(content => (long)content.Items.Length));
+
         var failed = 0;
-        foreach (var bin in bins)
-            failed += EmptyBin(bin);
+        foreach (var (bin, items) in contents)
+        {
+            if (progress?.CancellationToken.IsCancellationRequested == true)
+                break;
+
+            failed += EmptyBin(bin, items, progress);
+        }
 
         return failed;
     }
 
-    private static int EmptyBin(string bin)
+    private static int EmptyBin(string bin, string[] items, IOperationProgress? progress)
     {
         var files = IOPath.Combine(bin, "files");
         var info = IOPath.Combine(bin, "info");
         var failed = 0;
 
-        foreach (var item in Entries(files))
+        foreach (var item in items)
         {
-            if (TryDeleteTree(item))
-                TryDeleteTree(IOPath.Combine(info, IOPath.GetFileName(item) + ".trashinfo"));
+            if (progress?.CancellationToken.IsCancellationRequested == true)
+                return failed;
+
+            var name = IOPath.GetFileName(item);
+            progress?.Begin(name);
+
+            if (TryDeleteTree(item, out var error))
+            {
+                TryDeleteTree(IOPath.Combine(info, name + ".trashinfo"));
+            }
             else
+            {
                 failed++;
+                progress?.Fail(name, error ?? "Couldn't be deleted");
+            }
+
+            progress?.Advance();
         }
 
         // Info files whose item was already gone
@@ -101,16 +128,20 @@ public static class TrashBins
         }
     }
 
-    private static bool TryDeleteTree(string path)
+    private static bool TryDeleteTree(string path) => TryDeleteTree(path, out _);
+
+    private static bool TryDeleteTree(string path, out string? error)
     {
         try
         {
             DeleteTree(path);
+            error = null;
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             Trace.WriteLine($"Can't delete '{path}' from the trash: {ex.Message}");
+            error = ex.Message;
             return false;
         }
     }

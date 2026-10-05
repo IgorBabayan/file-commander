@@ -6,6 +6,7 @@ using File.Commander.Application.Keyboard;
 using File.Commander.Application.Path;
 using File.Commander.Application.Settings;
 using File.Commander.Presentation.Services;
+using File.Commander.Presentation.ViewModels.ActionCenter;
 using File.Commander.Presentation.ViewModels.Browser;
 using File.Commander.Presentation.ViewModels.Computer;
 using File.Commander.Presentation.ViewModels.Pages;
@@ -171,9 +172,10 @@ public partial class MainViewModel : ViewModelBase, INavigator
     }
 
     public MainViewModel(IDialogService dialogService, ISettingsService settings, IDesktopService desktopService,
-        IKeymapService keymap)
+        IKeymapService keymap, ActionCenterViewModel actionCenter)
     {
         _dialogService = dialogService;
+        ActionCenter = actionCenter;
         _settings = settings;
         _desktopService = desktopService;
         _keymap = keymap;
@@ -292,7 +294,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
     private void Refresh() => ActivePane.Refresh();
 
     /// <summary>
-    /// The button between the view switcher and Search (F3 by default). Splits the selected tab into two views,
+    /// The button between the view switcher and the Action center (F3 by default). Splits the selected tab into two views,
     /// the new one opening the active view's folder in the same layout with a history of its own.
     /// While split, closes the other view and keeps the active one.
     /// </summary>
