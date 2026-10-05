@@ -21,9 +21,8 @@ namespace File.Commander.Presentation.Views.Browser;
 /// </remarks>
 public partial class DirectoryView
 {
-    // The gap before a header (its 12 px left margin) is the grip; a little into the header still counts
-    private const double ResizeGripOutside = 10;
-    private const double ResizeGripInside = 2;
+    // Half the width of the grip around a column's separator (drawn in the middle of the 12 px gap before it)
+    private const double ResizeGripHalfWidth = 5;
 
     private static readonly Cursor ResizeCursor = new(StandardCursorType.SizeWestEast);
 
@@ -66,7 +65,7 @@ public partial class DirectoryView
         ColumnHeaders.PointerExited += (_, _) =>
         {
             if (_headerGesture == HeaderGesture.None)
-                ColumnHeaders.Cursor = null;
+                SetHotSeparator(null);
         };
     }
 
@@ -95,7 +94,7 @@ public partial class DirectoryView
             _headerPressX = x;
             _headerStartWidth = grip.Header.Bounds.Width;
             _headerPointer = e.Pointer;
-            ColumnHeaders.Cursor = ResizeCursor;
+            SetHotSeparator(grip.Column);
             e.Pointer.Capture(ColumnHeaders);
             return;
         }
@@ -117,7 +116,7 @@ public partial class DirectoryView
 
         if (_headerGesture == HeaderGesture.None)
         {
-            ColumnHeaders.Cursor = GripAt(x) is not null ? ResizeCursor : null;
+            SetHotSeparator(GripAt(x)?.Column);
             return;
         }
 
@@ -231,13 +230,20 @@ public partial class DirectoryView
         _headerShift.X = 0;
         _headerGesture = HeaderGesture.None;
         _headerButton = null;
-        ColumnHeaders.Cursor = null;
+        SetHotSeparator(null);
 
         // Last, as releasing the capture raises PointerCaptureLost, which comes back here (and finds nothing to do)
         var pointer = _headerPointer;
         _headerPointer = null;
         if (pointer is not null && ReferenceEquals(pointer.Captured, ColumnHeaders))
             pointer.Capture(null);
+    }
+
+    /// <summary>Highlights the separator before <paramref name="column"/> and shows the resize cursor; none when null.</summary>
+    private void SetHotSeparator(DetailColumn? column)
+    {
+        ColumnHeaders.HotColumn = column;
+        ColumnHeaders.Cursor = column is null ? null : ResizeCursor;
     }
 
     /// <summary>The detail column headers on screen, left to right.</summary>
@@ -254,13 +260,12 @@ public partial class DirectoryView
         return headers;
     }
 
-    /// <summary>The header whose resize grip (the gap on its left) is at <paramref name="x"/>.</summary>
+    /// <summary>The header whose resize grip (its separator, on its left) is at <paramref name="x"/>.</summary>
     private (Button Header, DetailColumn Column)? GripAt(double x)
     {
         foreach (var header in VisibleHeaders())
         {
-            var edge = header.Header.Bounds.X;
-            if (x >= edge - ResizeGripOutside && x <= edge + ResizeGripInside)
+            if (Math.Abs(x - DetailRowPanel.SeparatorX(header.Header)) <= ResizeGripHalfWidth)
                 return header;
         }
 

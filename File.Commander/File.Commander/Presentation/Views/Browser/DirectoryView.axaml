@@ -119,8 +119,11 @@
 
         <!-- ===== Column headers (list and tree) ===== -->
         <!-- margin = control padding + item padding; the tree adds the expander column -->
+        <!-- Separators: in the gap before every detail column, where it is resized; accent while hovered or dragged -->
         <Style Selector="views|DetailRowPanel.column-headers">
             <Setter Property="Margin" Value="22,14,22,6" />
+            <Setter Property="SeparatorBrush" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="HotSeparatorBrush" Value="{DynamicResource FcAccentBrush}" />
         </Style>
         <Style Selector="views|DetailRowPanel.column-headers.tree">
             <Setter Property="Margin" Value="48,14,22,6" />
