@@ -28,5 +28,6 @@
         <StyleInclude Source="avares://File.Commander/Presentation/Styles/TextBlock.axaml" />
         <StyleInclude Source="avares://File.Commander/Presentation/Styles/Button.axaml" />
         <StyleInclude Source="avares://File.Commander/Presentation/Styles/ScrollBar.axaml" />
+        <StyleInclude Source="avares://File.Commander/Presentation/Styles/ContextMenu.axaml" />
     </Application.Styles>
 </Application>
