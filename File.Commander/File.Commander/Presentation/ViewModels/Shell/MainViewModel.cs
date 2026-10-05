@@ -468,6 +468,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
         var reloadFolders = false;
         var reloadComputer = false;
         var reloadRecent = false;
+        var reloadTrash = false;
 
         // The field, not the property: the property would save the setting back and reload on its own
         if (basic!.ShowHiddenFiles != wasBasic!.ShowHiddenFiles
@@ -487,6 +488,10 @@ public partial class MainViewModel : ViewModelBase, INavigator
         if (settings.Advanced!.FileHistoryDays != previous.Advanced!.FileHistoryDays
             || settings.Advanced.ShowRecentFolders != previous.Advanced.ShowRecentFolders)
             reloadRecent = true;
+
+        // Settings → Trash: whether the Trash page lists the trash folders of other drives too
+        if (settings.Advanced.EmptyTrashOnAllDrives != previous.Advanced.EmptyTrashOnAllDrives)
+            reloadTrash = true;
 
         // Only a change of the default itself: Ctrl+1/2/3 choices survive unrelated saves.
         // A new default applies to every view of every tab.
@@ -508,10 +513,11 @@ public partial class MainViewModel : ViewModelBase, INavigator
             Sidebar.Select(CurrentPage.Location);
         }
 
-        if (reloadFolders || reloadComputer || reloadRecent)
+        if (reloadFolders || reloadComputer || reloadRecent || reloadTrash)
             RefreshPanes(page => (reloadFolders && page is DirectoryViewModel)
                                  || (reloadComputer && page is ComputerViewModel)
-                                 || (reloadRecent && page.Location == Locations.Recent));
+                                 || (reloadRecent && page.Location == Locations.Recent)
+                                 || (reloadTrash && page.Location == Locations.Trash));
     }
 
     /// <summary>An item was dragged to a new place on the sidebar: store the order.</summary>
@@ -728,7 +734,13 @@ public partial class MainViewModel : ViewModelBase, INavigator
                 return recent;
             }
             case Locations.Trash:
-                return new PlaceholderPageViewModel(location, "Trash", MaterialIconKind.TrashCanOutline);
+            {
+                // Read on every visit, like Recent: what's in the trash folders Empty trash would empty
+                var trash = DirectoryViewModel.ForTrash(pane.ViewMode, FileSort.Of(SortMode), CurrentFolderOptions(),
+                    _columns, pane, _appliedSettings.Advanced!.EmptyTrashOnAllDrives);
+                _ = trash.LoadAsync(); // never throws, reports errors through Error
+                return trash;
+            }
             case Locations.Network:
                 return new PlaceholderPageViewModel(location, "Network", MaterialIconKind.LanConnect);
         }

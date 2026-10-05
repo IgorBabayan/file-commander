@@ -6,9 +6,9 @@ namespace File.Commander.Presentation.ViewModels.Browser;
 
 public sealed class FileEntryViewModel
 {
-    private FileEntryViewModel(FileSystemInfo info, Details details, bool showExtension)
+    private FileEntryViewModel(FileSystemInfo info, Details details, bool showExtension, string? name)
     {
-        Name = info.Name;
+        Name = name ?? info.Name;
         FullPath = info.FullName;
         IsDirectory = info is DirectoryInfo;
         IsSymlink = details.LinkTarget is not null;
@@ -31,7 +31,7 @@ public sealed class FileEntryViewModel
         PermissionsText = FormatMode(details.Mode, IsDirectory, IsSymlink);
     }
 
-    /// <summary>The name on disk. Used for sorting.</summary>
+    /// <summary>The name on disk; for an item in the trash, the name it had before. Used for sorting.</summary>
     public string Name { get; }
 
     /// <summary>What the views show: <see cref="Name"/>, without the extension when extensions are hidden.</summary>
@@ -79,8 +79,12 @@ public sealed class FileEntryViewModel
     /// <summary>ls-style mode, e.g. "drwxr-xr-x". Empty where the mode can't be read.</summary>
     public string PermissionsText { get; }
 
-    public static FileEntryViewModel From(FileSystemInfo info, bool showExtension = true)
-        => new(info, Details.Read(info), showExtension);
+    /// <param name="name">
+    /// Shown and sorted by instead of the name on disk: the name a trashed item had before, as files/
+    /// may hold it under another one. Null: the name on disk.
+    /// </param>
+    public static FileEntryViewModel From(FileSystemInfo info, bool showExtension = true, string? name = null)
+        => new(info, Details.Read(info), showExtension, name);
 
     private static string WithoutExtension(string name)
     {

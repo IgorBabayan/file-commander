@@ -61,6 +61,19 @@ public sealed partial class DirectoryViewModel : PageViewModel
             (comparer, folderOptions, token) => ReadRecent(comparer, folderOptions, maxAgeDays, includeFolders, token),
             "No recent files", viewMode, FileSort.Of(FileSortMode.NewestFirst), options, columns, navigator);
 
+    /// <summary>
+    /// The Trash page: the same views, filled with what's in the trash folders instead of one folder.
+    /// Items are listed under the name they had before they were trashed; folders open as usual.
+    /// </summary>
+    /// <param name="allDrives">
+    /// Settings → Trash: the trash folders of other drives too, so the page lists what Empty trash would empty.
+    /// </param>
+    public static DirectoryViewModel ForTrash(DirectoryViewMode viewMode, FileSort sort, FolderOptions options,
+        FileColumnsViewModel columns, INavigator navigator, bool allDrives = true)
+        => new(Locations.Trash, "Trash",
+            (comparer, folderOptions, token) => ReadTrash(comparer, folderOptions, allDrives, token),
+            "Trash is empty", viewMode, sort, options, columns, navigator);
+
     public override string Location { get; }
 
     public override string Title { get; }
@@ -399,6 +412,28 @@ public sealed partial class DirectoryViewModel : PageViewModel
         {
             token.ThrowIfCancellationRequested();
             result.Add(FileEntryViewModel.From(info, options.ShowExtensions));
+        }
+
+        result.Sort(comparer);
+        return result;
+    }
+
+    private static IReadOnlyList<FileEntryViewModel> ReadTrash(IComparer<FileEntryViewModel> comparer,
+        FolderOptions options, bool allDrives, CancellationToken token)
+    {
+        // Found here, on the background thread: it lists the mounted drives
+        var bins = TrashBins.Find(allDrives);
+
+        var result = new List<FileEntryViewModel>();
+        foreach (var item in TrashContents.Read(bins, token))
+        {
+            token.ThrowIfCancellationRequested();
+
+            // Same rule as in folders, by the name it had: dot files only while hidden files are shown
+            if (!options.ShowHidden && item.Name.StartsWith('.'))
+                continue;
+
+            result.Add(FileEntryViewModel.From(item.Info, options.ShowExtensions, item.Name));
         }
 
         result.Sort(comparer);
