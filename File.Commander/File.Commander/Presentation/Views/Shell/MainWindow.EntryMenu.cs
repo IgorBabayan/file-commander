@@ -83,6 +83,9 @@ public partial class MainWindow
             () => _ = vm.RenameAsync(single!), isEnabled: canModify && single is not null);
         yield return EntryMenuItem("Compress…", MaterialIconKind.FolderZipOutline,
             () => _ = vm.CompressAsync(entries), isEnabled: canModify);
+        yield return EntryMenuItem("Extract here", MaterialIconKind.PackageVariant,
+            () => _ = vm.ExtractAsync(entries),
+            isEnabled: canModify && MainViewModel.CanExtract(entries));
         yield return EntryMenuItem("Email…", MaterialIconKind.EmailOutline,
             () => _ = vm.EmailAsync(entries), isEnabled: !hasFolders);
         yield return ShortcutEntry(vm, "Move to Trash", MaterialIconKind.DeleteOutline, KeymapActions.MoveToTrash,

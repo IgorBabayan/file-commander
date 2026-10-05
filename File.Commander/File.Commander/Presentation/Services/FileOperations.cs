@@ -494,7 +494,7 @@ public static class FileOperations
     }
 
     /// <summary>Symlinks are deleted, never followed.</summary>
-    private static void DeleteTree(string path)
+    internal static void DeleteTree(string path)
     {
         var info = new FileInfo(path);
         if (info.LinkTarget is not null || !Directory.Exists(path))

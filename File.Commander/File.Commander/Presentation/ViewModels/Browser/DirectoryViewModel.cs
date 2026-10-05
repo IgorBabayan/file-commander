@@ -148,6 +148,12 @@ public sealed partial class DirectoryViewModel : PageViewModel
     public event EventHandler<OpenFailedEventArgs>? OpenFailed;
 
     /// <summary>
+    /// An archive was opened (double click, Enter): the shell extracts it next to itself in the Action center,
+    /// instead of handing it to the app registered for archives, which is often another file manager.
+    /// </summary>
+    public event EventHandler<ExtractRequestedEventArgs>? ExtractRequested;
+
+    /// <summary>
     /// This page changed <see cref="SelectedEntries"/> itself (select all, a view switch, a new order):
     /// the view should show that selection. Raised before the bindings see a new
     /// <see cref="Entries"/> or <see cref="ViewMode"/>, so the view applies it later.
@@ -350,6 +356,14 @@ public sealed partial class DirectoryViewModel : PageViewModel
             return;
         }
 
+        // Not in the Trash page: its items must stay as they are until restored
+        if (Location != Locations.Trash && ArchiveExtractor.CanExtract(entry.FullPath)
+                                        && ExtractRequested is { } extract)
+        {
+            extract(this, new ExtractRequestedEventArgs(entry));
+            return;
+        }
+
         _ = OpenFileAsync(entry);
     }
 
@@ -482,6 +496,12 @@ public sealed partial class DirectoryViewModel : PageViewModel
         result.Sort(comparer);
         return result;
     }
+}
+
+/// <summary>The archive to extract.</summary>
+public sealed class ExtractRequestedEventArgs(FileEntryViewModel entry) : EventArgs
+{
+    public FileEntryViewModel Entry { get; } = entry;
 }
 
 /// <summary>Which file couldn't be opened, and why.</summary>

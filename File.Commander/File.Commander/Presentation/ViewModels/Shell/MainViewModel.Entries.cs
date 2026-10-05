@@ -20,6 +20,10 @@ public partial class MainViewModel
     /// </summary>
     public static bool CanModify(DirectoryViewModel page) => page.Location != Locations.Trash;
 
+    /// <summary>Extract here has something to do: one of <paramref name="entries"/> is an archive it can extract.</summary>
+    public static bool CanExtract(IReadOnlyList<FileEntryViewModel> entries)
+        => entries.Any(entry => !entry.IsDirectory && ArchiveExtractor.CanExtract(entry.FullPath));
+
     /// <summary>The first chord bound to <paramref name="actionId"/>, shown next to the menu item. Null: unbound.</summary>
     public KeyChord? ShortcutFor(string actionId) => _keymap.Current.For(actionId) is [var first, ..] ? first : null;
 
@@ -174,6 +178,29 @@ public partial class MainViewModel
         RefreshFolders([folder]);
     }
 
+    /// <summary>
+    /// Extract here, and a double click on an archive: each archive is extracted next to itself in the Action center,
+    /// into a folder named after it (or as is, when all it holds is one folder). The views showing it are refreshed
+    /// once it is done, so the new folder shows up without leaving the folder.
+    /// </summary>
+    public async Task ExtractAsync(IReadOnlyList<FileEntryViewModel> entries)
+    {
+        var archives = entries
+            .Where(entry => !entry.IsDirectory && ArchiveExtractor.CanExtract(entry.FullPath))
+            .Select(entry => entry.FullPath)
+            .ToList();
+
+        // One after the other, each its own action: two archives named alike would race for the same folder name.
+        // Each folder shows as soon as its archive is done.
+        foreach (var archive in archives)
+        {
+            await ActionCenter.RunAsync(OperationKind.Other, OperationTitles.Extract, ItemsText([archive]),
+                progress => ArchiveExtractor.Extract(archive, progress));
+
+            RefreshFolders([FileOperations.ParentOf(archive)]);
+        }
+    }
+
     /// <summary>Email…: the default email app with the files attached. Folders can't be attached.</summary>
     public async Task EmailAsync(IReadOnlyList<FileEntryViewModel> entries)
     {
@@ -241,15 +268,21 @@ public partial class MainViewModel
 
     // ===== Helpers =====
 
-    /// <summary>A folder page's files that can't be opened (no app registered…) are reported in a notice.</summary>
+    /// <summary>
+    /// A folder page's files that can't be opened (no app registered…) are reported in a notice; the archives it opens
+    /// are extracted.
+    /// </summary>
     private DirectoryViewModel Watch(DirectoryViewModel page)
     {
         page.OpenFailed += OnOpenFailed;
+        page.ExtractRequested += OnExtractRequested;
         return page;
     }
 
     private void OnOpenFailed(object? sender, OpenFailedEventArgs e)
         => _ = ShowNoticeAsync($"Can't open “{e.Name}”", e.Problem);
+
+    private void OnExtractRequested(object? sender, ExtractRequestedEventArgs e) => _ = ExtractAsync([e.Entry]);
 
     private async Task TransferToPickedAsync(IReadOnlyList<FileEntryViewModel> entries, bool move)
     {

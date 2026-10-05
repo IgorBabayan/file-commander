@@ -28,6 +28,8 @@ public sealed record DesktopApp(
 /// </remarks>
 public static class FileLauncher
 {
+    private const string DirectoryType = "inode/directory";
+
     private static readonly HashSet<string> WebTypes = new(StringComparer.Ordinal)
     {
         "text/html", "application/xhtml+xml", "application/x-mswinurl", "x-scheme-handler/http",
@@ -56,13 +58,19 @@ public static class FileLauncher
         var hierarchy = mime.Hierarchy(type);
         var lists = MimeAppsLists.Load();
 
+        // A file never opens in a file manager. GNOME Files, Nemo and others declare archive types, so a double click
+        // on a .zip would extract it in another file manager and open its window: archives this app can extract are
+        // extracted in the Action center, the others open in an archive app.
+        var skipFileManagers = !hierarchy.Contains(DirectoryType);
+        bool Usable(DesktopApp app) => !skipFileManagers || !IsFileManager(app);
+
         // 1. A default set by the user, the desktop or the distribution, for the type itself first.
         //    One that isn't installed is skipped.
         foreach (var current in hierarchy)
         {
             foreach (var id in lists.Defaults(current))
             {
-                if (applications.Find(id) is { } app)
+                if (applications.Find(id) is { } app && Usable(app))
                     return app;
             }
         }
@@ -80,6 +88,7 @@ public static class FileLauncher
                 .Distinct(StringComparer.Ordinal)
                 .Select(applications.Find)
                 .OfType<DesktopApp>()
+                .Where(Usable)
                 .ToList();
 
             var best = candidates
@@ -95,6 +104,12 @@ public static class FileLauncher
 
         return null;
     }
+
+    /// <summary>
+    /// A file manager, by its categories. Not by inode/directory: editors such as VS Code declare it too, and must
+    /// still open text files.
+    /// </summary>
+    private static bool IsFileManager(DesktopApp app) => app.Categories.Contains("FileManager");
 
     private static int Rank(DesktopApp app, bool isText, bool isWeb)
     {

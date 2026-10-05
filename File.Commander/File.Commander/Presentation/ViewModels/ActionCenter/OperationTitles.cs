@@ -54,6 +54,15 @@ public sealed record OperationTitles(
             ? "1 item couldn't be added to the archive. Check that you're allowed to read it."
             : $"{failed:N0} items couldn't be added to the archive. Check that you're allowed to read them.");
 
+    public static OperationTitles Extract { get; } = new(
+        "Extracting",
+        "Extracted",
+        "Not everything was extracted",
+        "Stopped extracting",
+        failed => failed == 1
+            ? "1 item couldn't be extracted. The archive may be damaged, or you may not be allowed to write to this folder."
+            : $"{failed:N0} items couldn't be extracted. The archive may be damaged, or you may not be allowed to write to this folder.");
+
     public string For(OperationState state) => state switch
     {
         OperationState.Succeeded => Succeeded,
