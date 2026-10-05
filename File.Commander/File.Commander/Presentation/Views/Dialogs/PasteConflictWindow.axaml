@@ -1,0 +1,169 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:File.Commander.Presentation.ViewModels.Dialogs"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
+        x:Class="File.Commander.Presentation.Views.Dialogs.PasteConflictWindow"
+        x:DataType="vm:PasteConflictViewModel"
+        Title="{Binding Title}"
+        WindowDecorations="None"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent">
+    <!-- DialogService sizes this window to cover the owner; the card is centered on a dimmed backdrop -->
+
+    <Window.Styles>
+        <Style Selector="Border.dialog-card">
+            <Setter Property="Background" Value="{DynamicResource BaseBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BoxShadow" Value="0 12 40 0 #66000000" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="32" />
+        </Style>
+
+        <Style Selector="TextBlock.dialog-title">
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector="TextBlock.dialog-message">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext1Brush}" />
+        </Style>
+
+        <!-- ===== Buttons ===== -->
+        <Style Selector="Button.dialog-button">
+            <Setter Property="MinWidth" Value="88" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+
+        <Style Selector="Button.dialog-button.primary">
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BaseBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BaseBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BaseBrush}" />
+        </Style>
+
+        <!-- Deletes something for good -->
+        <Style Selector="Button.dialog-button.primary.destructive">
+            <Setter Property="Background" Value="{DynamicResource RedBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button.primary.destructive:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RedBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button.primary.destructive:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RedBrush}" />
+        </Style>
+
+        <!-- ===== Choices ===== -->
+        <Style Selector="RadioButton.conflict-choice">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="MinHeight" Value="28" />
+        </Style>
+        <Style Selector="CheckBox.conflict-all">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="CheckBox.conflict-all:disabled">
+            <Setter Property="Opacity" Value="0.5" />
+        </Style>
+        <Style Selector="TextBlock.dialog-hint">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext0Brush}" />
+        </Style>
+        <Style Selector="TextBlock.dialog-error">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource RedBrush}" />
+        </Style>
+    </Window.Styles>
+
+    <Panel>
+        <!-- Clicking the dimmed area cancels the paste -->
+        <Border Background="{DynamicResource FcBackdropBrush}" PointerPressed="OnBackdropPressed" />
+
+        <Border Classes="dialog-card" Width="460">
+            <StackPanel Margin="24,20,24,20" Spacing="12">
+                <TextBlock Classes="dialog-title" Text="{Binding Title}" />
+                <TextBlock Classes="dialog-message" Text="{Binding Message}" />
+
+                <StackPanel Spacing="2">
+                    <RadioButton Classes="conflict-choice"
+                                 GroupName="paste-conflict"
+                                 Content="Replace the item in the folder"
+                                 IsChecked="{Binding IsReplace}" />
+                    <RadioButton x:Name="RenameChoice"
+                                 Classes="conflict-choice"
+                                 GroupName="paste-conflict"
+                                 Content="Rename the pasted item"
+                                 IsChecked="{Binding IsRename}" />
+                    <TextBox x:Name="NameBox"
+                             Margin="28,2,0,2"
+                             FontSize="14"
+                             Text="{Binding NewName}"
+                             IsEnabled="{Binding IsRename}" />
+                    <TextBlock Classes="dialog-error"
+                               Margin="28,0,0,2"
+                               Text="{Binding NameError}"
+                               IsVisible="{Binding ShowNameError}" />
+                    <RadioButton Classes="conflict-choice"
+                                 GroupName="paste-conflict"
+                                 Content="Skip it"
+                                 IsChecked="{Binding IsSkip}" />
+                </StackPanel>
+
+                <StackPanel Spacing="4" IsVisible="{Binding HasRemaining}">
+                    <TextBlock Classes="dialog-hint" Text="{Binding RemainingText}" />
+                    <CheckBox Classes="conflict-all"
+                              Content="Do the same for the other items"
+                              IsChecked="{Binding ApplyToAll}"
+                              IsEnabled="{Binding CanApplyToAll}" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="8"
+                            Margin="0,8,0,0">
+                    <Button Classes="dialog-button"
+                            Content="Cancel"
+                            Command="{Binding CancelCommand}" />
+                    <Button x:Name="AcceptButton"
+                            Classes="dialog-button primary"
+                            Classes.destructive="{Binding IsReplace}"
+                            Content="Continue"
+                            Command="{Binding AcceptCommand}" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Panel>
+</Window>

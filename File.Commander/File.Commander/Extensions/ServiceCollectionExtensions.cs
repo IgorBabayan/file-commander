@@ -63,6 +63,7 @@ static class ServiceCollectionExtensions
                 .AddSingleton<IKeymapService, KeymapService>()
                 .AddTransient<SettingsWindow>()
                 .AddTransient<global::File.Commander.Presentation.Views.Dialogs.PromptWindow>()
+                .AddTransient<global::File.Commander.Presentation.Views.Dialogs.PasteConflictWindow>()
                 .AddTransient<global::File.Commander.Presentation.Views.Dialogs.PropertiesWindow>();
         }
         

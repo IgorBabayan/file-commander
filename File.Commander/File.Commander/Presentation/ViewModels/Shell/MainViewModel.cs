@@ -417,6 +417,8 @@ public partial class MainViewModel : ViewModelBase, INavigator
         KeymapActions.Cut => (CutSelectionCommand, null),
         KeymapActions.Copy => (CopySelectionCommand, null),
         KeymapActions.Paste => (PasteCommand, null),
+        KeymapActions.PasteWithoutReplace => (PasteWithoutReplaceCommand, null),
+        KeymapActions.PasteWithReplace => (PasteWithReplaceCommand, null),
         KeymapActions.Rename => (RenameSelectionCommand, null),
         KeymapActions.MoveToTrash => (TrashSelectionCommand, null),
         KeymapActions.Properties => (ShowSelectionPropertiesCommand, null),

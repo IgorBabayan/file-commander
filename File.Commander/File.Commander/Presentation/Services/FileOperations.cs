@@ -10,7 +10,8 @@ namespace File.Commander.Presentation.Services;
 /// What the context menu of files and folders does on disk: copy, move, rename, compress, email.
 /// The long ones run in the Action center and report to its <see cref="IOperationProgress"/>: one item that
 /// fails is listed there and the rest goes on. Symlinks are copied as links, never followed into.
-/// Nothing is ever overwritten: a name that is taken gets a number, "report (2).pdf".
+/// What happens to a name that is taken is decided per item (<see cref="NameConflict"/>): by default it gets a
+/// number, "report (2).pdf"; a replaced item is only removed once its replacement fully arrived.
 /// </summary>
 public static class FileOperations
 {
@@ -20,58 +21,103 @@ public static class FileOperations
     private const UnixFileMode DirectoryType = (UnixFileMode)0x4000;
 
     /// <summary>
-    /// Copies or moves <paramref name="sources"/> into the folder <paramref name="target"/>. Never throws for one item:
-    /// it is reported to <paramref name="progress"/>. A move on the same drive is a rename; across drives,
-    /// a copy that deletes the source once everything in it was copied.
+    /// Copies or moves <paramref name="sources"/> into the folder <paramref name="target"/>, under their own names.
+    /// A name that is taken gets a number. See <see cref="Transfer(IReadOnlyList{TransferItem}, string, bool, IOperationProgress)"/>.
     /// </summary>
     public static void Transfer(IReadOnlyList<string> sources, string target, bool move, IOperationProgress progress)
+        => Transfer(sources.Select(source => new TransferItem(source)).ToList(), target, move, progress);
+
+    /// <summary>
+    /// Copies or moves <paramref name="items"/> into the folder <paramref name="target"/>, each under its
+    /// <see cref="TransferItem.Name"/>, doing what its <see cref="TransferItem.OnConflict"/> says when that name is
+    /// taken. Never throws for one item: it is reported to <paramref name="progress"/>. A move on the same drive is a
+    /// rename; across drives, a copy that deletes the source once everything in it was copied.
+    /// </summary>
+    public static void Transfer(IReadOnlyList<TransferItem> items, string target, bool move, IOperationProgress progress)
     {
         var token = progress.CancellationToken;
         target = Locations.Normalize(target);
 
         // Measured up front, so the Action center shows a percentage, the speed and the time left
-        var sizes = sources.Select(source => Measure(source, token)).ToList();
+        var sizes = items.Select(item => Measure(item.Source, token)).ToList();
         progress.SetTotal(sizes.Sum(size => size.Items), sizes.Sum(size => size.Bytes));
 
         IReadOnlyList<string> mounts = move ? SystemLocations.GetMountPoints() : [];
         var targetMount = move ? SystemLocations.MountPointOf(target, mounts) : null;
 
-        for (var i = 0; i < sources.Count; i++)
+        for (var i = 0; i < items.Count; i++)
         {
             if (token.IsCancellationRequested)
                 return;
 
-            var source = Locations.Normalize(sources[i]);
-            var (items, bytes) = sizes[i];
-            var name = IOPath.GetFileName(source);
+            var item = items[i];
+            var source = Locations.Normalize(item.Source);
+            var (count, bytes) = sizes[i];
+            var ownName = IOPath.GetFileName(source);
+            var name = string.IsNullOrEmpty(item.Name) ? ownName : item.Name;
             var parent = ParentOf(source);
             progress.Begin(name);
 
             if (!Exists(source))
             {
-                Skip(progress, name, "It doesn't exist anymore", items, bytes);
+                Skip(progress, name, "It doesn't exist anymore", count, bytes);
                 continue;
             }
 
             if (IsRealDirectory(source) && IsSameOrInside(target, source))
             {
-                Skip(progress, name, "A folder can't be put inside itself", items, bytes);
+                Skip(progress, name, "A folder can't be put inside itself", count, bytes);
                 continue;
             }
 
-            // Moved where it already is: nothing to do
-            if (move && parent == target)
+            // Moved where it already is, under the same name: nothing to do
+            if (move && parent == target && name == ownName)
             {
-                progress.Advance(items, bytes);
+                progress.Advance(count, bytes);
                 continue;
             }
 
-            var destination = UniquePath(target, name);
+            var destination = IOPath.Combine(target, name);
+            var replace = false;
+            if (Exists(destination))
+            {
+                switch (item.OnConflict)
+                {
+                    case NameConflict.Skip:
+                        progress.Advance(count, bytes);
+                        continue;
+
+                    case NameConflict.Replace when destination == source:
+                        // Pasted where it already is: replacing it with itself leaves it as it is
+                        progress.Advance(count, bytes);
+                        continue;
+
+                    case NameConflict.Replace when IsSameOrInside(source, destination):
+                        Skip(progress, name, "It can't replace the folder it is in", count, bytes);
+                        continue;
+
+                    case NameConflict.Replace:
+                        replace = true;
+                        break;
+
+                    default:
+                        destination = UniquePath(target, name);
+                        break;
+                }
+            }
+
+            var sameDrive = move && SystemLocations.MountPointOf(parent, mounts) == targetMount;
             try
             {
-                if (move && SystemLocations.MountPointOf(parent, mounts) == targetMount && TryRename(source, destination))
+                if (replace)
                 {
-                    progress.Advance(items, bytes);
+                    ReplaceEntry(source, destination, move, sameDrive, progress, token, count, bytes);
+                    continue;
+                }
+
+                if (sameDrive && TryRename(source, destination))
+                {
+                    progress.Advance(count, bytes);
                     continue;
                 }
 
@@ -203,6 +249,9 @@ public static class FileOperations
         }
     }
 
+    /// <summary>A folder, or a link to one.</summary>
+    public static bool IsDirectory(string path) => Directory.Exists(path);
+
     /// <summary><paramref name="name"/> in <paramref name="folder"/>; "name (2).ext", "name (3).ext"… while that is taken.</summary>
     public static string UniquePath(string folder, string name)
     {
@@ -242,6 +291,88 @@ public static class FileOperations
             Directory.Move(source, destination);
         else
             IOFile.Move(source, destination);
+    }
+
+    /// <summary>
+    /// Puts <paramref name="source"/> in place of what is at <paramref name="destination"/>. It arrives under a hidden
+    /// temporary name next to it first; only once all of it is there is the old item deleted and the new one renamed
+    /// into its place. So a copy that fails or is canceled leaves the old item as it was.
+    /// </summary>
+    private static void ReplaceEntry(string source, string destination, bool move, bool sameDrive,
+        IOperationProgress progress, CancellationToken token, long items, long bytes)
+    {
+        var staging = UniquePath(ParentOf(destination), $".{IOPath.GetFileName(destination)}.replacing");
+
+        // Same drive: the source itself is renamed in, so it can be put back if the swap fails
+        var renamed = sameDrive && TryRename(source, staging);
+        if (renamed)
+        {
+            progress.Advance(items, bytes);
+        }
+        else
+        {
+            bool complete;
+            try
+            {
+                complete = CopyEntry(source, staging, progress, token);
+            }
+            catch
+            {
+                TryDeleteTree(staging);
+                throw;
+            }
+
+            // Some of it couldn't be copied (already reported): the old item stays
+            if (!complete)
+            {
+                TryDeleteTree(staging);
+                return;
+            }
+        }
+
+        try
+        {
+            DeleteTree(destination);
+            MoveEntry(staging, destination);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            if (renamed)
+                TryMoveBack(staging, source);
+            else
+                TryDeleteTree(staging);
+
+            throw;
+        }
+
+        // Across drives: the source goes only now that it replaced the old item
+        if (move && !renamed)
+            DeleteTree(source);
+    }
+
+    private static void TryMoveBack(string staging, string source)
+    {
+        try
+        {
+            MoveEntry(staging, source);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Trace.WriteLine($"Can't move '{staging}' back to '{source}': {ex.Message}");
+        }
+    }
+
+    private static void TryDeleteTree(string path)
+    {
+        try
+        {
+            if (Exists(path))
+                DeleteTree(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Trace.WriteLine($"Can't delete '{path}': {ex.Message}");
+        }
     }
 
     private static void Skip(IOperationProgress progress, string name, string reason, long items, long bytes)

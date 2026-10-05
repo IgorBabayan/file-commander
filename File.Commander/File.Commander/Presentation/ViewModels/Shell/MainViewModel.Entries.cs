@@ -79,23 +79,124 @@ public partial class MainViewModel
     public Task CopyAsync(IReadOnlyList<FileEntryViewModel> entries) => FileClipboard.SetAsync(PathsOf(entries), cut: false);
 
     /// <summary>
-    /// Ctrl+V: the files on the clipboard into the active view's folder, copied or (after Cut) moved.
-    /// Taken names get a number; nothing is overwritten.
+    /// The files on the clipboard into the active view's folder, copied or (after Cut) moved. What happens to a name
+    /// that is taken depends on <paramref name="mode"/>: Paste (Ctrl+V) asks, Paste without replace (Ctrl+Alt+V)
+    /// numbers it, Paste with replace (Ctrl+Shift+V) replaces the item that has it.
     /// </summary>
-    public async Task PasteAsync()
+    public async Task PasteAsync(PasteMode mode = PasteMode.Ask)
     {
         if (CurrentPage is not DirectoryViewModel page || Locations.IsVirtual(page.Location))
             return;
 
-        var target = page.Location;
+        var target = Locations.Normalize(page.Location);
         if (await FileClipboard.GetAsync() is not { Paths.Count: > 0 } files)
             return;
 
-        await TransferAsync(files.Paths, target, move: files.IsCut);
+        var items = mode switch
+        {
+            PasteMode.KeepBoth => files.Paths.Select(path => new TransferItem(path)).ToList(),
+            PasteMode.Replace => files.Paths.Select(path => new TransferItem(path, OnConflict: NameConflict.Replace)).ToList(),
+            _ => await AskAboutConflictsAsync(files.Paths, target, files.IsCut),
+        };
+
+        // Canceled in the dialog, or every item skipped
+        if (items is not { Count: > 0 })
+            return;
+
+        await TransferAsync(items, target, move: files.IsCut);
 
         // Moved: the clipboard would point at where they were
         if (files.IsCut)
             await FileClipboard.ClearAsync();
+    }
+
+    /// <summary>
+    /// Paste: asks, one item after the other, what happens to each pasted item whose name is taken in
+    /// <paramref name="target"/> (by an item there, or by another pasted item): replace, rename or skip.
+    /// "Do the same for the other items" answers for the rest of the items whose name is taken.
+    /// </summary>
+    /// <returns>What to transfer, skipped items left out. Null: the paste was canceled.</returns>
+    private async Task<List<TransferItem>?> AskAboutConflictsAsync(IReadOnlyList<string> paths, string target, bool move)
+    {
+        var sources = paths.Select(Locations.Normalize).ToList();
+
+        // Names this paste ends up using, so a new name can't take one of them
+        var taken = new HashSet<string>(StringComparer.Ordinal);
+        var conflicts = new bool[sources.Count];
+        for (var i = 0; i < sources.Count; i++)
+        {
+            var name = IOPath.GetFileName(sources[i]);
+
+            // Moved where it already is: nothing happens to it
+            if (move && FileOperations.ParentOf(sources[i]) == target)
+                continue;
+
+            conflicts[i] = FileOperations.Exists(IOPath.Combine(target, name)) || !taken.Add(name);
+        }
+
+        var remaining = conflicts.Count(conflict => conflict);
+        PasteConflictChoice? forAll = null;
+        var items = new List<TransferItem>(sources.Count);
+
+        for (var i = 0; i < sources.Count; i++)
+        {
+            var source = sources[i];
+            if (!conflicts[i])
+            {
+                items.Add(new TransferItem(source));
+                continue;
+            }
+
+            remaining--;
+            var name = IOPath.GetFileName(source);
+            bool IsFree(string candidate)
+                => !taken.Contains(candidate) && !FileOperations.Exists(IOPath.Combine(target, candidate));
+
+            var choice = forAll;
+            string? newName = null;
+            if (choice is null)
+            {
+                using var dialog = new PasteConflictViewModel(name, FileOperations.IsDirectory(source), target,
+                    remaining, SuggestName(name, IsFree), IsFree);
+
+                if (!await _dialogService.ShowDialogAsync<PasteConflictViewModel, bool>(dialog))
+                    return null;
+
+                choice = dialog.Choice;
+                newName = dialog.NewName.Trim();
+                if (dialog.ApplyToAll && dialog.CanApplyToAll)
+                    forAll = choice;
+            }
+
+            switch (choice)
+            {
+                case PasteConflictChoice.Replace:
+                    items.Add(new TransferItem(source, name, NameConflict.Replace));
+                    break;
+
+                case PasteConflictChoice.Rename when !string.IsNullOrEmpty(newName):
+                    taken.Add(newName);
+                    // Taken in the meantime: it gets a number rather than replacing anything
+                    items.Add(new TransferItem(source, newName, NameConflict.KeepBoth));
+                    break;
+
+                case PasteConflictChoice.Skip:
+                    break;
+            }
+        }
+
+        return items;
+    }
+
+    /// <summary>"report (2).pdf", "report (3).pdf"…: the first one <paramref name="isFree"/> accepts.</summary>
+    private static string SuggestName(string name, Func<string, bool> isFree)
+    {
+        for (var number = 2; ; number++)
+        {
+            var candidate = FileOperations.NumberedName(name, number);
+            if (isFree(candidate))
+                return candidate;
+        }
     }
 
     /// <summary>Move to…: into a folder picked in the system's chooser.</summary>
@@ -255,7 +356,13 @@ public partial class MainViewModel
     private Task CopySelection() => CopyAsync(SelectedEntries);
 
     [RelayCommand(CanExecute = nameof(CanPaste))]
-    private Task Paste() => PasteAsync();
+    private Task Paste() => PasteAsync(PasteMode.Ask);
+
+    [RelayCommand(CanExecute = nameof(CanPaste))]
+    private Task PasteWithoutReplace() => PasteAsync(PasteMode.KeepBoth);
+
+    [RelayCommand(CanExecute = nameof(CanPaste))]
+    private Task PasteWithReplace() => PasteAsync(PasteMode.Replace);
 
     [RelayCommand(CanExecute = nameof(CanRenameSelection))]
     private Task RenameSelection() => RenameAsync(SelectedEntries[0]);
@@ -294,16 +401,17 @@ public partial class MainViewModel
         if (await FolderPicker.PickAsync(title, FileOperations.ParentOf(paths[0])) is not { } target)
             return;
 
-        await TransferAsync(paths, target, move);
+        await TransferAsync(paths.Select(path => new TransferItem(path)).ToList(), target, move);
     }
 
     /// <summary>Copies or moves in the Action center, then refreshes the views of the folders that changed.</summary>
-    private async Task TransferAsync(IReadOnlyList<string> sources, string target, bool move)
+    private async Task TransferAsync(IReadOnlyList<TransferItem> items, string target, bool move)
     {
+        var sources = items.Select(item => item.Source).ToList();
         var details = $"{ItemsText(sources)} to {target}";
         await ActionCenter.RunAsync(move ? OperationKind.Move : OperationKind.Copy,
             move ? OperationTitles.Move : OperationTitles.Copy, details,
-            progress => FileOperations.Transfer(sources, target, move, progress));
+            progress => FileOperations.Transfer(items, target, move, progress));
 
         IEnumerable<string> changed = move ? sources.Select(FileOperations.ParentOf).Append(target) : [target];
         RefreshFolders(changed, entriesMoved: move);

@@ -21,6 +21,8 @@ class DialogService : IDialogService
             SettingsViewModel => _serviceProvider.GetRequiredService<SettingsWindow>(),
             global::File.Commander.Presentation.ViewModels.Dialogs.PromptViewModel
                 => _serviceProvider.GetRequiredService<global::File.Commander.Presentation.Views.Dialogs.PromptWindow>(),
+            global::File.Commander.Presentation.ViewModels.Dialogs.PasteConflictViewModel
+                => _serviceProvider.GetRequiredService<global::File.Commander.Presentation.Views.Dialogs.PasteConflictWindow>(),
             global::File.Commander.Presentation.ViewModels.Dialogs.PropertiesViewModel
                 => _serviceProvider.GetRequiredService<global::File.Commander.Presentation.Views.Dialogs.PropertiesWindow>(),
             /*ConfirmDialogViewModel => _serviceProvider.GetRequiredService<ConfirmDialogWindow>(),

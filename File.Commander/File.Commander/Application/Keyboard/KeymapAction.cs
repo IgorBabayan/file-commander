@@ -34,6 +34,8 @@ public static class KeymapActions
     public const string Cut = "files.cut";
     public const string Copy = "files.copy";
     public const string Paste = "files.paste";
+    public const string PasteWithoutReplace = "files.paste-without-replace";
+    public const string PasteWithReplace = "files.paste-with-replace";
     public const string Rename = "files.rename";
     public const string MoveToTrash = "files.move-to-trash";
     public const string Properties = "files.properties";
@@ -80,7 +82,12 @@ public static class KeymapActions
         // Never while typing: a text box has its own Cut, Copy, Paste and Delete.
         new(Cut, FilesGroup, "Cut", [new(Key.X, KeyModifiers.Control)], WorksWhileTyping: false),
         new(Copy, FilesGroup, "Copy", [new(Key.C, KeyModifiers.Control)], WorksWhileTyping: false),
+        // Paste asks what to do with each name that is taken; the other two never ask
         new(Paste, FilesGroup, "Paste", [new(Key.V, KeyModifiers.Control)], WorksWhileTyping: false),
+        new(PasteWithoutReplace, FilesGroup, "Paste without replace",
+            [new(Key.V, KeyModifiers.Control | KeyModifiers.Alt)], WorksWhileTyping: false),
+        new(PasteWithReplace, FilesGroup, "Paste with replace",
+            [new(Key.V, KeyModifiers.Control | KeyModifiers.Shift)], WorksWhileTyping: false),
         new(Rename, FilesGroup, "Rename", [new(Key.F2)], WorksWhileTyping: false),
         new(MoveToTrash, FilesGroup, "Move to Trash", [new(Key.Delete)], WorksWhileTyping: false),
         new(Properties, FilesGroup, "Properties", [new(Key.Enter, KeyModifiers.Alt)], WorksWhileTyping: false),
