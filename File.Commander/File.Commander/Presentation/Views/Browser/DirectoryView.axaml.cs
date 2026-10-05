@@ -12,7 +12,7 @@ namespace File.Commander.Presentation.Views.Browser;
 public partial class DirectoryView : UserControl
 {
     // Horizontal space that isn't name or detail columns: side margins (list padding + item padding,
-    // same as DockPanel.column-headers), the icon slot, and room for the vertical scroll bar
+    // same as DetailRowPanel.column-headers), the icon slot, and room for the vertical scroll bar
     private const double ListChrome = 22 + 22 + 28 + 8;
 
     // The tree's headers start further right, past the expander column
@@ -56,12 +56,16 @@ public partial class DirectoryView : UserControl
 
         // Right click and the menu key on entries (DirectoryView.EntryMenu.cs)
         InitializeEntryMenu();
+
+        // Drag a header to move its column, drag the gap on its left to resize it (DirectoryView.ColumnHeaders.cs)
+        InitializeColumnHeaders();
     }
 
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
         EndBand();
+        EndHeaderGesture();
         Subscribe(DataContext as DirectoryViewModel);
         FitColumns();
     }
@@ -257,17 +261,24 @@ public partial class DirectoryView : UserControl
     private void OnColumnsPropertyChanged(object? sender, PropertyChangedEventArgs e) => FitColumns();
 
     /// <summary>
-    /// Shrinks the detail columns to the view's width, so a narrow view (split view) trims their text
-    /// instead of drawing them over each other and the name. Header and rows share the widths, so they line up.
+    /// Puts the detail columns in the user's order and gives them the user's widths, shrunk to the view's
+    /// width: a narrow view (split view) trims their text instead of drawing them over each other and the name.
+    /// Header and rows share the order and the widths, so they line up.
     /// </summary>
     private void FitColumns()
     {
+        // Inherited by the header and every row (DetailRowPanel)
+        if (_viewModel is { } page && !ReferenceEquals(DetailRowPanel.GetOrder(Root), page.Columns.Order))
+            DetailRowPanel.SetOrder(Root, page.Columns.Order);
+
         // Before the first layout the width is 0: that would drop every column for a frame
         if (_viewModel is not { IsGridView: false } vm || Bounds.Width <= 0)
             return;
 
+        var columns = vm.Columns;
         var available = Bounds.Width - (vm.IsTreeView ? TreeChrome : ListChrome);
-        var widths = DetailColumnsLayout.Fit(available, ShownColumns(vm.Columns));
+        var widths = DetailColumnsLayout.Fit(available, columns.ShownColumns(),
+            column => columns.WidthOf(column) ?? DetailColumnsLayout.PreferredWidth(column));
 
         foreach (var column in DetailColumnsLayout.All)
         {
@@ -278,22 +289,10 @@ public partial class DirectoryView : UserControl
 
             // Only real changes: every row re-measures when a width resource changes
             var key = "Col" + name + "Width";
-            var value = width ?? DetailColumnsLayout.PreferredWidth(column);
+            var value = width ?? DetailColumnsLayout.Clamp(column, columns.WidthOf(column) ?? DetailColumnsLayout.PreferredWidth(column));
             if (!Resources.TryGetValue(key, out var current) || current is not double d || d != value)
                 Resources[key] = value;
         }
-    }
-
-    private static List<DetailColumn> ShownColumns(FileColumnsViewModel columns)
-    {
-        var shown = new List<DetailColumn>();
-        if (columns.ShowSize) shown.Add(DetailColumn.Size);
-        if (columns.ShowType) shown.Add(DetailColumn.Type);
-        if (columns.ShowModified) shown.Add(DetailColumn.Modified);
-        if (columns.ShowCreated) shown.Add(DetailColumn.Created);
-        if (columns.ShowAccessed) shown.Add(DetailColumn.Accessed);
-        if (columns.ShowPermissions) shown.Add(DetailColumn.Permissions);
-        return shown;
     }
 
     /// <summary>Settings → Open file: Click. Ctrl/Shift+click still only selects (several entries).</summary>

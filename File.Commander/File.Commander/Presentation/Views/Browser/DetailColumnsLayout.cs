@@ -1,21 +1,12 @@
-namespace File.Commander.Presentation.Views.Browser;
+using File.Commander.Presentation.ViewModels.Browser;
 
-/// <summary>The detail columns of the list and tree, left to right.</summary>
-internal enum DetailColumn
-{
-    Size,
-    Type,
-    Modified,
-    Created,
-    Accessed,
-    Permissions,
-}
+namespace File.Commander.Presentation.Views.Browser;
 
 /// <summary>
 /// Fits the detail columns into the width a folder view has (narrow in split view). Columns get their
-/// preferred width when there is room; otherwise they all shrink towards a minimum, so their text is
-/// trimmed with an ellipsis; when even that doesn't fit, the rightmost columns are dropped.
-/// Name always keeps <see cref="NameMinWidth"/>.
+/// preferred width (the user's, when they resized it) when there is room; otherwise they all shrink towards
+/// a minimum, so their text is trimmed with an ellipsis; when even that doesn't fit, the rightmost columns
+/// are dropped. Name always keeps <see cref="NameMinWidth"/>.
 /// </summary>
 internal static class DetailColumnsLayout
 {
@@ -23,6 +14,9 @@ internal static class DetailColumnsLayout
     public const double CellMargin = 12;
 
     public const double NameMinWidth = 120;
+
+    /// <summary>Widest a column can be dragged.</summary>
+    public const double MaxWidth = 480;
 
     public static IReadOnlyList<DetailColumn> All { get; } = Enum.GetValues<DetailColumn>();
 
@@ -37,39 +31,50 @@ internal static class DetailColumnsLayout
         (84, 60),   // Permissions
     ];
 
+    /// <summary>The default width of <paramref name="column"/>, before the user resizes it.</summary>
     public static double PreferredWidth(DetailColumn column) => Widths[(int)column].Preferred;
+
+    /// <summary>Narrowest <paramref name="column"/> gets, whether shrunk to fit or dragged by the user.</summary>
+    public static double MinWidth(DetailColumn column) => Widths[(int)column].Min;
+
+    /// <summary><paramref name="width"/> kept between the column's minimum and <see cref="MaxWidth"/>.</summary>
+    public static double Clamp(DetailColumn column, double width) => Math.Clamp(width, MinWidth(column), MaxWidth);
 
     /// <param name="available">Width for the name and the detail columns, cell margins included.</param>
     /// <param name="shown">Columns the user turned on, left to right.</param>
+    /// <param name="preferredOf">The width each column wants; its default width when null.</param>
     /// <returns>Width of every column (by <see cref="DetailColumn"/>), or null for a shown column that doesn't fit.</returns>
-    public static double?[] Fit(double available, IReadOnlyList<DetailColumn> shown)
+    public static double?[] Fit(double available, IReadOnlyList<DetailColumn> shown,
+        Func<DetailColumn, double>? preferredOf = null)
     {
-        var result = All.Select(c => (double?)PreferredWidth(c)).ToArray();
+        double Preferred(DetailColumn column) => Clamp(column, preferredOf?.Invoke(column) ?? PreferredWidth(column));
+
+        var result = All.Select(c => (double?)Preferred(c)).ToArray();
         var budget = available - NameMinWidth;
 
         var kept = shown.ToList();
-        while (kept.Count > 0 && Total(kept, w => w.Min) > budget)
+        while (kept.Count > 0 && Total(kept, MinWidth) > budget)
         {
             result[(int)kept[^1]] = null;
             kept.RemoveAt(kept.Count - 1);
         }
 
-        if (kept.Count == 0 || Total(kept, w => w.Preferred) <= budget)
+        if (kept.Count == 0 || Total(kept, Preferred) <= budget)
             return result;
 
         // Every kept column gives up the same share of what it has above its minimum
-        var range = kept.Sum(c => Widths[(int)c].Preferred - Widths[(int)c].Min);
-        var ratio = range > 0 ? Math.Clamp((budget - Total(kept, w => w.Min)) / range, 0, 1) : 0;
+        var range = kept.Sum(c => Preferred(c) - MinWidth(c));
+        var ratio = range > 0 ? Math.Clamp((budget - Total(kept, MinWidth)) / range, 0, 1) : 0;
 
         foreach (var column in kept)
         {
-            var (preferred, min) = Widths[(int)column];
-            result[(int)column] = Math.Floor(min + (preferred - min) * ratio);
+            var min = MinWidth(column);
+            result[(int)column] = Math.Floor(min + (Preferred(column) - min) * ratio);
         }
 
         return result;
     }
 
-    private static double Total(List<DetailColumn> columns, Func<(double Preferred, double Min), double> width)
-        => columns.Sum(c => width(Widths[(int)c]) + CellMargin);
+    private static double Total(List<DetailColumn> columns, Func<DetailColumn, double> width)
+        => columns.Sum(c => width(c) + CellMargin);
 }

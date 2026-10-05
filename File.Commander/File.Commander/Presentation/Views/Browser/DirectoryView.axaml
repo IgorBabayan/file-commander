@@ -3,6 +3,7 @@
              xmlns:browser="clr-namespace:File.Commander.Presentation.ViewModels.Browser"
              xmlns:converters="clr-namespace:File.Commander.Presentation.Converters"
              xmlns:controls="clr-namespace:File.Commander.Presentation.Controls"
+             xmlns:views="clr-namespace:File.Commander.Presentation.Views.Browser"
              xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              x:Class="File.Commander.Presentation.Views.Browser.DirectoryView"
              x:DataType="browser:DirectoryViewModel">
@@ -102,7 +103,7 @@
             <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
         </Style>
         <!-- Dot files (only listed when hidden files are shown) -->
-        <Style Selector="DockPanel.hidden, StackPanel.hidden">
+        <Style Selector="views|DetailRowPanel.hidden, StackPanel.hidden">
             <Setter Property="Opacity" Value="0.55" />
         </Style>
         <Style Selector="TextBlock.placeholder">
@@ -118,10 +119,10 @@
 
         <!-- ===== Column headers (list and tree) ===== -->
         <!-- margin = control padding + item padding; the tree adds the expander column -->
-        <Style Selector="DockPanel.column-headers">
+        <Style Selector="views|DetailRowPanel.column-headers">
             <Setter Property="Margin" Value="22,14,22,6" />
         </Style>
-        <Style Selector="DockPanel.column-headers.tree">
+        <Style Selector="views|DetailRowPanel.column-headers.tree">
             <Setter Property="Margin" Value="48,14,22,6" />
         </Style>
 
@@ -223,6 +224,14 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
         </Style>
+        <!-- The header being dragged to another place (DirectoryView.ColumnHeaders.cs) -->
+        <Style Selector="Button.column-header.dragging">
+            <Setter Property="Opacity" Value="0.7" />
+        </Style>
+        <Style Selector="Button.column-header.dragging /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
         <!-- ===== Rubber band (DirectoryView.RubberBand.cs): accent outline over a faint accent fill ===== -->
         <Style Selector="Border.rubber-band">
             <Setter Property="BorderBrush" Value="{DynamicResource FcAccentBrush}" />
@@ -249,83 +258,34 @@
           Classes.hide-created="{Binding !Columns.ShowCreated}"
           Classes.hide-accessed="{Binding !Columns.ShowAccessed}"
           Classes.hide-permissions="{Binding !Columns.ShowPermissions}">
-        <!-- Same layout as the rows: icon left, details docked right, name fills the rest.
-             The grid view has no columns, so no headers. -->
-        <DockPanel Grid.Row="0"
-                   Classes="column-headers"
-                   Classes.tree="{Binding IsTreeView}"
-                   Background="Transparent"
-                   IsVisible="{Binding !IsGridView}"
-                   ToolTip.Tip="Click to sort, right-click to choose columns">
-            <DockPanel.ContextMenu>
+        <!-- Same layout as the rows (DetailRowPanel): icon slot left, name next, then the detail columns
+             in the user's order. The grid view has no columns, so no headers.
+             Click a header to sort, drag it sideways to move its column, drag the gap on a column's left
+             to resize it (double-click there for its default width): DirectoryView.ColumnHeaders.cs.
+             Right-click to choose the columns. -->
+        <views:DetailRowPanel x:Name="ColumnHeaders"
+                              Grid.Row="0"
+                              Classes="column-headers"
+                              Classes.tree="{Binding IsTreeView}"
+                              Background="Transparent"
+                              IsVisible="{Binding !IsGridView}"
+                              ToolTip.Tip="Click to sort, drag to move, drag the gap between columns to resize, right-click to choose columns">
+            <views:DetailRowPanel.ContextMenu>
                 <ContextMenu>
+                    <MenuItem Header="Name" ToggleType="CheckBox" IsChecked="True" IsEnabled="False" />
+                    <Separator />
                     <MenuItem Header="Size" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowSize, Mode=TwoWay}" />
                     <MenuItem Header="Type" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowType, Mode=TwoWay}" />
                     <MenuItem Header="Modified" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowModified, Mode=TwoWay}" />
                     <MenuItem Header="Created" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowCreated, Mode=TwoWay}" />
                     <MenuItem Header="Accessed" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowAccessed, Mode=TwoWay}" />
                     <MenuItem Header="Permissions" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowPermissions, Mode=TwoWay}" />
+                    <Separator />
+                    <MenuItem Header="Reset columns" Command="{Binding Columns.ResetCommand}" />
                 </ContextMenu>
-            </DockPanel.ContextMenu>
+            </views:DetailRowPanel.ContextMenu>
 
-            <Border DockPanel.Dock="Left" Width="28" />
-            <!-- Docked right: the first one is the rightmost.
-                 The arrow is docked before the text, so a narrow column trims the text, not the arrow -->
-            <Button DockPanel.Dock="Right" Classes="column-header col-permissions"
-                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Permissions}">
-                <DockPanel>
-                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
-                                           Kind="{Binding SortArrow}"
-                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Permissions}}" />
-                    <TextBlock Text="Permissions" TextTrimming="CharacterEllipsis" />
-                </DockPanel>
-            </Button>
-            <Button DockPanel.Dock="Right" Classes="column-header col-accessed"
-                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Accessed}">
-                <DockPanel>
-                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
-                                           Kind="{Binding SortArrow}"
-                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Accessed}}" />
-                    <TextBlock Text="Accessed" TextTrimming="CharacterEllipsis" />
-                </DockPanel>
-            </Button>
-            <Button DockPanel.Dock="Right" Classes="column-header col-created"
-                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Created}">
-                <DockPanel>
-                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
-                                           Kind="{Binding SortArrow}"
-                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Created}}" />
-                    <TextBlock Text="Created" TextTrimming="CharacterEllipsis" />
-                </DockPanel>
-            </Button>
-            <Button DockPanel.Dock="Right" Classes="column-header col-modified"
-                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Modified}">
-                <DockPanel>
-                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
-                                           Kind="{Binding SortArrow}"
-                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Modified}}" />
-                    <TextBlock Text="Modified" TextTrimming="CharacterEllipsis" />
-                </DockPanel>
-            </Button>
-            <Button DockPanel.Dock="Right" Classes="column-header col-type"
-                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Type}">
-                <DockPanel>
-                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
-                                           Kind="{Binding SortArrow}"
-                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Type}}" />
-                    <TextBlock Text="Type" TextTrimming="CharacterEllipsis" />
-                </DockPanel>
-            </Button>
-            <!-- Right-aligned like its cells: the arrow goes before the text -->
-            <Button DockPanel.Dock="Right" Classes="column-header col-size" HorizontalContentAlignment="Right"
-                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Size}">
-                <DockPanel>
-                    <avalonia:MaterialIcon DockPanel.Dock="Left" Classes="sort-arrow" Margin="0,0,4,0"
-                                           Kind="{Binding SortArrow}"
-                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Size}}" />
-                    <TextBlock Text="Size" TextTrimming="CharacterEllipsis" />
-                </DockPanel>
-            </Button>
+            <Border views:DetailRowPanel.IsLeading="True" Width="28" />
             <Button Classes="column-header name"
                     Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Name}">
                 <DockPanel>
@@ -335,7 +295,63 @@
                     <TextBlock Text="Name" TextTrimming="CharacterEllipsis" />
                 </DockPanel>
             </Button>
-        </DockPanel>
+            <!-- The arrow is docked before the text, so a narrow column trims the text, not the arrow -->
+            <!-- Right-aligned like its cells: the arrow goes before the text -->
+            <Button Classes="column-header col-size" HorizontalContentAlignment="Right"
+                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Size}">
+                <DockPanel>
+                    <avalonia:MaterialIcon DockPanel.Dock="Left" Classes="sort-arrow" Margin="0,0,4,0"
+                                           Kind="{Binding SortArrow}"
+                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Size}}" />
+                    <TextBlock Text="Size" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+            </Button>
+            <Button Classes="column-header col-type"
+                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Type}">
+                <DockPanel>
+                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
+                                           Kind="{Binding SortArrow}"
+                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Type}}" />
+                    <TextBlock Text="Type" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+            </Button>
+            <Button Classes="column-header col-modified"
+                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Modified}">
+                <DockPanel>
+                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
+                                           Kind="{Binding SortArrow}"
+                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Modified}}" />
+                    <TextBlock Text="Modified" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+            </Button>
+            <Button Classes="column-header col-created"
+                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Created}">
+                <DockPanel>
+                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
+                                           Kind="{Binding SortArrow}"
+                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Created}}" />
+                    <TextBlock Text="Created" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+            </Button>
+            <Button Classes="column-header col-accessed"
+                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Accessed}">
+                <DockPanel>
+                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
+                                           Kind="{Binding SortArrow}"
+                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Accessed}}" />
+                    <TextBlock Text="Accessed" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+            </Button>
+            <Button Classes="column-header col-permissions"
+                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Permissions}">
+                <DockPanel>
+                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
+                                           Kind="{Binding SortArrow}"
+                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Permissions}}" />
+                    <TextBlock Text="Permissions" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+            </Button>
+        </views:DetailRowPanel>
 
         <ProgressBar Grid.Row="0"
                      IsIndeterminate="True"
@@ -356,25 +372,26 @@
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="browser:FileEntryViewModel">
-                        <DockPanel Classes.hidden="{Binding IsHidden}" ToolTip.Tip="{Binding FullPath}">
-                            <controls:EntryIcon DockPanel.Dock="Left"
+                        <!-- Laid out like the header: the cells follow the columns' order and widths -->
+                        <views:DetailRowPanel Classes.hidden="{Binding IsHidden}" ToolTip.Tip="{Binding FullPath}">
+                            <controls:EntryIcon views:DetailRowPanel.IsLeading="True"
                                                 FilePath="{Binding FullPath}"
                                                 IsFolder="{Binding IsDirectory}"
                                                 Kind="{Binding Icon}"
                                                 Width="20" Height="20"
                                                 Margin="0,0,8,0"
                                                 VerticalAlignment="Center" />
-                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-permissions" Text="{Binding PermissionsText}" />
-                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-accessed" Text="{Binding AccessedText}" />
-                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-created" Text="{Binding CreatedText}" />
-                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-modified" Text="{Binding ModifiedText}" />
-                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-type" Text="{Binding TypeText}" />
-                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-size" Text="{Binding SizeText}" />
+                            <TextBlock Classes="meta cell col-permissions" Text="{Binding PermissionsText}" />
+                            <TextBlock Classes="meta cell col-accessed" Text="{Binding AccessedText}" />
+                            <TextBlock Classes="meta cell col-created" Text="{Binding CreatedText}" />
+                            <TextBlock Classes="meta cell col-modified" Text="{Binding ModifiedText}" />
+                            <TextBlock Classes="meta cell col-type" Text="{Binding TypeText}" />
+                            <TextBlock Classes="meta cell col-size" Text="{Binding SizeText}" />
                             <TextBlock Text="{Binding DisplayName}"
                                        FontSize="14"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis" />
-                        </DockPanel>
+                        </views:DetailRowPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -420,9 +437,9 @@
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <TreeView.ItemTemplate>
                     <TreeDataTemplate x:DataType="browser:FileTreeNodeViewModel" ItemsSource="{Binding Children}">
-                        <DockPanel Classes.hidden="{Binding IsHidden}" ToolTip.Tip="{Binding FullPath}">
+                        <views:DetailRowPanel Classes.hidden="{Binding IsHidden}" ToolTip.Tip="{Binding FullPath}">
                             <!-- Fixed slot, so a placeholder's text lines up with the names around it -->
-                            <Panel DockPanel.Dock="Left" Width="28">
+                            <Panel views:DetailRowPanel.IsLeading="True" Width="28">
                                 <controls:EntryIcon FilePath="{Binding FullPath}"
                                                     IsFolder="{Binding IsDirectory}"
                                                     Kind="{Binding Icon}"
@@ -431,18 +448,18 @@
                                                     HorizontalAlignment="Left"
                                                     VerticalAlignment="Center" />
                             </Panel>
-                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-permissions" Text="{Binding PermissionsText}" />
-                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-accessed" Text="{Binding AccessedText}" />
-                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-created" Text="{Binding CreatedText}" />
-                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-modified" Text="{Binding ModifiedText}" />
-                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-type" Text="{Binding TypeText}" />
-                            <TextBlock DockPanel.Dock="Right" Classes="meta cell col-size" Text="{Binding SizeText}" />
+                            <TextBlock Classes="meta cell col-permissions" Text="{Binding PermissionsText}" />
+                            <TextBlock Classes="meta cell col-accessed" Text="{Binding AccessedText}" />
+                            <TextBlock Classes="meta cell col-created" Text="{Binding CreatedText}" />
+                            <TextBlock Classes="meta cell col-modified" Text="{Binding ModifiedText}" />
+                            <TextBlock Classes="meta cell col-type" Text="{Binding TypeText}" />
+                            <TextBlock Classes="meta cell col-size" Text="{Binding SizeText}" />
                             <TextBlock Classes.placeholder="{Binding IsPlaceholder}"
                                        Text="{Binding Name}"
                                        FontSize="14"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis" />
-                        </DockPanel>
+                        </views:DetailRowPanel>
                     </TreeDataTemplate>
                 </TreeView.ItemTemplate>
             </TreeView>
