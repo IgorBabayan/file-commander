@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Text;
 using File.Commander.Application.Operations;
 
 namespace File.Commander.Presentation.Services;
@@ -68,6 +69,159 @@ public static class TrashBins
 
         return failed;
     }
+
+    /// <summary>
+    /// Moves <paramref name="paths"/> to the trash, restorable by any file manager. Items of the home drive go to the
+    /// home trash; items of another drive to the trash at its top ($topdir/.Trash/$uid, else $topdir/.Trash-$uid),
+    /// so nothing is copied across drives. Never throws for one item: it is reported to <paramref name="progress"/>.
+    /// </summary>
+    public static void MoveToTrash(IReadOnlyList<string> paths, IOperationProgress progress)
+    {
+        progress.SetTotal(paths.Count);
+
+        var mounts = SystemLocations.GetMountPoints();
+        var homeMount = SystemLocations.MountPointOf(DataHome(), mounts);
+        var uid = UserId();
+
+        foreach (var path in paths)
+        {
+            if (progress.CancellationToken.IsCancellationRequested)
+                break;
+
+            var name = IOPath.GetFileName(path);
+            progress.Begin(name);
+
+            try
+            {
+                var mount = SystemLocations.MountPointOf(FileOperations.ParentOf(path), mounts);
+                if (mount == homeMount)
+                {
+                    EnsureBin(HomeTrash);
+                    MoveIntoBin(path, HomeTrash, topDir: null);
+                }
+                else if (DriveBin(mount, uid) is { } bin)
+                {
+                    MoveIntoBin(path, bin, mount);
+                }
+                else
+                {
+                    progress.Fail(name, "This drive has no trash you can use");
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                progress.Fail(name, ex.Message);
+            }
+
+            progress.Advance();
+        }
+    }
+
+    /// <summary>The trash at the top of another drive: the shared .Trash when it is safe to use, else our own.</summary>
+    private static string? DriveBin(string topDir, string? uid)
+    {
+        if (uid is null)
+            return null;
+
+        // The spec only trusts a shared .Trash that is a real folder with the sticky bit set
+        var shared = IOPath.Combine(topDir, ".Trash");
+        try
+        {
+            var info = new DirectoryInfo(shared);
+            if (info.Exists && info.LinkTarget is null && (info.UnixFileMode & UnixFileMode.StickyBit) != 0)
+            {
+                var bin = IOPath.Combine(shared, uid);
+                EnsureBin(bin);
+                return bin;
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Not usable: try our own below
+        }
+
+        var own = IOPath.Combine(topDir, $".Trash-{uid}");
+        try
+        {
+            EnsureBin(own);
+            return own;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Trace.WriteLine($"Can't create the trash '{own}': {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>Creates the bin with its files/ and info/ folders, readable by its owner only.</summary>
+    private static void EnsureBin(string bin)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            Directory.CreateDirectory(IOPath.Combine(bin, "files"));
+            Directory.CreateDirectory(IOPath.Combine(bin, "info"));
+            return;
+        }
+
+        const UnixFileMode ownerOnly = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
+        Directory.CreateDirectory(bin, ownerOnly);
+        Directory.CreateDirectory(IOPath.Combine(bin, "files"), ownerOnly);
+        Directory.CreateDirectory(IOPath.Combine(bin, "info"), ownerOnly);
+    }
+
+    /// <summary>
+    /// Writes the info file first, as the spec asks: its exclusive creation reserves the name in files/.
+    /// A taken name gets a number. Without the move, the info file is removed again.
+    /// </summary>
+    /// <param name="topDir">The drive's top for a drive trash: its info files store paths relative to it.</param>
+    private static void MoveIntoBin(string path, string bin, string? topDir)
+    {
+        var files = IOPath.Combine(bin, "files");
+        var info = IOPath.Combine(bin, "info");
+        var name = IOPath.GetFileName(path);
+        var stored = topDir is null ? path : IOPath.GetRelativePath(topDir, path);
+        var content = Encoding.UTF8.GetBytes(
+            "[Trash Info]\n"
+            + $"Path={EncodeTrashPath(stored)}\n"
+            + $"DeletionDate={DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)}\n");
+
+        for (var number = 1; number < 10_000; number++)
+        {
+            var candidate = number == 1 ? name : FileOperations.NumberedName(name, number);
+
+            // Left there without an info file by another program: not ours to replace
+            if (FileOperations.Exists(IOPath.Combine(files, candidate)))
+                continue;
+
+            var infoFile = IOPath.Combine(info, candidate + ".trashinfo");
+            try
+            {
+                using var stream = new FileStream(infoFile, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                stream.Write(content);
+            }
+            catch (IOException) when (IOFile.Exists(infoFile))
+            {
+                continue;
+            }
+
+            try
+            {
+                FileOperations.MoveEntry(path, IOPath.Combine(files, candidate));
+                return;
+            }
+            catch
+            {
+                TryDeleteTree(infoFile);
+                throw;
+            }
+        }
+
+        throw new IOException("The trash has no free name for it");
+    }
+
+    /// <summary>Path= is a URL-escaped path: every segment escaped, the slashes kept.</summary>
+    private static string EncodeTrashPath(string path)
+        => string.Join('/', path.Split('/').Select(Uri.EscapeDataString));
 
     private static int EmptyBin(string bin, string[] items, IOperationProgress? progress)
     {

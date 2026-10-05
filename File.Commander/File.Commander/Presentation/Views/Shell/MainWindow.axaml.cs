@@ -61,6 +61,9 @@ public partial class MainWindow : Window
 
         // Right click and the menu key on an item (MainWindow.SidebarMenu.cs)
         InitializeSidebarMenu();
+
+        // Right click and the menu key on files and folders of a view (MainWindow.EntryMenu.cs)
+        InitializeEntryMenu();
     }
 
     private MainViewModel? ViewModel => DataContext as MainViewModel;

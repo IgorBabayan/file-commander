@@ -53,6 +53,9 @@ public partial class DirectoryView : UserControl
         FileTree.AddHandler(KeyDownEvent, OnTreeKeyDown, RoutingStrategies.Bubble, handledEventsToo: true);
 
         InitializeRubberBand();
+
+        // Right click and the menu key on entries (DirectoryView.EntryMenu.cs)
+        InitializeEntryMenu();
     }
 
     protected override void OnDataContextChanged(EventArgs e)

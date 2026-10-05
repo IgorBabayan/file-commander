@@ -19,6 +19,7 @@ public sealed record KeymapAction(
 public static class KeymapActions
 {
     public const string ActionsGroup = "Actions";
+    public const string FilesGroup = "Files";
     public const string SelectionGroup = "Selection";
     public const string NavigationGroup = "Navigation";
     public const string ViewGroup = "View";
@@ -29,6 +30,13 @@ public static class KeymapActions
     public const string Refresh = "actions.refresh";
     public const string OpenSettings = "actions.open-settings";
     public const string ToggleInfoPanel = "actions.toggle-info-panel";
+
+    public const string Cut = "files.cut";
+    public const string Copy = "files.copy";
+    public const string Paste = "files.paste";
+    public const string Rename = "files.rename";
+    public const string MoveToTrash = "files.move-to-trash";
+    public const string Properties = "files.properties";
 
     public const string SelectAll = "selection.select-all";
     public const string SelectNone = "selection.select-none";
@@ -57,7 +65,7 @@ public static class KeymapActions
 
     /// <summary>The order the groups are shown in.</summary>
     public static IReadOnlyList<string> Groups { get; } =
-        [ActionsGroup, SelectionGroup, NavigationGroup, ViewGroup, TabsGroup, AppearanceGroup];
+        [ActionsGroup, FilesGroup, SelectionGroup, NavigationGroup, ViewGroup, TabsGroup, AppearanceGroup];
 
     public static IReadOnlyList<KeymapAction> All { get; } =
     [
@@ -67,6 +75,15 @@ public static class KeymapActions
         new(OpenSettings, ActionsGroup, "Open settings", [new(Key.OemComma, KeyModifiers.Control)]),
         // Like Finder's Quick Look. Never while typing: Space belongs to the text box there.
         new(ToggleInfoPanel, ActionsGroup, "Show info panel", [new(Key.Space)], WorksWhileTyping: false),
+
+        // What the context menu of files and folders offers, on the selection of the active view.
+        // Never while typing: a text box has its own Cut, Copy, Paste and Delete.
+        new(Cut, FilesGroup, "Cut", [new(Key.X, KeyModifiers.Control)], WorksWhileTyping: false),
+        new(Copy, FilesGroup, "Copy", [new(Key.C, KeyModifiers.Control)], WorksWhileTyping: false),
+        new(Paste, FilesGroup, "Paste", [new(Key.V, KeyModifiers.Control)], WorksWhileTyping: false),
+        new(Rename, FilesGroup, "Rename", [new(Key.F2)], WorksWhileTyping: false),
+        new(MoveToTrash, FilesGroup, "Move to Trash", [new(Key.Delete)], WorksWhileTyping: false),
+        new(Properties, FilesGroup, "Properties", [new(Key.Enter, KeyModifiers.Alt)], WorksWhileTyping: false),
 
         // Never while typing: Ctrl+A selects the text of a text box there.
         // Esc also clears the selection when it isn't bound and the info panel is closed.

@@ -106,6 +106,25 @@ public static class SystemLocations
             .ToList();
     }
 
+    /// <summary>Every mount point, pseudo filesystems included. Read once per operation for <see cref="MountPointOf"/>.</summary>
+    public static IReadOnlyList<string> GetMountPoints() => ReadMounts().Select(m => m.MountPoint).ToList();
+
+    /// <summary>
+    /// The mount point of the filesystem <paramref name="path"/> is on: the longest of <paramref name="mountPoints"/>
+    /// it is in. Two paths with the same one can be renamed into each other; otherwise they must be copied.
+    /// </summary>
+    public static string MountPointOf(string path, IReadOnlyList<string> mountPoints)
+    {
+        var best = "/";
+        foreach (var mountPoint in mountPoints)
+        {
+            if (mountPoint.Length > best.Length && IsUnder(path, [mountPoint]))
+                best = mountPoint;
+        }
+
+        return best;
+    }
+
     private static string GetVolumeName(string mountPoint) => mountPoint switch
     {
         "/" => "System Disk",

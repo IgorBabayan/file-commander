@@ -4,7 +4,9 @@ using System.IO.Enumeration;
 using System.Runtime.InteropServices;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using File.Commander.Application.FileSystem;
 using File.Commander.Presentation.Services;
+using File.Commander.Presentation.ViewModels.Browser;
 using File.Commander.Presentation.ViewModels.Helpers;
 using Material.Icons;
 
@@ -26,8 +28,9 @@ public sealed partial class PropertyRowViewModel : ObservableObject
 }
 
 /// <summary>
-/// Properties of a sidebar item: a folder, a drive, Computer, Network or the trash. Folder and trash
-/// sizes are counted in the background; disposing the view model (closing the dialog) stops the count.
+/// Properties of a sidebar item (a folder, a drive, Computer, Network or the trash) or of the files and folders
+/// selected in a view. Folder and trash sizes are counted in the background; disposing the view model
+/// (closing the dialog) stops the count.
 /// </summary>
 public sealed partial class PropertiesViewModel : ViewModelBase
 {
@@ -61,6 +64,34 @@ public sealed partial class PropertiesViewModel : ViewModelBase
         _ when Locations.IsVirtual(item.Location) => ForVirtual(item, "Location"),
         _ => ForFolder(item),
     };
+
+    /// <summary>
+    /// Properties of entries of a folder view (the context menu, Alt+Enter). One entry: what it is, its size and dates.
+    /// Several: how many there are of each kind and what they hold together. Call on the UI thread.
+    /// </summary>
+    public static PropertiesViewModel For(IReadOnlyList<FileEntryViewModel> entries)
+    {
+        if (entries.Count == 1)
+            return ForEntry(entries[0]);
+
+        var properties = new PropertiesViewModel(ItemsText(entries.Count), MaterialIconKind.FileMultipleOutline);
+
+        var folders = entries.Count(entry => entry.IsDirectory);
+        var files = entries.Count - folders;
+        properties.Add("Type", (folders, files) switch
+        {
+            (0, _) => "Files",
+            (_, 0) => "Folders",
+            _ => $"{CountText(folders, "folder", "folders")}, {CountText(files, "file", "files")}",
+        });
+
+        var parents = entries.Select(entry => IOPath.GetDirectoryName(entry.FullPath) ?? "/").Distinct().ToList();
+        properties.Add("Location", parents.Count == 1 ? parents[0] : "Several folders");
+
+        var contents = properties.Add("Contents", "Calculating…");
+        _ = properties.CountAsync(contents, entries.Select(entry => entry.FullPath).ToList(), emptyText: "Empty");
+        return properties;
+    }
 
     [RelayCommand]
     private void Close() => CloseRequested?.Invoke();
@@ -116,6 +147,54 @@ public sealed partial class PropertiesViewModel : ViewModelBase
         }
 
         return properties;
+    }
+
+    private static PropertiesViewModel ForEntry(FileEntryViewModel entry)
+    {
+        var properties = new PropertiesViewModel(entry.Name, entry.Icon);
+        properties.Add("Type", entry.TypeText);
+        properties.Add("Location", IOPath.GetDirectoryName(entry.FullPath) ?? "/");
+
+        if (entry.IsSymlink && LinkTarget(entry.FullPath) is { } target)
+            properties.Add("Link to", target);
+
+        if (entry.IsDirectory)
+        {
+            var contents = properties.Add("Contents", "Calculating…");
+            _ = properties.CountAsync(contents, [entry.FullPath], emptyText: "Empty folder");
+        }
+        else
+        {
+            properties.Add("Size", entry.Size is { } size
+                ? $"{SizeFormatter.Format(size)} ({size.ToString("N0", CultureInfo.CurrentCulture)} bytes)"
+                : "Unknown");
+        }
+
+        if (entry.Modified is { } modified)
+            properties.Add("Modified", FormatDate(modified));
+        if (entry.Created is { } created)
+            properties.Add("Created", FormatDate(created));
+        if (entry.Accessed is { } accessed)
+            properties.Add("Accessed", FormatDate(accessed));
+
+        if (entry.PermissionsText.Length > 0)
+            properties.Add("Permissions", entry.PermissionsText);
+        if (UnixFileAccess.GetOwnership(entry.FullPath) is { } ownership)
+            properties.Add("Owner", $"{ownership.Owner} (group {ownership.Group})");
+
+        return properties;
+    }
+
+    private static string? LinkTarget(string path)
+    {
+        try
+        {
+            return new FileInfo(path).LinkTarget;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     private static PropertiesViewModel ForTrash(SidebarItem item, IReadOnlyList<string> bins)
@@ -204,6 +283,24 @@ public sealed partial class PropertiesViewModel : ViewModelBase
 
         foreach (var root in roots)
         {
+            token.ThrowIfCancellationRequested();
+
+            // A selected file: counted as itself
+            if (!Directory.Exists(root))
+            {
+                if (TryLength(root) is { } length)
+                {
+                    bytes += length;
+                    items++;
+                }
+                else
+                {
+                    complete = false;
+                }
+
+                continue;
+            }
+
             try
             {
                 var walk = new FileSystemEnumerable<long>(root,
@@ -235,6 +332,22 @@ public sealed partial class PropertiesViewModel : ViewModelBase
 
         return (bytes, items, complete);
     }
+
+    private static long? TryLength(string path)
+    {
+        try
+        {
+            var info = new FileInfo(path);
+            return info.Exists ? info.Length : info.LinkTarget is not null ? 0 : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    private static string CountText(int count, string one, string many)
+        => count == 1 ? $"1 {one}" : $"{count.ToString("N0", CultureInfo.CurrentCulture)} {many}";
 
     private static string ItemsText(long items)
         => items == 1 ? "1 item" : $"{items.ToString("N0", CultureInfo.CurrentCulture)} items";

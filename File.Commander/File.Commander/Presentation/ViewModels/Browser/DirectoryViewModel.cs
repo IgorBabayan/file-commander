@@ -314,13 +314,25 @@ public sealed partial class DirectoryViewModel : PageViewModel
     [RelayCommand]
     private void OpenSelection()
     {
-        if (SelectedEntries.Count <= 1)
+        if (SelectedEntries.Count == 0)
+            Open(CurrentEntry);
+        else
+            OpenEntries(SelectedEntries);
+    }
+
+    /// <summary>
+    /// Open in the context menu, and Enter. One entry opens as on a double click. Several open every file
+    /// among them; folders are skipped, as there is only one view to go into.
+    /// </summary>
+    public void OpenEntries(IReadOnlyList<FileEntryViewModel> entries)
+    {
+        if (entries.Count == 1)
         {
-            Open(SelectedEntries.Count == 1 ? SelectedEntries[0] : CurrentEntry);
+            Open(entries[0]);
             return;
         }
 
-        foreach (var entry in SelectedEntries.Where(e => !e.IsDirectory).ToList())
+        foreach (var entry in entries.Where(e => !e.IsDirectory).ToList())
             Open(entry);
     }
 

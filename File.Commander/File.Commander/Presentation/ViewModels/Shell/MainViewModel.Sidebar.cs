@@ -11,31 +11,11 @@ public partial class MainViewModel
     /// <summary>Open: what a click on the item does.</summary>
     public void OpenSidebarItem(SidebarItem item) => Navigate(item.Location);
 
-    /// <summary>
-    /// Open in split view: splits the selected tab if it isn't split yet, opens the item in the other
-    /// view and makes that view the active one. The view that was active keeps its folder.
-    /// </summary>
-    public void OpenSidebarItemInSplitView(SidebarItem item)
-    {
-        var tab = ActiveTab;
-        if (!tab.IsSplit)
-            ToggleSplitView();
+    /// <summary>Open in split view: see <see cref="OpenInSplitView"/>.</summary>
+    public void OpenSidebarItemInSplitView(SidebarItem item) => OpenInSplitView(item.Location);
 
-        if (tab.Panes.FirstOrDefault(pane => !ReferenceEquals(pane, tab.ActivePane)) is not { } other)
-            return;
-
-        other.Navigate(item.Location);
-        ActivatePane(other); // Syncs the shell through ActivePageChanged
-    }
-
-    /// <summary>Open in new tab: a tab next to the selected one, in the active view's layout, selected.</summary>
-    public void OpenSidebarItemInNewTab(SidebarItem item)
-    {
-        var tab = CreateTab(item.Location, ActivePane.ViewMode);
-        Tabs.Insert(Tabs.IndexOf(_activeTab) + 1, tab);
-        UpdateTabStates();
-        SelectTab(tab);
-    }
+    /// <summary>Open in new tab: see <see cref="OpenInNewTab"/>.</summary>
+    public void OpenSidebarItemInNewTab(SidebarItem item) => OpenInNewTab(item.Location);
 
     /// <summary>Recent → File history settings.</summary>
     public Task OpenFileHistorySettingsAsync() => OpenSettingsAtAsync(SettingsViewModel.FileHistorySection);

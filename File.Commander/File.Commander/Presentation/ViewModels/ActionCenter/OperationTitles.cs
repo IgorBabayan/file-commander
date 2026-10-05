@@ -18,6 +18,42 @@ public sealed record OperationTitles(
             ? "1 item couldn't be deleted. Check that you're allowed to delete it."
             : $"{failed:N0} items couldn't be deleted. Check that you're allowed to delete them.");
 
+    public static OperationTitles Copy { get; } = new(
+        "Copying",
+        "Copied",
+        "Not everything was copied",
+        "Stopped copying",
+        failed => failed == 1
+            ? "1 item couldn't be copied. Check that you're allowed to read it and to write to the destination."
+            : $"{failed:N0} items couldn't be copied. Check that you're allowed to read them and to write to the destination.");
+
+    public static OperationTitles Move { get; } = new(
+        "Moving",
+        "Moved",
+        "Not everything was moved",
+        "Stopped moving",
+        failed => failed == 1
+            ? "1 item couldn't be moved. Check that you're allowed to move it."
+            : $"{failed:N0} items couldn't be moved. Check that you're allowed to move them.");
+
+    public static OperationTitles MoveToTrash { get; } = new(
+        "Moving to the trash",
+        "Moved to the trash",
+        "Not everything was moved to the trash",
+        "Stopped moving to the trash",
+        failed => failed == 1
+            ? "1 item couldn't be moved to the trash. Check that you're allowed to delete it."
+            : $"{failed:N0} items couldn't be moved to the trash. Check that you're allowed to delete them.");
+
+    public static OperationTitles Compress { get; } = new(
+        "Compressing",
+        "Compressed",
+        "The archive is missing some items",
+        "Stopped compressing",
+        failed => failed == 1
+            ? "1 item couldn't be added to the archive. Check that you're allowed to read it."
+            : $"{failed:N0} items couldn't be added to the archive. Check that you're allowed to read them.");
+
     public string For(OperationState state) => state switch
     {
         OperationState.Succeeded => Succeeded,
