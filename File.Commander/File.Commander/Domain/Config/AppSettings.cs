@@ -36,6 +36,10 @@ public record AppSettings
     [JsonPropertyName(nameof(Keymap))]
     public Dictionary<string, List<string>>? Keymap { get; set; } = new();
 
+    /// <summary>The detail columns of the list and tree, as set from their header (not from the Settings window).</summary>
+    [JsonPropertyName(nameof(Columns))]
+    public ColumnSettings? Columns { get; set; } = new();
+
     public bool IsAddonEnabled(string key) => !Addons!.TryGetValue(key, out var enabled) || enabled;
 }
 
@@ -60,6 +64,24 @@ public sealed record BasicSettings
 
     /// <summary>The sort menu's order, used by every folder opened. Header clicks aren't stored.</summary>
     public FolderSortOrder SortOrder { get; init; } = FolderSortOrder.Type;
+}
+
+/// <summary>
+/// The detail columns of the list and tree: shown or not (the header's context menu), their order (dragged
+/// headers) and their widths (dragged separators). Columns are named as in the header: "Size", "Type",
+/// "Modified", "Created", "Accessed", "Permissions"; unknown names are ignored.
+/// Replace the lists, never mutate them: the shell compares settings by reference.
+/// </summary>
+public sealed record ColumnSettings
+{
+    /// <summary>Columns turned off. Null or empty: every column is shown.</summary>
+    public IReadOnlyList<string>? Hidden { get; init; }
+
+    /// <summary>Columns left to right. Null: the built-in order. Columns that aren't listed go to the end.</summary>
+    public IReadOnlyList<string>? Order { get; init; }
+
+    /// <summary>Widths the user dragged columns to, by name. A column that isn't listed has its default width.</summary>
+    public IReadOnlyDictionary<string, double>? Widths { get; init; }
 }
 
 /// <summary>Settings → Sidebar: which sidebar entries are shown.</summary>

@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows.Input;
 using Avalonia.Input;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using File.Commander.Application.Keyboard;
 using File.Commander.Application.Path;
@@ -28,6 +30,14 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
     // What the shell currently runs with; compared on every save to apply only what changed
     private AppSettings _appliedSettings;
+
+    // A column change waiting to be stored: resizing changes the width on every pointer move,
+    // so changes are stored once they stop for a moment
+    private IDisposable? _pendingColumnsSave;
+    private static readonly TimeSpan ColumnsSaveDelay = TimeSpan.FromMilliseconds(400);
+
+    // Applying stored columns: that isn't a change to store
+    private bool _applyingColumns;
 
     public SidebarViewModel Sidebar { get; }
 
@@ -193,6 +203,10 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
         // Before the first page: it is created with this order
         SortMode = ToSortMode(basic.SortOrder);
+
+        // Columns as the user left them; changed from the column header, stored as they change
+        ApplyColumns(_appliedSettings.Columns!);
+        _columns.PropertyChanged += OnColumnsChanged;
 
         var start = StartLocationOf(basic.StartLocation);
         _activeTab = CreateTab(start, ToViewMode(_appliedSettings.Workspace!.DefaultView));
@@ -519,6 +533,10 @@ public partial class MainViewModel : ViewModelBase, INavigator
             Sidebar.Select(CurrentPage.Location);
         }
 
+        // Saved by another window: this one follows. Its own saves come back as the same instance (SaveColumns)
+        if (!ReferenceEquals(settings.Columns, previous.Columns))
+            ApplyColumns(settings.Columns!);
+
         if (reloadFolders || reloadComputer || reloadRecent || reloadTrash)
             RefreshPanes(page => (reloadFolders && page is DirectoryViewModel)
                                  || (reloadComputer && page is ComputerViewModel)
@@ -550,6 +568,42 @@ public partial class MainViewModel : ViewModelBase, INavigator
         // As for the order: the sidebar already shows these favorites, don't rebuild it after the save
         _appliedSettings = _appliedSettings with { Sidebar = sidebar };
         _ = SaveSettingsAsync(current with { Sidebar = sidebar });
+    }
+
+    private void ApplyColumns(ColumnSettings columns)
+    {
+        _applyingColumns = true;
+        try
+        {
+            _columns.Apply(columns);
+        }
+        finally
+        {
+            _applyingColumns = false;
+        }
+    }
+
+    /// <summary>A column was shown, hidden, moved or resized: store it once the changes stop.</summary>
+    private void OnColumnsChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (_applyingColumns)
+            return;
+
+        _pendingColumnsSave?.Dispose();
+        _pendingColumnsSave = DispatcherTimer.RunOnce(SaveColumns, ColumnsSaveDelay);
+    }
+
+    private void SaveColumns()
+    {
+        _pendingColumnsSave?.Dispose();
+        _pendingColumnsSave = null;
+
+        var columns = _columns.ToSettings();
+
+        // The columns already show this: applying the same instance first keeps OnSettingsChanged
+        // from applying it again after the save
+        _appliedSettings = _appliedSettings with { Columns = columns };
+        _ = SaveSettingsAsync(_settings.Current with { Columns = columns });
     }
 
     private async Task SaveSettingsAsync(AppSettings settings)
@@ -607,6 +661,11 @@ public partial class MainViewModel : ViewModelBase, INavigator
     protected override void OnDispose()
     {
         _settings.Changed -= OnSettingsChanged;
+        _columns.PropertyChanged -= OnColumnsChanged;
+
+        // The window closes right after a change: store it now
+        if (_pendingColumnsSave is not null)
+            SaveColumns();
 
         foreach (var tab in Tabs)
         {
