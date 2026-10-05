@@ -7,6 +7,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using File.Commander.Application.Path;
+using File.Commander.Presentation.Views.Browser;
 
 namespace File.Commander.Presentation.Views.Shell;
 
@@ -17,12 +18,19 @@ public partial class MainWindow : Window
 
     private const string DraggingClass = "dragging";
 
+    private const string DropTargetClass = "drop-target";
+
     private MainViewModel? _subscribed;
 
     // Sidebar drag: the pressed item, where it was pressed, and whether the pointer went past the threshold
     private SidebarItem? _dragItem;
     private Avalonia.Point _dragStart;
     private bool _dragging;
+
+    // Drag from a folder view over the sidebar: the drag being followed, and whether it brings a new favorite.
+    // DragOver fires on every move, so the folders are checked once per drag.
+    private IDataTransfer? _dropData;
+    private bool _dropAddsFavorite;
 
     public MainWindow()
     {
@@ -40,6 +48,14 @@ public partial class MainWindow : Window
         SidebarList.AddHandler(PointerMovedEvent, OnSidebarPointerMoved, RoutingStrategies.Tunnel);
         SidebarList.AddHandler(PointerReleasedEvent, OnSidebarPointerReleased, RoutingStrategies.Tunnel);
         SidebarList.AddHandler(PointerCaptureLostEvent, OnSidebarPointerCaptureLost);
+
+        // Folders dragged from a view are dropped on the sidebar as favorites; right click removes one
+        DragDrop.SetAllowDrop(SidebarList, true);
+        DragDrop.AddDragEnterHandler(SidebarList, OnSidebarDragOver);
+        DragDrop.AddDragOverHandler(SidebarList, OnSidebarDragOver);
+        DragDrop.AddDragLeaveHandler(SidebarList, OnSidebarDragLeave);
+        DragDrop.AddDropHandler(SidebarList, OnSidebarDrop);
+        SidebarList.ContextRequested += OnSidebarContextRequested;
     }
 
     private MainViewModel? ViewModel => DataContext as MainViewModel;
@@ -240,6 +256,60 @@ public partial class MainWindow : Window
     {
         foreach (var container in SidebarList.GetRealizedContainers())
             container.Classes.Set(DraggingClass, item is not null && ReferenceEquals(container.DataContext, item));
+    }
+
+    /// <summary>Entering and moving over the sidebar: accepts the drag when it brings a folder that isn't a favorite yet.</summary>
+    private void OnSidebarDragOver(object? sender, DragEventArgs e)
+    {
+        if (!ReferenceEquals(e.DataTransfer, _dropData))
+        {
+            _dropData = e.DataTransfer;
+            _dropAddsFavorite = ViewModel is { } vm
+                                && FileDragData.TryGetPaths(e.DataTransfer) is { } paths
+                                && vm.Sidebar.CanAddFavorites(paths);
+        }
+
+        e.DragEffects = _dropAddsFavorite ? DragDropEffects.Link : DragDropEffects.None;
+        SidebarList.Classes.Set(DropTargetClass, _dropAddsFavorite);
+        e.Handled = true;
+    }
+
+    private void OnSidebarDragLeave(object? sender, DragEventArgs e) => EndSidebarDrop();
+
+    /// <summary>Adds the dropped folders to "Favorites"; the section appears with the first one.</summary>
+    private void OnSidebarDrop(object? sender, DragEventArgs e)
+    {
+        var added = ViewModel is { } vm
+                    && FileDragData.TryGetPaths(e.DataTransfer) is { } paths
+                    && vm.Sidebar.AddFavorites(paths);
+
+        e.DragEffects = added ? DragDropEffects.Link : DragDropEffects.None;
+        e.Handled = true;
+        EndSidebarDrop();
+    }
+
+    private void EndSidebarDrop()
+    {
+        _dropData = null;
+        _dropAddsFavorite = false;
+        SidebarList.Classes.Set(DropTargetClass, false);
+    }
+
+    /// <summary>Right click on a favorite: offers to remove it from the sidebar (the folder itself stays).</summary>
+    private void OnSidebarContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        if (ViewModel is not { } vm
+            || e.Source is not Avalonia.Visual source
+            || source.FindAncestorOfType<ListBoxItem>(includeSelf: true) is not { DataContext: SidebarItem { IsFavorite: true } item } container)
+            return;
+
+        var remove = new MenuItem { Header = "Remove from Favorites" };
+        remove.Click += (_, _) => vm.Sidebar.RemoveFavorite(item);
+
+        var menu = new ContextMenu();
+        menu.Items.Add(remove);
+        menu.Open(container);
+        e.Handled = true;
     }
 
     private static SidebarItem? SidebarItemAt(Avalonia.Visual visual)

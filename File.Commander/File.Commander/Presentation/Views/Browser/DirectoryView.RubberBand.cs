@@ -13,6 +13,7 @@ namespace File.Commander.Presentation.Views.Browser;
 /// Rubber-band selection: press the left button and drag to select every entry the rectangle touches.
 /// Ctrl+drag adds to the selection. Dragging past the top or bottom edge scrolls.
 /// A click on empty space (no drag, no Ctrl) clears the selection.
+/// A plain press on an entry drags the entry out instead (DirectoryView.DragOut.cs).
 /// </summary>
 /// <remarks>
 /// Works in content coordinates (viewport position + scroll offset), so the band keeps its start while
@@ -101,6 +102,8 @@ public partial class DirectoryView
         // A Tapped that never came (released elsewhere) mustn't eat the next click
         _suppressTap = false;
         EndBand();
+        _dragEntry = null;
+        _dragPress = null;
 
         if (sender is not Control owner || _viewModel is not { } vm || !ReferenceEquals(owner, ActiveControl(vm)))
             return;
@@ -116,6 +119,14 @@ public partial class DirectoryView
         _bandStart = _bandPointer + scroll.Offset;
         _bandAdds = (e.KeyModifiers & KeyModifiers.Control) != 0;
         _bandOnEmpty = !IsOnItem(e.Source as Visual, owner);
+
+        // On an entry, a plain press drags it out (DirectoryView.DragOut.cs); Ctrl or Shift keep the band
+        if ((e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift)) == 0
+            && EntryAt(e.Source as Visual, owner) is { } entry)
+        {
+            _dragEntry = entry;
+            _dragPress = e;
+        }
     }
 
     private void OnBandPointerMoved(object? sender, PointerEventArgs e)
@@ -136,6 +147,12 @@ public partial class DirectoryView
             var moved = _bandPointer - (_bandStart - scroll.Offset);
             if (Math.Abs(moved.X) < DragThreshold && Math.Abs(moved.Y) < DragThreshold)
                 return;
+
+            if (_dragEntry is { } entry)
+            {
+                StartEntryDrag(entry, e);
+                return;
+            }
 
             BeginBand(e.Pointer);
             if (!_bandActive)
@@ -251,6 +268,8 @@ public partial class DirectoryView
         _bandBaseIndexes = [];
         _bandBaseNodes = [];
         _bandLast = null;
+        _dragEntry = null;
+        _dragPress = null;
 
         // Last, as releasing the capture raises PointerCaptureLost, which comes back here (and finds nothing to do)
         if (pointer is not null && owner is not null && ReferenceEquals(pointer.Captured, owner))

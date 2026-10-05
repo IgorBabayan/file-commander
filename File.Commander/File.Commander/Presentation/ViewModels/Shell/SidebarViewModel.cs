@@ -14,7 +14,13 @@ public partial class SidebarViewModel : ViewModelBase
     // The stored order (SidebarSettings.ItemOrder); includes items that are hidden now
     private IReadOnlyList<string> _order;
 
-    // Entries.Move may make the ListBox write a different (or no) selection: not a click
+    // The stored favorites (SidebarSettings.Favorites), in the order they were added
+    private IReadOnlyList<string> _favorites;
+
+    // What Build shows: kept so the entries can be rebuilt when a favorite is added or removed
+    private SidebarSettings _visibility;
+
+    // Entries.Move or a rebuild may make the ListBox write a different (or no) selection: not a click
     private bool _moving;
 
     public SidebarViewModel(IReadOnlyList<UserDirectory> directories, IReadOnlyList<Volume> volumes,
@@ -22,7 +28,9 @@ public partial class SidebarViewModel : ViewModelBase
     {
         _directories = directories;
         _volumes = volumes;
+        _visibility = visibility;
         _order = visibility.ItemOrder ?? [];
+        _favorites = visibility.Favorites ?? [];
         Entries = new ObservableCollection<SidebarEntry>(Build(visibility));
     }
 
@@ -34,6 +42,12 @@ public partial class SidebarViewModel : ViewModelBase
     /// already shown: store it.
     /// </summary>
     public event EventHandler<IReadOnlyList<string>>? OrderChanged;
+
+    /// <summary>
+    /// A folder was added to or removed from "Favorites". The argument is the new
+    /// <see cref="SidebarSettings.Favorites"/>, already shown: store it.
+    /// </summary>
+    public event EventHandler<IReadOnlyList<string>>? FavoritesChanged;
 
     public ObservableCollection<SidebarEntry> Entries { get; }
 
@@ -60,7 +74,9 @@ public partial class SidebarViewModel : ViewModelBase
     /// </summary>
     public void Apply(SidebarSettings visibility)
     {
+        _visibility = visibility;
         _order = visibility.ItemOrder ?? [];
+        _favorites = visibility.Favorites ?? [];
 
         Entries.Clear();
         foreach (var entry in Build(visibility))
@@ -76,6 +92,10 @@ public partial class SidebarViewModel : ViewModelBase
     /// </summary>
     public void Select(string location)
     {
+        // A favorite can also be in Quick access: keep the one that was clicked
+        if (_selectedEntry is SidebarItem current && Locations.AreEqual(current.Location, location))
+            return;
+
         var item = Entries.OfType<SidebarItem>().FirstOrDefault(i => Locations.AreEqual(i.Location, location));
         if (ReferenceEquals(item, _selectedEntry))
             return;
@@ -116,6 +136,40 @@ public partial class SidebarViewModel : ViewModelBase
         return true;
     }
 
+    /// <summary>True when dropping <paramref name="paths"/> would add at least one folder to "Favorites".</summary>
+    public bool CanAddFavorites(IEnumerable<string> paths) => NewFavorites(paths).Any();
+
+    /// <summary>
+    /// Adds the folders among <paramref name="paths"/> that aren't favorites yet to "Favorites" (the section
+    /// appears with the first one) and raises <see cref="FavoritesChanged"/>. Files and missing paths are skipped.
+    /// Keeps the highlight, doesn't navigate.
+    /// </summary>
+    /// <returns>False when nothing was added.</returns>
+    public bool AddFavorites(IEnumerable<string> paths)
+    {
+        var added = NewFavorites(paths).ToList();
+        if (added.Count == 0)
+            return false;
+
+        UpdateFavorites([.. _favorites, .. added]);
+        return true;
+    }
+
+    /// <summary>Takes <paramref name="item"/> off "Favorites"; the section goes away with the last one.</summary>
+    /// <returns>False when <paramref name="item"/> isn't a favorite.</returns>
+    public bool RemoveFavorite(SidebarItem item)
+    {
+        if (!item.IsFavorite)
+            return false;
+
+        var favorites = _favorites.Where(f => !Locations.AreEqual(f, item.Location)).ToList();
+        if (favorites.Count == _favorites.Count)
+            return false;
+
+        UpdateFavorites(favorites);
+        return true;
+    }
+
     /// <summary>A drag ended: raises <see cref="OrderChanged"/> if the order differs from the stored one.</summary>
     public void CommitOrder()
     {
@@ -126,6 +180,57 @@ public partial class SidebarViewModel : ViewModelBase
 
         _order = order;
         OrderChanged?.Invoke(this, order);
+    }
+
+    // Existing folders that aren't favorites yet, normalized, each once
+    private IEnumerable<string> NewFavorites(IEnumerable<string> paths)
+    {
+        var seen = new List<string>();
+        foreach (var path in paths)
+        {
+            if (Locations.IsVirtual(path))
+                continue;
+
+            var location = Locations.Normalize(path);
+            if (_favorites.Any(f => Locations.AreEqual(f, location))
+                || seen.Contains(location, StringComparer.Ordinal)
+                || !Directory.Exists(location))
+                continue;
+
+            seen.Add(location);
+            yield return location;
+        }
+    }
+
+    private void UpdateFavorites(IReadOnlyList<string> favorites)
+    {
+        _favorites = favorites;
+        _visibility = _visibility with { Favorites = favorites };
+        Rebuild();
+        FavoritesChanged?.Invoke(this, favorites);
+    }
+
+    /// <summary>Shows the entries again (a section came or went), keeping the highlight. Doesn't navigate.</summary>
+    private void Rebuild()
+    {
+        var selected = (_selectedEntry as SidebarItem)?.Location;
+
+        _moving = true;
+        try
+        {
+            Entries.Clear();
+            foreach (var entry in Build(_visibility))
+                Entries.Add(entry);
+        }
+        finally
+        {
+            _moving = false;
+        }
+
+        _selectedEntry = selected is null
+            ? null
+            : Entries.OfType<SidebarItem>().FirstOrDefault(i => Locations.AreEqual(i.Location, selected));
+        OnPropertyChanged(nameof(SelectedEntry));
     }
 
     // The header the entry at index is under
@@ -189,7 +294,10 @@ public partial class SidebarViewModel : ViewModelBase
                 canEject: v.Kind is VolumeKind.Removable or VolumeKind.Optical)));
         }
 
+        var favorites = _favorites.Select(ToFavorite).ToList();
+
         var entries = new List<SidebarEntry>();
+        AddSection(entries, "Favorites", favorites);
         AddSection(entries, "Quick access", quickAccess);
         AddSection(entries, "Partitions", partitions);
         if (visibility.ShowNetwork)
@@ -218,6 +326,13 @@ public partial class SidebarViewModel : ViewModelBase
             rank.TryAdd(_order[i], i);
 
         return items.OrderBy(item => rank.GetValueOrDefault(item.Location, int.MaxValue));
+    }
+
+    private static SidebarItem ToFavorite(string location)
+    {
+        var name = IOPath.GetFileName(location);
+        return new SidebarItem(name.Length == 0 ? location : name, MaterialIconKind.FolderStarOutline, location,
+            isFavorite: true);
     }
 
     private static SidebarItem ToItem(UserDirectory directory) =>

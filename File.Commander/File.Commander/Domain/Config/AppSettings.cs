@@ -79,6 +79,12 @@ public sealed record SidebarSettings
     /// Replace the list, never mutate it: the shell compares settings by reference.
     /// </summary>
     public IReadOnlyList<string>? ItemOrder { get; init; }
+
+    /// <summary>
+    /// Folders the user dragged from a view onto the sidebar, shown under "Favorites". Null or empty: no section.
+    /// Replace the list, never mutate it: the shell compares settings by reference.
+    /// </summary>
+    public IReadOnlyList<string>? Favorites { get; init; }
 }
 
 /// <summary>Settings → Workspace.</summary>

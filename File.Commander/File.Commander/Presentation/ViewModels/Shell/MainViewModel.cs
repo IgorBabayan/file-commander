@@ -186,6 +186,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
             _appliedSettings.Sidebar!);
         Sidebar.NavigationRequested += (_, location) => Navigate(location);
         Sidebar.OrderChanged += OnSidebarOrderChanged;
+        Sidebar.FavoritesChanged += OnSidebarFavoritesChanged;
         AddressBar = new AddressBarViewModel(this);
 
         // Before the first page: it is created with this order
@@ -512,6 +513,17 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
         // The sidebar already shows this order: applying the same instance first keeps
         // OnSettingsChanged from rebuilding the sidebar (and losing the highlight) after the save
+        _appliedSettings = _appliedSettings with { Sidebar = sidebar };
+        _ = SaveSettingsAsync(current with { Sidebar = sidebar });
+    }
+
+    /// <summary>A folder was dropped on the sidebar, or removed from "Favorites": store the list.</summary>
+    private void OnSidebarFavoritesChanged(object? sender, IReadOnlyList<string> favorites)
+    {
+        var current = _settings.Current;
+        var sidebar = current.Sidebar! with { Favorites = favorites };
+
+        // As for the order: the sidebar already shows these favorites, don't rebuild it after the save
         _appliedSettings = _appliedSettings with { Sidebar = sidebar };
         _ = SaveSettingsAsync(current with { Sidebar = sidebar });
     }

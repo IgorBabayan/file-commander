@@ -21,12 +21,14 @@ public sealed class SidebarHeader : SidebarEntry
  
 public sealed class SidebarItem : SidebarEntry
 {
-    public SidebarItem(string title, MaterialIconKind icon, string location, bool canEject = false)
+    public SidebarItem(string title, MaterialIconKind icon, string location, bool canEject = false,
+        bool isFavorite = false)
         : base(title)
     {
         Icon = icon;
         Location = location;
         CanEject = canEject;
+        IsFavorite = isFavorite;
     }
  
     public MaterialIconKind Icon { get; }
@@ -35,6 +37,9 @@ public sealed class SidebarItem : SidebarEntry
     public string Location { get; }
  
     public bool CanEject { get; }
+
+    /// <summary>A folder the user dropped on the sidebar: listed under "Favorites" and can be removed.</summary>
+    public bool IsFavorite { get; }
  
     public override bool IsSelectable => true;
 }
