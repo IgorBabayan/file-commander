@@ -1,0 +1,164 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Catppuccin Macchiato. One of four palettes with the same keys: ThemeLatte, ThemeFrappe, ThemeMacchiato, ThemeMocha. -->
+    <!-- Accent colors -->
+    <Color x:Key="Rosewater">#f4dbd6</Color>
+    <SolidColorBrush x:Key="RosewaterBrush" Color="{StaticResource Rosewater}" />
+
+    <Color x:Key="Flamingo">#f0c6c6</Color>
+    <SolidColorBrush x:Key="FlamingoBrush" Color="{StaticResource Flamingo}" />
+
+    <Color x:Key="Pink">#f5bde6</Color>
+    <SolidColorBrush x:Key="PinkBrush" Color="{StaticResource Pink}" />
+
+    <Color x:Key="Mauve">#c6a0f6</Color>
+    <SolidColorBrush x:Key="MauveBrush" Color="{StaticResource Mauve}" />
+
+    <Color x:Key="Red">#ed8796</Color>
+    <SolidColorBrush x:Key="RedBrush" Color="{StaticResource Red}" />
+
+    <Color x:Key="Maroon">#ee99a0</Color>
+    <SolidColorBrush x:Key="MaroonBrush" Color="{StaticResource Maroon}" />
+
+    <Color x:Key="Peach">#f5a97f</Color>
+    <SolidColorBrush x:Key="PeachBrush" Color="{StaticResource Peach}" />
+
+    <Color x:Key="Yellow">#eed49f</Color>
+    <SolidColorBrush x:Key="YellowBrush" Color="{StaticResource Yellow}" />
+
+    <Color x:Key="Green">#a6da95</Color>
+    <SolidColorBrush x:Key="GreenBrush" Color="{StaticResource Green}" />
+
+    <Color x:Key="Teal">#8bd5ca</Color>
+    <SolidColorBrush x:Key="TealBrush" Color="{StaticResource Teal}" />
+
+    <Color x:Key="Sky">#91d7e3</Color>
+    <SolidColorBrush x:Key="SkyBrush" Color="{StaticResource Sky}" />
+
+    <Color x:Key="Sapphire">#7dc4e4</Color>
+    <SolidColorBrush x:Key="SapphireBrush" Color="{StaticResource Sapphire}" />
+
+    <Color x:Key="Blue">#8aadf4</Color>
+    <SolidColorBrush x:Key="BlueBrush" Color="{StaticResource Blue}" />
+
+    <Color x:Key="Lavender">#b7bdf8</Color>
+    <SolidColorBrush x:Key="LavenderBrush" Color="{StaticResource Lavender}" />
+
+    <!-- Text -->
+    <Color x:Key="Text">#cad3f5</Color>
+    <SolidColorBrush x:Key="TextBrush" Color="{StaticResource Text}" />
+
+    <Color x:Key="Subtext1">#b8c0e0</Color>
+    <SolidColorBrush x:Key="Subtext1Brush" Color="{StaticResource Subtext1}" />
+
+    <Color x:Key="Subtext0">#a5adcb</Color>
+    <SolidColorBrush x:Key="Subtext0Brush" Color="{StaticResource Subtext0}" />
+
+    <!-- Overlays -->
+    <Color x:Key="Overlay2">#939ab7</Color>
+    <SolidColorBrush x:Key="Overlay2Brush" Color="{StaticResource Overlay2}" />
+
+    <Color x:Key="Overlay1">#8087a2</Color>
+    <SolidColorBrush x:Key="Overlay1Brush" Color="{StaticResource Overlay1}" />
+
+    <Color x:Key="Overlay0">#6e738d</Color>
+    <SolidColorBrush x:Key="Overlay0Brush" Color="{StaticResource Overlay0}" />
+
+    <!-- Surfaces -->
+    <Color x:Key="Surface2">#5b6078</Color>
+    <SolidColorBrush x:Key="Surface2Brush" Color="{StaticResource Surface2}" />
+
+    <Color x:Key="Surface1">#494d64</Color>
+    <SolidColorBrush x:Key="Surface1Brush" Color="{StaticResource Surface1}" />
+
+    <Color x:Key="Surface0">#363a4f</Color>
+    <SolidColorBrush x:Key="Surface0Brush" Color="{StaticResource Surface0}" />
+
+    <!-- Backgrounds -->
+    <Color x:Key="Base">#24273a</Color>
+    <SolidColorBrush x:Key="BaseBrush" Color="{StaticResource Base}" />
+
+    <Color x:Key="Mantle">#1e2030</Color>
+    <SolidColorBrush x:Key="MantleBrush" Color="{StaticResource Mantle}" />
+
+    <Color x:Key="Crust">#181926</Color>
+    <SolidColorBrush x:Key="CrustBrush" Color="{StaticResource Crust}" />
+
+    <!--
+        Semantic aliases over the Catppuccin Macchiato palette above. They live here, not in a window,
+        so each theme can map them on its own and every window and UserControl can reach them.
+        Everything outside this file must use DynamicResource: a StaticResource is resolved
+        once and would keep the old theme's colors after the theme changes.
+    -->
+    <SolidColorBrush x:Key="FcTitleBarBrush" Color="{StaticResource Mantle}" />
+    <SolidColorBrush x:Key="FcSidebarBrush" Color="{StaticResource Mantle}" />
+    <SolidColorBrush x:Key="FcContentBrush" Color="{StaticResource Base}" />
+    <SolidColorBrush x:Key="FcCardBrush" Color="{StaticResource Surface0}" />
+    <SolidColorBrush x:Key="FcCardHoverBrush" Color="{StaticResource Surface1}" />
+    <SolidColorBrush x:Key="FcCardPressedBrush" Color="{StaticResource Surface2}" />
+    <SolidColorBrush x:Key="FcAccentBrush" Color="{StaticResource Blue}" />
+    <SolidColorBrush x:Key="FcAccentHoverBrush" Color="{StaticResource Lavender}" />
+    <SolidColorBrush x:Key="FcAccentPressedBrush" Color="{StaticResource Sapphire}" />
+    <!-- Text and glyphs drawn on the accent -->
+    <SolidColorBrush x:Key="FcOnAccentBrush" Color="{StaticResource Crust}" />
+    <SolidColorBrush x:Key="FcTextBrush" Color="{StaticResource Text}" />
+    <SolidColorBrush x:Key="FcSubtleTextBrush" Color="{StaticResource Subtext0}" />
+    <SolidColorBrush x:Key="FcHeaderTextBrush" Color="{StaticResource Overlay1}" />
+    <SolidColorBrush x:Key="FcDisabledTextBrush" Color="{StaticResource Overlay0}" />
+    <SolidColorBrush x:Key="FcDividerBrush" Color="{StaticResource Surface0}" />
+    <SolidColorBrush x:Key="FcTrackBrush" Color="{StaticResource Surface1}" />
+    <SolidColorBrush x:Key="FcNavGroupBrush" Color="{StaticResource Surface0}" />
+    <SolidColorBrush x:Key="FcHoverBrush" Color="{StaticResource Surface1}" />
+    <SolidColorBrush x:Key="FcPressedBrush" Color="{StaticResource Surface2}" />
+    <!-- Items cut (Ctrl+X) and not pasted yet: a lighter accent than the selection -->
+    <SolidColorBrush x:Key="FcCutBrush" Color="{StaticResource Blue}" Opacity="0.35" />
+    <!-- Translucent overlays for controls that sit on both plain and accent backgrounds -->
+    <SolidColorBrush x:Key="FcOverlayHoverBrush" Color="#26000000" />
+    <SolidColorBrush x:Key="FcOverlayPressedBrush" Color="#40000000" />
+    <!-- Dims the main window behind the Settings card -->
+    <SolidColorBrush x:Key="FcBackdropBrush" Color="#8C181926" />
+
+    <LinearGradientBrush x:Key="FcFolderBodyBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+        <GradientStop Offset="0" Color="{StaticResource Sapphire}" />
+        <GradientStop Offset="1" Color="{StaticResource Blue}" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="FcFolderTabBrush" Color="{StaticResource Lavender}" />
+    <SolidColorBrush x:Key="FcFolderBadgeBrush" Color="{StaticResource Base}" />
+
+    <LinearGradientBrush x:Key="FcUsageNormalBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+        <GradientStop Offset="0" Color="{StaticResource Sapphire}" />
+        <GradientStop Offset="1" Color="{StaticResource Blue}" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="FcUsageWarningBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+        <GradientStop Offset="0" Color="{StaticResource Peach}" />
+        <GradientStop Offset="1" Color="{StaticResource Yellow}" />
+    </LinearGradientBrush>
+
+    <!-- Drive glyphs on the Computer page -->
+    <LinearGradientBrush x:Key="FcDiskBodyBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+        <GradientStop Offset="0" Color="{StaticResource Green}" />
+        <GradientStop Offset="1" Color="{StaticResource Teal}" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="FcDiskBodyRemovableBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+        <GradientStop Offset="0" Color="{StaticResource Lavender}" />
+        <GradientStop Offset="1" Color="{StaticResource Mauve}" />
+    </LinearGradientBrush>
+    <ConicGradientBrush x:Key="FcOpticalDiscBrush" Center="50%,50%">
+        <GradientStop Offset="0.00" Color="{StaticResource Sky}" />
+        <GradientStop Offset="0.25" Color="{StaticResource Pink}" />
+        <GradientStop Offset="0.50" Color="{StaticResource Rosewater}" />
+        <GradientStop Offset="0.75" Color="{StaticResource Lavender}" />
+        <GradientStop Offset="1.00" Color="{StaticResource Sky}" />
+    </ConicGradientBrush>
+
+    <!-- Fluent check boxes in the palette's accent instead of the system accent -->
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillChecked" Color="{StaticResource Blue}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPointerOver" Color="{StaticResource Lavender}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPressed" Color="{StaticResource Sapphire}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeChecked" Color="{StaticResource Blue}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPointerOver" Color="{StaticResource Lavender}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPressed" Color="{StaticResource Sapphire}" />
+    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundChecked" Color="{StaticResource Crust}" />
+    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPointerOver" Color="{StaticResource Crust}" />
+    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPressed" Color="{StaticResource Crust}" />
+</ResourceDictionary>

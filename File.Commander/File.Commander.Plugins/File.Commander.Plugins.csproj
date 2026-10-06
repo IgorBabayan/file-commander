@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+        The plugin SDK: the contracts File Commander and its plugins share. The host resolves this assembly,
+        Avalonia and Material.Icons from its own folder (PluginLoadContext), so plugins never ship copies.
+    -->
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <!-- Same versions as the host: a plugin compiled against other versions would see other types -->
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="12.1.3" />
+        <PackageReference Include="Material.Icons.Avalonia" Version="3.0.3-nightly.0.2" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="11.0.0-rc.1.26425.128" />
+    </ItemGroup>
+
+</Project>

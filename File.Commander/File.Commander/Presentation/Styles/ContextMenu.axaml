@@ -1,0 +1,81 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Every context menu (sidebar, column headers, keymap rows) looks like the sort drop-down:
+        a card with a thin border, rounded rows that light up on hover, Fc* brushes that follow the theme.
+        Restyles the template parts of Fluent's ContextMenu and MenuItem themes (Avalonia 12.1.3):
+        Border#PART_LayoutRoot, ContentPresenter#PART_HeaderPresenter, ContentControl#PART_IconPresenter,
+        TextBlock#PART_InputGestureText. Scoped to ContextMenu, so a menu bar would keep its own look.
+    -->
+
+    <!-- ===== The card ===== -->
+    <Style Selector="ContextMenu">
+        <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource FcHoverBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <!-- The template adds 4 above and below the items: 6 all around, like the sort menu -->
+        <Setter Property="Padding" Value="6,2" />
+        <Setter Property="MinWidth" Value="200" />
+    </Style>
+
+    <!-- ===== Rows ===== -->
+    <Style Selector="ContextMenu MenuItem">
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="Padding" Value="8,0,12,0" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+    </Style>
+    <Style Selector="ContextMenu MenuItem /template/ ContentControl#PART_IconPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+    </Style>
+    <Style Selector="ContextMenu MenuItem /template/ TextBlock#PART_InputGestureText">
+        <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+    </Style>
+
+    <!-- Hover, or picked with the arrow keys -->
+    <Style Selector="ContextMenu MenuItem:selected /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+    </Style>
+    <Style Selector="ContextMenu MenuItem:selected /template/ ContentPresenter#PART_HeaderPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+    </Style>
+    <Style Selector="ContextMenu MenuItem:selected /template/ ContentControl#PART_IconPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+    </Style>
+    <Style Selector="ContextMenu MenuItem:selected /template/ TextBlock#PART_InputGestureText">
+        <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+    </Style>
+
+    <!-- Like Fluent: on PART_LayoutRoot:pointerover, so pressing in a submenu doesn't light up its parent -->
+    <Style Selector="ContextMenu MenuItem:pressed /template/ Border#PART_LayoutRoot:pointerover">
+        <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+    </Style>
+    <Style Selector="ContextMenu MenuItem:pressed /template/ Border#PART_LayoutRoot:pointerover ContentPresenter#PART_HeaderPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+    </Style>
+
+    <!-- E.g. Empty trash while the trash is empty -->
+    <Style Selector="ContextMenu MenuItem:disabled /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ContextMenu MenuItem:disabled /template/ ContentPresenter#PART_HeaderPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource FcDisabledTextBrush}" />
+    </Style>
+    <Style Selector="ContextMenu MenuItem:disabled /template/ ContentControl#PART_IconPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource FcDisabledTextBrush}" />
+    </Style>
+    <Style Selector="ContextMenu MenuItem:disabled /template/ TextBlock#PART_InputGestureText">
+        <Setter Property="Foreground" Value="{DynamicResource FcDisabledTextBrush}" />
+    </Style>
+
+    <!-- ===== Separators ===== -->
+    <!-- Not FcDividerBrush: that is Surface0, the same color as the menu background (as in the sort menu) -->
+    <Style Selector="ContextMenu Separator">
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Margin" Value="4,6" />
+        <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+    </Style>
+</Styles>

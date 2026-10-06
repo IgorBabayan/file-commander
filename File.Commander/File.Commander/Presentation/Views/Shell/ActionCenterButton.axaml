@@ -1,0 +1,409 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ac="clr-namespace:File.Commander.Presentation.ViewModels.ActionCenter"
+             xmlns:controls="clr-namespace:File.Commander.Presentation.Controls"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             x:Class="File.Commander.Presentation.Views.Shell.ActionCenterButton"
+             x:DataType="ac:ActionCenterViewModel">
+    <!-- Action center button and its panel, between split view and Search. Fc* brushes follow the theme: DynamicResource -->
+    <UserControl.Styles>
+        <!-- Same look as the view-mode and sort buttons next to it -->
+        <Style Selector="Button.action-center">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        </Style>
+        <Style Selector="Button.action-center:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.action-center:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.action-center:flyout-open /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcNavGroupBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <!-- While something runs the glyph shrinks into the progress ring -->
+        <Style Selector="Button.action-center avalonia|MaterialIcon.glyph">
+            <Setter Property="Width" Value="18" />
+            <Setter Property="Height" Value="18" />
+        </Style>
+        <Style Selector="Button.action-center.running avalonia|MaterialIcon.glyph">
+            <Setter Property="Width" Value="12" />
+            <Setter Property="Height" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+
+        <!-- Count of running actions, and the dots for finished ones not looked at yet -->
+        <Style Selector="Border.badge">
+            <Setter Property="MinWidth" Value="14" />
+            <Setter Property="Height" Value="14" />
+            <Setter Property="Padding" Value="3,0" />
+            <Setter Property="CornerRadius" Value="7" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcTitleBarBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Border.badge TextBlock">
+            <Setter Property="FontSize" Value="9" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Ellipse.dot">
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Height" Value="8" />
+            <Setter Property="Margin" Value="0,4,4,0" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Fill" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="Ellipse.dot.failure">
+            <Setter Property="Fill" Value="{DynamicResource RedBrush}" />
+        </Style>
+
+        <!-- ===== Panel ===== -->
+        <!-- The list scrolls by itself under a fixed header: the presenter's own scroll viewer stays off -->
+        <Style Selector="FlyoutPresenter.action-center">
+            <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MaxWidth" Value="420" />
+            <Setter Property="MaxHeight" Value="560" />
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+        </Style>
+        <Style Selector="TextBlock.panel-title">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.subtle">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.subtle.error">
+            <Setter Property="Foreground" Value="{DynamicResource RedBrush}" />
+        </Style>
+
+        <!-- Text buttons of the header: Cancel all, Clear completed -->
+        <Style Selector="Button.header-action">
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.header-action:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentHoverBrush}" />
+        </Style>
+        <Style Selector="Button.header-action:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentHoverBrush}" />
+        </Style>
+        <Style Selector="Button.header-action:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcDisabledTextBrush}" />
+        </Style>
+
+        <!-- One action -->
+        <Style Selector="Border.operation">
+            <Setter Property="Background" Value="{DynamicResource FcContentBrush}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+        <Style Selector="Border.operation-icon">
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Margin" Value="0,0,12,0" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Background" Value="{DynamicResource FcNavGroupBrush}" />
+        </Style>
+        <Style Selector="Border.operation-icon avalonia|MaterialIcon">
+            <Setter Property="Width" Value="18" />
+            <Setter Property="Height" Value="18" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="Border.operation-icon.succeeded avalonia|MaterialIcon">
+            <Setter Property="Foreground" Value="{DynamicResource GreenBrush}" />
+        </Style>
+        <Style Selector="Border.operation-icon.failed avalonia|MaterialIcon">
+            <Setter Property="Foreground" Value="{DynamicResource RedBrush}" />
+        </Style>
+        <Style Selector="Border.operation-icon.canceled avalonia|MaterialIcon">
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.operation-title">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector="ProgressBar.operation-progress">
+            <Setter Property="Height" Value="4" />
+            <Setter Property="MinHeight" Value="4" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="CornerRadius" Value="2" />
+            <Setter Property="Minimum" Value="0" />
+            <Setter Property="Maximum" Value="100" />
+            <Setter Property="Background" Value="{DynamicResource FcTrackBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="ProgressBar.operation-progress.stopping">
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+
+        <!-- Small square buttons on an action: details, cancel, dismiss -->
+        <Style Selector=":is(Button).operation-button">
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector=":is(Button).operation-button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector=":is(Button).operation-button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.operation-button:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcNavGroupBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector=":is(Button).operation-button:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcDisabledTextBrush}" />
+        </Style>
+
+        <!-- More details: speed graph, current item, failed items -->
+        <Style Selector="Border.details">
+            <Setter Property="Background" Value="{DynamicResource FcTitleBarBrush}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="Margin" Value="0,10,0,0" />
+        </Style>
+        <Style Selector="controls|SpeedGraph">
+            <Setter Property="Height" Value="56" />
+            <Setter Property="Stroke" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Fill" Value="{DynamicResource FcNavGroupBrush}" />
+            <Setter Property="GridLines" Value="{DynamicResource FcHoverBrush}" />
+        </Style>
+        <Style Selector="TextBlock.failure">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,2" />
+        </Style>
+    </UserControl.Styles>
+
+    <Button x:Name="Toggle"
+            Classes="action-center"
+            Classes.running="{Binding HasRunning}"
+            ToolTip.Tip="{Binding ToolTipText}">
+        <Button.Flyout>
+            <Flyout Placement="BottomEdgeAlignedRight" FlyoutPresenterClasses="action-center">
+                <Grid Width="400" RowDefinitions="Auto,*">
+                    <!-- Header -->
+                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" Margin="16,14,10,10">
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Classes="panel-title" Text="Action center" />
+                            <TextBlock Classes="subtle" Text="{Binding SummaryText}" />
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Classes="header-action"
+                                Content="Cancel all"
+                                ToolTip.Tip="Stop every running action"
+                                IsVisible="{Binding HasRunning}"
+                                Command="{Binding CancelAllCommand}" />
+                        <Button Grid.Column="2"
+                                Classes="header-action"
+                                Content="Clear completed"
+                                ToolTip.Tip="Remove finished actions from the list"
+                                IsVisible="{Binding HasFinished}"
+                                Command="{Binding ClearCompletedCommand}" />
+                    </Grid>
+
+                    <!-- Nothing yet -->
+                    <StackPanel Grid.Row="1"
+                                IsVisible="{Binding HasNoOperations}"
+                                Margin="24,18,24,30"
+                                Spacing="8"
+                                HorizontalAlignment="Center">
+                        <avalonia:MaterialIcon Kind="CheckboxMarkedCircleOutline"
+                                               Width="36" Height="36"
+                                               Foreground="{DynamicResource FcDisabledTextBrush}" />
+                        <TextBlock HorizontalAlignment="Center"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource FcTextBrush}"
+                                   Text="No recent actions" />
+                        <TextBlock Classes="subtle"
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="280"
+                                   Text="Long-running actions such as emptying the trash show their progress here." />
+                    </StackPanel>
+
+                    <!-- The actions, newest first -->
+                    <ScrollViewer Grid.Row="1"
+                                  IsVisible="{Binding HasOperations}"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Operations}" Margin="10,0,10,4">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="ac:OperationViewModel">
+                                    <Border Classes="operation">
+                                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                                            <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
+                                                    Classes="operation-icon"
+                                                    Classes.succeeded="{Binding IsSucceeded}"
+                                                    Classes.failed="{Binding IsFailed}"
+                                                    Classes.canceled="{Binding IsCanceled}">
+                                                <avalonia:MaterialIcon Kind="{Binding Icon}" />
+                                            </Border>
+
+                                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                                       Classes="operation-title"
+                                                       VerticalAlignment="Center"
+                                                       Text="{Binding Title}"
+                                                       ToolTip.Tip="{Binding Title}" />
+                                            <TextBlock Grid.Row="1" Grid.Column="1"
+                                                       Classes="subtle"
+                                                       Margin="0,2,0,0"
+                                                       TextTrimming="PathSegmentEllipsis"
+                                                       Text="{Binding Details}"
+                                                       ToolTip.Tip="{Binding Details}"
+                                                       IsVisible="{Binding HasDetails}" />
+
+                                            <StackPanel Grid.Row="0" Grid.RowSpan="2" Grid.Column="2"
+                                                        Orientation="Horizontal"
+                                                        VerticalAlignment="Top"
+                                                        Margin="8,0,0,0"
+                                                        Spacing="2">
+                                                <ToggleButton Classes="operation-button"
+                                                              ToolTip.Tip="More details"
+                                                              IsChecked="{Binding IsExpanded, Mode=TwoWay}">
+                                                    <Panel>
+                                                        <avalonia:MaterialIcon Kind="ChevronDown" Width="16" Height="16"
+                                                                               IsVisible="{Binding !IsExpanded}" />
+                                                        <avalonia:MaterialIcon Kind="ChevronUp" Width="16" Height="16"
+                                                                               IsVisible="{Binding IsExpanded}" />
+                                                    </Panel>
+                                                </ToggleButton>
+                                                <Button Classes="operation-button"
+                                                        ToolTip.Tip="Cancel"
+                                                        IsVisible="{Binding IsRunning}"
+                                                        Command="{Binding CancelCommand}">
+                                                    <avalonia:MaterialIcon Kind="StopCircleOutline" Width="16" Height="16" />
+                                                </Button>
+                                                <Button Classes="operation-button"
+                                                        ToolTip.Tip="Dismiss"
+                                                        IsVisible="{Binding IsFinished}"
+                                                        Command="{Binding DismissCommand}">
+                                                    <avalonia:MaterialIcon Kind="Close" Width="16" Height="16" />
+                                                </Button>
+                                            </StackPanel>
+
+                                            <ProgressBar Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                                                         Classes="operation-progress"
+                                                         Classes.stopping="{Binding IsCancelRequested}"
+                                                         Margin="0,10,0,0"
+                                                         Value="{Binding Percent}"
+                                                         IsIndeterminate="{Binding IsIndeterminate}"
+                                                         IsVisible="{Binding IsRunning}" />
+
+                                            <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                                                       Classes="subtle"
+                                                       Classes.error="{Binding IsFailed}"
+                                                       Margin="0,6,0,0"
+                                                       TextWrapping="Wrap"
+                                                       Text="{Binding StatusText}" />
+
+                                            <!-- More details -->
+                                            <Border Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3"
+                                                    Classes="details"
+                                                    IsVisible="{Binding IsExpanded}">
+                                                <StackPanel Spacing="6">
+                                                    <StackPanel Spacing="4" IsVisible="{Binding IsRunning}">
+                                                        <controls:SpeedGraph Samples="{Binding SpeedSamples}" />
+                                                        <TextBlock Classes="subtle"
+                                                                   Text="{Binding SpeedText}"
+                                                                   IsVisible="{Binding SpeedText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                                    </StackPanel>
+                                                    <TextBlock Classes="subtle"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               Text="{Binding CurrentItemText, StringFormat='Now: {0}'}"
+                                                               ToolTip.Tip="{Binding CurrentItemText}"
+                                                               IsVisible="{Binding HasCurrentItem}" />
+                                                    <TextBlock Classes="subtle" Text="{Binding TimingText}" TextWrapping="Wrap" />
+
+                                                    <StackPanel Spacing="2" IsVisible="{Binding HasFailures}">
+                                                        <TextBlock Classes="subtle" FontWeight="SemiBold" Text="Couldn't be processed" />
+                                                        <ScrollViewer MaxHeight="140" HorizontalScrollBarVisibility="Disabled">
+                                                            <ItemsControl ItemsSource="{Binding Failures}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate x:DataType="x:String">
+                                                                        <TextBlock Classes="failure" Text="{Binding}" />
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                        </ScrollViewer>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Flyout>
+        </Button.Flyout>
+
+        <Panel>
+            <controls:ActivityRing Width="26" Height="26"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   StrokeThickness="2.5"
+                                   Stroke="{DynamicResource FcAccentBrush}"
+                                   Track="{DynamicResource FcTrackBrush}"
+                                   Value="{Binding OverallProgress}"
+                                   IsIndeterminate="{Binding IsOverallIndeterminate}"
+                                   IsVisible="{Binding HasRunning}" />
+            <avalonia:MaterialIcon Classes="glyph"
+                                   Kind="ListStatus"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+            <Border Classes="badge" IsVisible="{Binding HasRunning}">
+                <TextBlock Text="{Binding RunningCount}" />
+            </Border>
+            <Ellipse Classes="dot failure" IsVisible="{Binding ShowFailureDot}" />
+            <Ellipse Classes="dot" IsVisible="{Binding ShowSuccessDot}" />
+        </Panel>
+    </Button>
+</UserControl>

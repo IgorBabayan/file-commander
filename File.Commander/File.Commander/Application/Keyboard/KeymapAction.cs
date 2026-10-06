@@ -1,0 +1,148 @@
+using Avalonia.Input;
+
+namespace File.Commander.Application.Keyboard;
+
+/// <summary>Something a shortcut can do. Listed in Settings → Basic → Keymap under <see cref="Group"/>.</summary>
+/// <param name="Id">Key in settings.json. Never rename it: stored bindings would be lost.</param>
+/// <param name="WorksWhileTyping">
+/// False: ignored while a text box has focus (Backspace, Alt+Left… belong to the text box there).
+/// Even when true, a chord that types text (no Ctrl/Alt/Super) is left to the text box.
+/// </param>
+public sealed record KeymapAction(
+    string Id,
+    string Group,
+    string Title,
+    IReadOnlyList<KeyChord> Defaults,
+    bool WorksWhileTyping = true);
+
+/// <summary>Every action a shortcut can be bound to, with its default chords.</summary>
+public static class KeymapActions
+{
+    public const string ActionsGroup = "Actions";
+    public const string FilesGroup = "Files";
+    public const string SelectionGroup = "Selection";
+    public const string NavigationGroup = "Navigation";
+    public const string ViewGroup = "View";
+    public const string TabsGroup = "Tabs";
+    public const string AppearanceGroup = "Appearance";
+
+    public const string ToggleHiddenFiles = "actions.toggle-hidden-files";
+    public const string Refresh = "actions.refresh";
+    public const string OpenSettings = "actions.open-settings";
+    public const string ToggleInfoPanel = "actions.toggle-info-panel";
+
+    public const string Cut = "files.cut";
+    public const string Copy = "files.copy";
+    public const string Paste = "files.paste";
+    public const string PasteWithoutReplace = "files.paste-without-replace";
+    public const string PasteWithReplace = "files.paste-with-replace";
+    public const string Rename = "files.rename";
+    public const string MoveToTrash = "files.move-to-trash";
+    public const string DeletePermanently = "files.delete-permanently";
+    public const string Properties = "files.properties";
+    public const string NewFolder = "files.new-folder";
+    public const string NewTextDocument = "files.new-text-document";
+
+    public const string SelectAll = "selection.select-all";
+    public const string SelectNone = "selection.select-none";
+    public const string InvertSelection = "selection.invert";
+
+    public const string EditPath = "navigation.edit-path";
+    public const string GoBack = "navigation.back";
+    public const string GoForward = "navigation.forward";
+    public const string GoUp = "navigation.up";
+    public const string GoComputer = "navigation.computer";
+
+    public const string GridView = "view.grid";
+    public const string ListView = "view.list";
+    public const string TreeView = "view.tree";
+    public const string ToggleSplitView = "view.split";
+
+    public const string NewTab = "tabs.new";
+    public const string CloseTab = "tabs.close";
+    public const string NextTab = "tabs.next";
+    public const string PreviousTab = "tabs.previous";
+
+    public const string ThemeLatte = "appearance.theme-latte";
+    public const string ThemeFrappe = "appearance.theme-frappe";
+    public const string ThemeMacchiato = "appearance.theme-macchiato";
+    public const string ThemeMocha = "appearance.theme-mocha";
+
+    /// <summary>The order the groups are shown in.</summary>
+    public static IReadOnlyList<string> Groups { get; } =
+        [ActionsGroup, FilesGroup, SelectionGroup, NavigationGroup, ViewGroup, TabsGroup, AppearanceGroup];
+
+    public static IReadOnlyList<KeymapAction> All { get; } =
+    [
+        new(ToggleHiddenFiles, ActionsGroup, "Show hidden files",
+            [new(Key.H, KeyModifiers.Control)], WorksWhileTyping: false),
+        new(Refresh, ActionsGroup, "Refresh", [new(Key.F5)]),
+        new(OpenSettings, ActionsGroup, "Open settings", [new(Key.OemComma, KeyModifiers.Control)]),
+        // Like Finder's Quick Look. Never while typing: Space belongs to the text box there.
+        new(ToggleInfoPanel, ActionsGroup, "Show info panel", [new(Key.Space)], WorksWhileTyping: false),
+
+        // What the context menu of files and folders offers, on the selection of the active view.
+        // Never while typing: a text box has its own Cut, Copy, Paste and Delete.
+        new(Cut, FilesGroup, "Cut", [new(Key.X, KeyModifiers.Control)], WorksWhileTyping: false),
+        new(Copy, FilesGroup, "Copy", [new(Key.C, KeyModifiers.Control)], WorksWhileTyping: false),
+        // Paste asks what to do with each name that is taken; the other two never ask
+        new(Paste, FilesGroup, "Paste", [new(Key.V, KeyModifiers.Control)], WorksWhileTyping: false),
+        new(PasteWithoutReplace, FilesGroup, "Paste without replace",
+            [new(Key.V, KeyModifiers.Control | KeyModifiers.Alt)], WorksWhileTyping: false),
+        new(PasteWithReplace, FilesGroup, "Paste with replace",
+            [new(Key.V, KeyModifiers.Control | KeyModifiers.Shift)], WorksWhileTyping: false),
+        new(Rename, FilesGroup, "Rename", [new(Key.F2)], WorksWhileTyping: false),
+        new(MoveToTrash, FilesGroup, "Move to Trash", [new(Key.Delete)], WorksWhileTyping: false),
+        // Skips the trash: asks first unless Settings → Dialog says not to
+        new(DeletePermanently, FilesGroup, "Delete permanently",
+            [new(Key.Delete, KeyModifiers.Shift)], WorksWhileTyping: false),
+        new(Properties, FilesGroup, "Properties", [new(Key.Enter, KeyModifiers.Alt)], WorksWhileTyping: false),
+        // What the context menu of a folder's empty space offers, in the active view's folder
+        new(NewFolder, FilesGroup, "New folder",
+            [new(Key.N, KeyModifiers.Control | KeyModifiers.Shift)], WorksWhileTyping: false),
+        new(NewTextDocument, FilesGroup, "New text document", [], WorksWhileTyping: false),
+
+        // Never while typing: Ctrl+A selects the text of a text box there.
+        // Esc, when it isn't bound and the info panel is closed, cancels a Cut, else clears the selection.
+        new(SelectAll, SelectionGroup, "Select all", [new(Key.A, KeyModifiers.Control)], WorksWhileTyping: false),
+        new(SelectNone, SelectionGroup, "Select none",
+            [new(Key.A, KeyModifiers.Control | KeyModifiers.Shift)], WorksWhileTyping: false),
+        new(InvertSelection, SelectionGroup, "Invert selection",
+            [new(Key.I, KeyModifiers.Control | KeyModifiers.Shift)], WorksWhileTyping: false),
+
+        new(EditPath, NavigationGroup, "Edit path",
+            [new(Key.L, KeyModifiers.Control), new(Key.D, KeyModifiers.Alt)]),
+        new(GoBack, NavigationGroup, "Go back", [new(Key.Left, KeyModifiers.Alt)], WorksWhileTyping: false),
+        new(GoForward, NavigationGroup, "Go forward", [new(Key.Right, KeyModifiers.Alt)], WorksWhileTyping: false),
+        new(GoUp, NavigationGroup, "Go up",
+            [new(Key.Up, KeyModifiers.Alt), new(Key.Back)], WorksWhileTyping: false),
+        new(GoComputer, NavigationGroup, "Open Computer", [], WorksWhileTyping: false),
+
+        new(GridView, ViewGroup, "Icons view", [new(Key.D1, KeyModifiers.Control)]),
+        new(ListView, ViewGroup, "List view", [new(Key.D2, KeyModifiers.Control)]),
+        new(TreeView, ViewGroup, "Tree view", [new(Key.D3, KeyModifiers.Control)]),
+        // Like Dolphin's split view
+        new(ToggleSplitView, ViewGroup, "Split view", [new(Key.F3)]),
+
+        // Like a browser's. The new tab opens where the active view is.
+        new(NewTab, TabsGroup, "New tab", [new(Key.T, KeyModifiers.Control)]),
+        new(CloseTab, TabsGroup, "Close tab", [new(Key.W, KeyModifiers.Control)]),
+        new(NextTab, TabsGroup, "Next tab",
+            [new(Key.Tab, KeyModifiers.Control), new(Key.PageDown, KeyModifiers.Control)]),
+        new(PreviousTab, TabsGroup, "Previous tab",
+            [new(Key.Tab, KeyModifiers.Control | KeyModifiers.Shift), new(Key.PageUp, KeyModifiers.Control)]),
+
+        new(ThemeLatte, AppearanceGroup, "Select theme Latte",
+            [new(Key.D1, KeyModifiers.Control | KeyModifiers.Alt)]),
+        new(ThemeFrappe, AppearanceGroup, "Select theme Frappé",
+            [new(Key.D2, KeyModifiers.Control | KeyModifiers.Alt)]),
+        new(ThemeMacchiato, AppearanceGroup, "Select theme Macchiato",
+            [new(Key.D3, KeyModifiers.Control | KeyModifiers.Alt)]),
+        new(ThemeMocha, AppearanceGroup, "Select theme Mocha",
+            [new(Key.D4, KeyModifiers.Control | KeyModifiers.Alt)]),
+    ];
+
+    private static readonly Dictionary<string, KeymapAction> ById = All.ToDictionary(a => a.Id);
+
+    public static KeymapAction? Find(string id) => ById.GetValueOrDefault(id);
+}

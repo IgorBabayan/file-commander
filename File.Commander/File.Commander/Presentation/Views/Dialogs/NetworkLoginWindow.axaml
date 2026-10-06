@@ -1,0 +1,149 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:File.Commander.Presentation.ViewModels.Dialogs"
+        xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
+        x:Class="File.Commander.Presentation.Views.Dialogs.NetworkLoginWindow"
+        x:DataType="vm:NetworkLoginViewModel"
+        Title="{Binding Title}"
+        WindowDecorations="None"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent">
+    <!-- Like PromptWindow: DialogService sizes this window to cover the owner; the card is centered on a dimmed backdrop -->
+
+    <Window.Styles>
+        <Style Selector="Border.dialog-card">
+            <Setter Property="Background" Value="{DynamicResource BaseBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BoxShadow" Value="0 12 40 0 #66000000" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="32" />
+        </Style>
+
+        <Style Selector="TextBlock.dialog-title">
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector="TextBlock.dialog-message">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext1Brush}" />
+        </Style>
+
+        <!-- ===== Buttons ===== -->
+        <Style Selector="Button.dialog-button">
+            <Setter Property="MinWidth" Value="88" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+
+        <Style Selector="Button.dialog-button.primary">
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BaseBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BaseBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BaseBrush}" />
+        </Style>
+
+        <!-- Deletes something for good -->
+        <Style Selector="Button.dialog-button.primary.destructive">
+            <Setter Property="Background" Value="{DynamicResource RedBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button.primary.destructive:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RedBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button.primary.destructive:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RedBrush}" />
+        </Style>
+
+        <Style Selector="TextBlock.field-label">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext1Brush}" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+        <Style Selector="TextBlock.login-error">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource RedBrush}" />
+        </Style>
+    </Window.Styles>
+
+    <Panel>
+        <!-- Clicking the dimmed area cancels -->
+        <Border Background="{DynamicResource FcBackdropBrush}" PointerPressed="OnBackdropPressed" />
+
+        <Border Classes="dialog-card" Width="440">
+            <StackPanel Margin="24,20,24,20" Spacing="12">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <avalonia:MaterialIcon Kind="LockOutline"
+                                           Width="20" Height="20"
+                                           Foreground="{DynamicResource FcAccentBrush}" />
+                    <TextBlock Classes="dialog-title" Text="{Binding Title}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Classes="dialog-message" Text="{Binding Message}" />
+                <TextBlock Classes="login-error"
+                           Text="The server refused the user name or password. Try again."
+                           IsVisible="{Binding IsRetry}" />
+
+                <StackPanel IsVisible="{Binding HasUser}">
+                    <TextBlock Classes="field-label" Text="User name" />
+                    <TextBox x:Name="UserBox" Text="{Binding User}" FontSize="14" />
+                </StackPanel>
+
+                <StackPanel IsVisible="{Binding HasDomain}">
+                    <TextBlock Classes="field-label" Text="Domain" />
+                    <TextBox Text="{Binding Domain}" FontSize="14" PlaceholderText="WORKGROUP" />
+                </StackPanel>
+
+                <StackPanel>
+                    <TextBlock Classes="field-label" Text="Password" />
+                    <TextBox x:Name="PasswordBox" Text="{Binding Password}" PasswordChar="•" FontSize="14" />
+                </StackPanel>
+
+                <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
+                    <Button Grid.Column="0"
+                            Classes="dialog-button"
+                            Content="Connect as guest"
+                            IsVisible="{Binding CanConnectAsGuest}"
+                            Command="{Binding ConnectAsGuestCommand}" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                        <Button Classes="dialog-button"
+                                Content="Cancel"
+                                Command="{Binding CancelCommand}" />
+                        <Button Classes="dialog-button primary"
+                                Content="Connect"
+                                Command="{Binding AcceptCommand}" />
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Panel>
+</Window>

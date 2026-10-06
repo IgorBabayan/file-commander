@@ -1,0 +1,665 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:shell="clr-namespace:File.Commander.Presentation.ViewModels.Shell"
+        xmlns:shellViews="clr-namespace:File.Commander.Presentation.Views.Shell"
+        xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
+        x:Class="File.Commander.Presentation.Views.Shell.MainWindow"
+        x:DataType="shell:MainViewModel"
+        Width="1100" Height="700"
+        MinWidth="820" MinHeight="520"
+        Icon="/Assets/logo.png"
+        Title="{Binding CurrentPage.Title, StringFormat='{}{0} — File Commander'}">
+    <Window.Styles>
+        <!-- The view mode and file buttons of the title bar -->
+        <StyleInclude Source="avares://File.Commander/Presentation/Styles/TitleBar.axaml" />
+
+        <!-- ===== Title bar: back / forward pill ===== -->
+        <Style Selector="Border.nav-group">
+            <Setter Property="Background" Value="{DynamicResource FcNavGroupBrush}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="ClipToBounds" Value="True" />
+        </Style>
+        <Style Selector="Button.nav">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.nav:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.nav:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.nav:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcDisabledTextBrush}" />
+        </Style>
+
+        <!-- ===== Title bar: blue "Computer" view button ===== -->
+        <Style Selector="Button.view-toggle">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.view-toggle:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="Button.view-toggle:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+
+        <!-- ===== Info panel host: closed = no width, so the page gets the whole row ===== -->
+        <Style Selector="Border.info-panel">
+            <Setter Property="Width" Value="0" />
+        </Style>
+        <Style Selector="Border.info-panel.open">
+            <Setter Property="Width" Value="300" />
+        </Style>
+
+        <!-- ===== Tab bar: only while there is more than one tab ===== -->
+        <Style Selector="Border.tab-bar">
+            <Setter Property="Background" Value="{DynamicResource FcTitleBarBrush}" />
+            <Setter Property="Padding" Value="6,4,6,0" />
+        </Style>
+        <Style Selector="Border.tab">
+            <Setter Property="Height" Value="34" />
+            <Setter Property="MinWidth" Value="120" />
+            <Setter Property="MaxWidth" Value="220" />
+            <Setter Property="Margin" Value="0,0,2,0" />
+            <Setter Property="CornerRadius" Value="8,8,0,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Border.tab:pointerover">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+        </Style>
+        <!-- The selected tab takes the content's color, so it reads as part of the page below -->
+        <Style Selector="Border.tab.selected">
+            <Setter Property="Background" Value="{DynamicResource FcContentBrush}" />
+        </Style>
+        <Style Selector="Border.tab TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <Style Selector="Border.tab.selected TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Border.tab avalonia|MaterialIcon.tab-icon">
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <Style Selector="Border.tab.selected avalonia|MaterialIcon.tab-icon">
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="Button.tab-close">
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.tab-close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.tab-new">
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Margin" Value="4,0,0,2" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.tab-new:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+
+        <!-- ===== Sidebar ===== -->
+        <Style Selector="ListBox.sidebar">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="12,4,12,12" />
+        </Style>
+        <Style Selector="ListBox.sidebar ListBoxItem" x:DataType="shell:SidebarEntry">
+            <Setter Property="IsEnabled" Value="{Binding IsSelectable}" />
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Margin" Value="0,1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.sidebar ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.sidebar ListBoxItem:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.sidebar ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="ListBox.sidebar ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="ListBox.sidebar ListBoxItem:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <!-- The item being dragged (set from code-behind). After :selected so it wins while dragging. -->
+        <Style Selector="ListBox.sidebar ListBoxItem.dragging /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <!-- Folders dragged from a view over the sidebar (set from code-behind): they'll become favorites. -->
+        <Style Selector="ListBox.sidebar.drop-target">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+        </Style>
+        <!-- Section headers are disabled items: keep them flat, no hover. -->
+        <Style Selector="ListBox.sidebar ListBoxItem:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <!-- Link pinned to the bottom of the sidebar: plain text link, no background in any state -->
+        <Style Selector="HyperlinkButton.sidebar-link">
+            <Setter Property="Margin" Value="24,0,12,16" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="HyperlinkButton.sidebar-link /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="HyperlinkButton.sidebar-link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentHoverBrush}" />
+        </Style>
+        <Style Selector="HyperlinkButton.sidebar-link:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentPressedBrush}" />
+        </Style>
+
+        <Style Selector="Button.eject">
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.eject:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcOverlayHoverBrush}" />
+            <Setter Property="Foreground" Value="{TemplateBinding Foreground}" />
+        </Style>
+        <Style Selector="Button.eject:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcOverlayPressedBrush}" />
+            <Setter Property="Foreground" Value="{TemplateBinding Foreground}" />
+        </Style>
+    </Window.Styles>
+
+    <Border Background="{DynamicResource FcContentBrush}">
+        <Grid RowDefinitions="52,*">
+            <!-- ================= Title bar ================= -->
+            <!-- A right click anywhere on it opens "Customize Toolbar…" (MainWindow.Toolbar.cs) -->
+            <Border x:Name="TitleBar"
+                    Grid.Row="0"
+                    Background="{DynamicResource FcTitleBarBrush}"
+                    PointerPressed="OnPointerPressed">
+                <Grid ColumnDefinitions="Auto,*,Auto" Margin="12,0,10,0">
+                    <Image Grid.Column="0"
+                           Source="/Assets/logo.png"
+                           Width="30" Height="30"
+                           Margin="0,0,16,0"
+                           VerticalAlignment="Center"
+                           RenderOptions.BitmapInterpolationMode="HighQuality" />
+
+                    <!-- The customizable items, left to right as set with Customize Toolbar…. Filled by
+                         MainWindow.Toolbar.cs with the controls of ToolbarPool, each in a Border.toolbar-item -->
+                    <shellViews:ToolbarPanel x:Name="ToolbarArea"
+                                             Grid.Column="1"
+                                             Margin="0,0,12,0"
+                                             Spacing="8">
+                        <shellViews:ToolbarPanel.Styles>
+                            <Style Selector="Border.toolbar-item">
+                                <Setter Property="VerticalAlignment" Value="Center" />
+                            </Style>
+                            <!-- Flexible space: just room, until customizing shows it -->
+                            <Style Selector="Border.toolbar-item.spring">
+                                <Setter Property="MinWidth" Value="16" />
+                                <Setter Property="Height" Value="36" />
+                            </Style>
+                            <Style Selector="Border.toolbar-item.spring avalonia|MaterialIcon">
+                                <Setter Property="IsVisible" Value="False" />
+                                <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+                            </Style>
+
+                            <!-- Customizing: items are something to drag, not to use -->
+                            <Style Selector="shellViews|ToolbarPanel.customizing > Border.toolbar-item">
+                                <Setter Property="Cursor" Value="Hand" />
+                            </Style>
+                            <Style Selector="shellViews|ToolbarPanel.customizing > Border.toolbar-item:not(.nav-group)">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="CornerRadius" Value="8" />
+                            </Style>
+                            <Style Selector="shellViews|ToolbarPanel.customizing > Border.toolbar-item:not(.nav-group):pointerover">
+                                <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+                            </Style>
+                            <!-- A segment of a pill: shows which one would be dragged -->
+                            <Style Selector="shellViews|ToolbarPanel.customizing > Border.toolbar-item.nav-group:pointerover">
+                                <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+                            </Style>
+                            <Style Selector="shellViews|ToolbarPanel.customizing > Border.toolbar-item.spring">
+                                <Setter Property="MinWidth" Value="48" />
+                                <Setter Property="Background" Value="{DynamicResource FcNavGroupBrush}" />
+                            </Style>
+                            <Style Selector="shellViews|ToolbarPanel.customizing > Border.toolbar-item.spring avalonia|MaterialIcon">
+                                <Setter Property="IsVisible" Value="True" />
+                            </Style>
+                            <!-- The dragged item, where it will land -->
+                            <Style Selector="Border.toolbar-item.dragging">
+                                <Setter Property="Opacity" Value="0.35" />
+                            </Style>
+                        </shellViews:ToolbarPanel.Styles>
+                    </shellViews:ToolbarPanel>
+
+                    <!-- Every item the toolbar can show; Tag = its id in ToolbarViewModel.Catalog.
+                         The ones that aren't on the toolbar wait here, hidden -->
+                    <Panel x:Name="ToolbarPool" Grid.Column="1" IsVisible="False">
+                        <Button Tag="back" Classes="nav" ToolTip.Tip="Back (Alt+Left)" Command="{Binding GoBackCommand}">
+                            <avalonia:MaterialIcon Kind="ChevronLeft" Width="20" Height="20" />
+                        </Button>
+                        <Button Tag="forward" Classes="nav" ToolTip.Tip="Forward (Alt+Right)" Command="{Binding GoForwardCommand}">
+                            <avalonia:MaterialIcon Kind="ChevronRight" Width="20" Height="20" />
+                        </Button>
+                        <Button Tag="up" Classes="nav" ToolTip.Tip="Up (Alt+Up)" Command="{Binding GoUpCommand}">
+                            <avalonia:MaterialIcon Kind="ArrowUp" Width="18" Height="18" />
+                        </Button>
+
+                        <!-- New, Select all, Copy, Paste: they act on the active view's folder and selection,
+                             like their shortcuts. Side by side they share one pill, like back / forward / up -->
+                        <Button x:Name="NewButton"
+                                Tag="new"
+                                Classes="nav dropdown file-action"
+                                ToolTip.Tip="New"
+                                IsEnabled="{Binding CanCreateInActiveFolder}">
+                            <Button.Flyout>
+                                <Flyout Placement="BottomEdgeAlignedLeft" FlyoutPresenterClasses="file-menu">
+                                    <StackPanel>
+                                        <Button Classes="menu-row" Command="{Binding NewFolderCommand}" Click="OnFileMenuRowClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <avalonia:MaterialIcon Kind="FolderPlusOutline" Width="16" Height="16" />
+                                                <TextBlock Text="New folder" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Classes="menu-row" Command="{Binding NewTextDocumentCommand}" Click="OnFileMenuRowClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <avalonia:MaterialIcon Kind="FilePlusOutline" Width="16" Height="16" />
+                                                <TextBlock Text="New text document" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                            <StackPanel Orientation="Horizontal" Spacing="2">
+                                <avalonia:MaterialIcon Kind="PlusBoxOutline" Width="18" Height="18" />
+                                <avalonia:MaterialIcon Classes="chevron" Kind="ChevronDown" Width="14" Height="14" />
+                            </StackPanel>
+                        </Button>
+                        <Button Tag="select-all"
+                                Classes="nav file-action"
+                                ToolTip.Tip="Select all"
+                                Command="{Binding SelectAllCommand}">
+                            <avalonia:MaterialIcon Kind="SelectAll" Width="18" Height="18" />
+                        </Button>
+                        <Button Tag="copy"
+                                Classes="nav file-action"
+                                ToolTip.Tip="Copy"
+                                Command="{Binding CopySelectionCommand}">
+                            <avalonia:MaterialIcon Kind="ContentCopy" Width="17" Height="17" />
+                        </Button>
+                        <!-- Paste ▸ Paste (asks about taken names), Paste without replace, Paste with replace -->
+                        <Button x:Name="PasteButton"
+                                Tag="paste"
+                                Classes="nav dropdown file-action"
+                                ToolTip.Tip="Paste"
+                                IsEnabled="{Binding CanPasteInActiveFolder}">
+                            <Button.Flyout>
+                                <Flyout Placement="BottomEdgeAlignedLeft" FlyoutPresenterClasses="file-menu">
+                                    <StackPanel>
+                                        <Button Classes="menu-row" Command="{Binding PasteCommand}" Click="OnFileMenuRowClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <avalonia:MaterialIcon Kind="ContentPaste" Width="16" Height="16" />
+                                                <TextBlock Text="Paste" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Classes="menu-row" Command="{Binding PasteWithoutReplaceCommand}" Click="OnFileMenuRowClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <avalonia:MaterialIcon Kind="ContentDuplicate" Width="16" Height="16" />
+                                                <TextBlock Text="Paste without replace" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Classes="menu-row" Command="{Binding PasteWithReplaceCommand}" Click="OnFileMenuRowClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <avalonia:MaterialIcon Kind="FileReplaceOutline" Width="16" Height="16" />
+                                                <TextBlock Text="Paste with replace" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                            <StackPanel Orientation="Horizontal" Spacing="2">
+                                <avalonia:MaterialIcon Kind="ContentPaste" Width="18" Height="18" />
+                                <avalonia:MaterialIcon Classes="chevron" Kind="ChevronDown" Width="14" Height="14" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Tag="computer"
+                                Classes="view-toggle"
+                                ToolTip.Tip="Computer"
+                                Command="{Binding GoComputerCommand}">
+                            <avalonia:MaterialIcon Kind="Monitor" Width="18" Height="18" />
+                        </Button>
+
+                        <!-- Address bar: breadcrumbs, click the empty part (or Ctrl+L) to type a path.
+                             Can be moved but not removed, like Firefox's -->
+                        <shellViews:AddressBar Tag="address" DataContext="{Binding AddressBar}" />
+                        <shellViews:SortButton Tag="sort" />
+
+                        <!-- Grid / list / tree: side by side they stay 2 px apart, as before -->
+                        <Button Tag="view-grid"
+                                Classes="view-mode"
+                                Classes.selected="{Binding IsGridView}"
+                                Command="{Binding ShowGridViewCommand}"
+                                ToolTip.Tip="Grid (Ctrl+1)">
+                            <avalonia:MaterialIcon Kind="ViewGridOutline" Width="18" Height="18" />
+                        </Button>
+                        <Button Tag="view-list"
+                                Classes="view-mode"
+                                Classes.selected="{Binding IsListView}"
+                                Command="{Binding ShowListViewCommand}"
+                                ToolTip.Tip="List (Ctrl+2)">
+                            <avalonia:MaterialIcon Kind="FormatListBulleted" Width="18" Height="18" />
+                        </Button>
+                        <Button Tag="view-tree"
+                                Classes="view-mode"
+                                Classes.selected="{Binding IsTreeView}"
+                                Command="{Binding ShowTreeViewCommand}"
+                                ToolTip.Tip="Tree (Ctrl+3)">
+                            <avalonia:MaterialIcon Kind="FileTreeOutline" Width="18" Height="18" />
+                        </Button>
+                        <!-- Split view: always available, highlighted while the window shows two views -->
+                        <Button Tag="split-view"
+                                Classes="view-mode"
+                                Classes.selected="{Binding IsSplit}"
+                                Command="{Binding ToggleSplitViewCommand}"
+                                ToolTip.Tip="Split view (F3)">
+                            <avalonia:MaterialIcon Kind="ViewSplitVertical" Width="18" Height="18" />
+                        </Button>
+
+                        <shellViews:ActionCenterButton Tag="action-center" DataContext="{Binding ActionCenter}" />
+
+                        <Button Tag="search" Classes="window-button" ToolTip.Tip="Search">
+                            <avalonia:MaterialIcon Kind="Magnify" />
+                        </Button>
+
+                        <!-- In the palette only, until the user drags them onto the toolbar -->
+                        <Button Tag="refresh"
+                                Classes="window-button"
+                                ToolTip.Tip="Refresh (F5)"
+                                Command="{Binding RefreshCommand}">
+                            <avalonia:MaterialIcon Kind="Refresh" />
+                        </Button>
+                        <Button Tag="new-tab"
+                                Classes="window-button"
+                                ToolTip.Tip="New tab (Ctrl+T)"
+                                Command="{Binding NewTabCommand}">
+                            <avalonia:MaterialIcon Kind="TabPlus" />
+                        </Button>
+                        <Button Tag="info-panel"
+                                Classes="window-button"
+                                ToolTip.Tip="Info panel (Space)"
+                                Command="{Binding ToggleInfoPanelCommand}">
+                            <avalonia:MaterialIcon Kind="InformationOutline" />
+                        </Button>
+                        <Button Tag="hidden-files"
+                                Classes="window-button"
+                                ToolTip.Tip="Show hidden files (Ctrl+H)"
+                                Command="{Binding ToggleHiddenFilesCommand}">
+                            <avalonia:MaterialIcon Kind="EyeOutline" />
+                        </Button>
+                    </Panel>
+
+                    <!-- Not customizable, like Firefox's menu button and window controls -->
+                    <StackPanel Grid.Column="2"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Spacing="6">
+                        <Button Classes="window-button"
+                                ToolTip.Tip="Settings"
+                                Command="{Binding SettingsCommand}"
+                                Margin="0,0,12,0">
+                            <avalonia:MaterialIcon Kind="Menu" />
+                        </Button>
+
+                        <Button Classes="window-button"
+                                ToolTip.Tip="Minimize window"
+                                Click="OnMinimizeClick"
+                                IsVisible="{Binding IsNotHyprland}">
+                            <avalonia:MaterialIcon Kind="WindowMinimize" />
+                        </Button>
+
+                        <Button Classes="window-button"
+                                ToolTip.Tip="Maximize window"
+                                Click="OnMaximizeClick"
+                                IsVisible="{Binding IsNotHyprland}">
+                            <avalonia:MaterialIcon Kind="WindowMaximize" />
+                        </Button>
+
+                        <Button Classes="window-button close"
+                                ToolTip.Tip="Close window"
+                                Click="OnCloseClick">
+                            <avalonia:MaterialIcon Kind="WindowClose" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Customize Toolbar…: the palette takes the place of the window's content until Done -->
+            <shellViews:ToolbarCustomizer x:Name="Customizer"
+                                          Grid.Row="1"
+                                          ZIndex="1"
+                                          IsVisible="False"
+                                          DataContext="{Binding Toolbar}" />
+
+            <!-- An item dragged while customizing follows the pointer here -->
+            <Canvas x:Name="DragLayer"
+                    Grid.Row="0"
+                    Grid.RowSpan="2"
+                    ZIndex="2"
+                    IsHitTestVisible="False" />
+
+            <!-- ================= Body ================= -->
+            <Grid Grid.Row="1" ColumnDefinitions="200,*">
+                <!-- Sidebar -->
+                <Border Grid.Column="0" Background="{DynamicResource FcSidebarBrush}">
+                    <DockPanel>
+                        <HyperlinkButton DockPanel.Dock="Bottom"
+                                         Classes="sidebar-link"
+                                         IsVisible="{Binding HasNotDesktopFile}"
+                                         Command="{Binding CreateDesktopFileCommand}"
+                                         Content="Create desktop file" />
+                        <ListBox x:Name="SidebarList"
+                                 Classes="sidebar"
+                                 ItemsSource="{Binding Sidebar.Entries}"
+                                 SelectedItem="{Binding Sidebar.SelectedEntry}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.DataTemplates>
+                                <DataTemplate DataType="shell:SidebarHeader">
+                                    <TextBlock Text="{Binding Title}"
+                                               FontSize="14"
+                                               Foreground="{DynamicResource FcHeaderTextBrush}"
+                                               VerticalAlignment="Center" />
+                                </DataTemplate>
+
+                                <DataTemplate DataType="shell:SidebarItem">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ToolTip.Tip="{Binding Location}">
+                                        <avalonia:MaterialIcon Grid.Column="0"
+                                                               Kind="{Binding Icon}"
+                                                               Width="18" Height="18"
+                                                               Margin="0,0,12,0"
+                                                               VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Title}"
+                                                   FontSize="14"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <Button Grid.Column="2"
+                                                Classes="eject"
+                                                IsVisible="{Binding CanEject}"
+                                                Foreground="{Binding $parent[ContentPresenter].Foreground}"
+                                                ToolTip.Tip="Eject">
+                                            <avalonia:MaterialIcon Kind="Eject" Width="14" Height="14" />
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.DataTemplates>
+                        </ListBox>
+                    </DockPanel>
+                </Border>
+
+                <!-- The tab bar (Ctrl+T), and below it the selected tab -->
+                <DockPanel Grid.Column="1">
+                    <Border DockPanel.Dock="Top"
+                            Classes="tab-bar"
+                            IsVisible="{Binding HasMultipleTabs}">
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Disabled">
+                            <StackPanel Orientation="Horizontal">
+                                <ItemsControl ItemsSource="{Binding Tabs}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="shell:TabViewModel">
+                                            <!-- Left click selects, middle click closes (code-behind) -->
+                                            <Border Classes="tab"
+                                                    Classes.selected="{Binding IsSelected}"
+                                                    ToolTip.Tip="{Binding Location}"
+                                                    PointerReleased="OnTabPointerReleased">
+                                                <Grid ColumnDefinitions="Auto,*,Auto" Margin="10,0,6,0">
+                                                    <avalonia:MaterialIcon Grid.Column="0"
+                                                                           Classes="tab-icon"
+                                                                           Kind="{Binding Icon}"
+                                                                           Width="16" Height="16"
+                                                                           Margin="0,0,8,0"
+                                                                           VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding Title}"
+                                                               FontSize="13"
+                                                               VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                    <Button Grid.Column="2"
+                                                            Classes="tab-close"
+                                                            Margin="8,0,0,0"
+                                                            ToolTip.Tip="Close tab (Ctrl+W)"
+                                                            IsVisible="{Binding CanClose}"
+                                                            Command="{Binding CloseCommand}">
+                                                        <avalonia:MaterialIcon Kind="Close" Width="14" Height="14" />
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <Button Classes="tab-new"
+                                        ToolTip.Tip="New tab (Ctrl+T)"
+                                        Command="{Binding NewTabCommand}">
+                                    <avalonia:MaterialIcon Kind="Plus" Width="18" Height="18" />
+                                </Button>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Every tab stays in the tree, only the selected one visible: switching back keeps
+                         its scroll positions, selection and info panel exactly as they were -->
+                    <ItemsControl ItemsSource="{Binding Tabs}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Panel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="shell:TabViewModel">
+                                <!-- The views (two side by side in split view), with the info panel (Space) on their right -->
+                                <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding IsSelected}">
+                                    <ItemsControl Grid.Column="0" ItemsSource="{Binding Panes}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Rows="1" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="shell:PaneViewModel">
+                                                <shellViews:PaneView />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <!-- Info panel: slides in from the right by growing from 0 to its full width.
+                                         The panel itself keeps its width and sticks to the right edge, so it moves in
+                                         rather than squeezing its text while the host grows. -->
+                                    <Border Grid.Column="1"
+                                            Classes="info-panel"
+                                            Classes.open="{Binding InfoPanel.IsShown}"
+                                            ClipToBounds="True">
+                                        <Border.Transitions>
+                                            <Transitions>
+                                                <DoubleTransition Property="Width" Duration="0:0:0.18" Easing="CubicEaseOut" />
+                                            </Transitions>
+                                        </Border.Transitions>
+                                        <shellViews:InfoPanel Width="300"
+                                                              HorizontalAlignment="Right"
+                                                              DataContext="{Binding InfoPanel}" />
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </DockPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

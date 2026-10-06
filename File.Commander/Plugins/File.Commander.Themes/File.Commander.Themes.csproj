@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!-- Shown in Settings → Plugins: AssemblyTitle is the name, Description the line under it, Version the version -->
+    <PropertyGroup>
+        <AssemblyName>File.Commander.Themes</AssemblyName>
+        <RootNamespace>File.Commander.Themes</RootNamespace>
+        <AssemblyTitle>Extra Themes</AssemblyTitle>
+        <Description>Nord, Dracula, Gruvbox and Tokyo Night color themes.</Description>
+        <Version>1.0.0</Version>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="addon.json" />
+    </ItemGroup>
+
+</Project>

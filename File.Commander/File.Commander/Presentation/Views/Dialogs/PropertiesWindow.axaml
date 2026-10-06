@@ -1,0 +1,148 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:File.Commander.Presentation.ViewModels.Dialogs"
+        xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
+        x:Class="File.Commander.Presentation.Views.Dialogs.PropertiesWindow"
+        x:DataType="vm:PropertiesViewModel"
+        Title="{Binding Title}"
+        WindowDecorations="None"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent">
+    <!-- DialogService sizes this window to cover the owner; the card is centered on a dimmed backdrop -->
+
+    <Window.Styles>
+        <Style Selector="Border.dialog-card">
+            <Setter Property="Background" Value="{DynamicResource BaseBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BoxShadow" Value="0 12 40 0 #66000000" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="32" />
+        </Style>
+
+        <Style Selector="TextBlock.dialog-title">
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector="TextBlock.dialog-message">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext1Brush}" />
+        </Style>
+
+        <!-- ===== Buttons ===== -->
+        <Style Selector="Button.dialog-button">
+            <Setter Property="MinWidth" Value="88" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+
+        <Style Selector="Button.dialog-button.primary">
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BaseBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BaseBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BaseBrush}" />
+        </Style>
+
+        <!-- Deletes something for good -->
+        <Style Selector="Button.dialog-button.primary.destructive">
+            <Setter Property="Background" Value="{DynamicResource RedBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button.primary.destructive:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RedBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button.primary.destructive:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RedBrush}" />
+        </Style>
+
+        <Style Selector="TextBlock.property-label">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext1Brush}" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+        </Style>
+        <Style Selector="SelectableTextBlock.property-value">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+    </Window.Styles>
+
+    <Panel>
+        <!-- Clicking the dimmed area closes the window -->
+        <Border Background="{DynamicResource FcBackdropBrush}" PointerPressed="OnBackdropPressed" />
+
+        <Border Classes="dialog-card" Width="480" MaxHeight="560">
+            <DockPanel Margin="24,20,24,20">
+                <!-- ===== Header: icon + name ===== -->
+                <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" Margin="0,0,0,18">
+                    <Border Grid.Column="0"
+                            Width="48" Height="48"
+                            CornerRadius="10"
+                            Background="{DynamicResource MantleBrush}">
+                        <avalonia:MaterialIcon Kind="{Binding Icon}"
+                                               Width="28" Height="28"
+                                               Foreground="{DynamicResource FcAccentBrush}" />
+                    </Border>
+                    <TextBlock Grid.Column="1"
+                               Classes="dialog-title"
+                               Text="{Binding Name}"
+                               Margin="14,0,0,0"
+                               VerticalAlignment="Center" />
+                </Grid>
+
+                <StackPanel DockPanel.Dock="Bottom"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Margin="0,18,0,0">
+                    <Button x:Name="CloseButton"
+                            Classes="dialog-button primary"
+                            Content="Close"
+                            Command="{Binding CloseCommand}" />
+                </StackPanel>
+
+                <!-- ===== Rows ===== -->
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding Rows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:PropertyRowViewModel">
+                                <Grid ColumnDefinitions="110,*" Margin="0,5">
+                                    <TextBlock Grid.Column="0" Classes="property-label" Text="{Binding Label}" />
+                                    <SelectableTextBlock Grid.Column="1" Classes="property-value" Text="{Binding Value}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+    </Panel>
+</Window>

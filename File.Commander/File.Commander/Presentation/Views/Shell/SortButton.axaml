@@ -1,0 +1,161 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="clr-namespace:File.Commander.Presentation.ViewModels.Shell"
+             xmlns:browser="clr-namespace:File.Commander.Presentation.ViewModels.Browser"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             x:Class="File.Commander.Presentation.Views.Shell.SortButton"
+             x:DataType="shell:MainViewModel">
+    <!-- Sort button with its drop-down. Fc* brushes follow the theme: DynamicResource -->
+    <UserControl.Styles>
+        <!-- Same look as the view-mode buttons next to it -->
+        <Style Selector="Button.sort">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.sort:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.sort:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <!-- While the menu is open -->
+        <Style Selector="Button.sort:flyout-open /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcNavGroupBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="Button.sort:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcDisabledTextBrush}" />
+        </Style>
+
+        <!-- ===== Drop-down ===== -->
+        <Style Selector="FlyoutPresenter.sort-menu">
+            <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="MinWidth" Value="180" />
+        </Style>
+        <Style Selector="TextBlock.menu-title">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+            <Setter Property="Margin" Value="8,4,8,4" />
+        </Style>
+        <Style Selector="RadioButton.sort-option">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="Padding" Value="8,0,8,0" />
+            <Setter Property="Margin" Value="4,0" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+
+        <!-- Not FcDividerBrush: that is Surface0, the same color as the menu background -->
+        <Style Selector="Border.menu-separator">
+            <Setter Property="Height" Value="1" />
+            <Setter Property="Margin" Value="4,6" />
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+        </Style>
+
+        <!-- A checkable menu row: a check mark instead of a filled button when on -->
+        <Style Selector="ToggleButton.menu-check">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="4,0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.menu-check:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.menu-check:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.menu-check:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.shortcut">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Button x:Name="Toggle"
+            Classes="sort"
+            IsEnabled="{Binding IsFolderPage}"
+            ToolTip.Tip="Sort">
+        <Button.Flyout>
+            <Flyout Placement="BottomEdgeAlignedRight" FlyoutPresenterClasses="sort-menu">
+                <StackPanel>
+                    <TextBlock Classes="menu-title" Text="Sort" />
+                    <RadioButton Classes="sort-option" GroupName="file-sort" Content="A-Z"
+                                 IsChecked="{Binding IsSortedAToZ, Mode=TwoWay}" Click="OnOptionClick"
+                                 Command="{Binding ApplySortCommand}"
+                                 CommandParameter="{x:Static browser:FileSortMode.NameAscending}" />
+                    <RadioButton Classes="sort-option" GroupName="file-sort" Content="Z-A"
+                                 IsChecked="{Binding IsSortedZToA, Mode=TwoWay}" Click="OnOptionClick"
+                                 Command="{Binding ApplySortCommand}"
+                                 CommandParameter="{x:Static browser:FileSortMode.NameDescending}" />
+                    <RadioButton Classes="sort-option" GroupName="file-sort" Content="Last Modified"
+                                 IsChecked="{Binding IsSortedNewestFirst, Mode=TwoWay}" Click="OnOptionClick"
+                                 Command="{Binding ApplySortCommand}"
+                                 CommandParameter="{x:Static browser:FileSortMode.NewestFirst}" />
+                    <RadioButton Classes="sort-option" GroupName="file-sort" Content="First Modified"
+                                 IsChecked="{Binding IsSortedOldestFirst, Mode=TwoWay}" Click="OnOptionClick"
+                                 Command="{Binding ApplySortCommand}"
+                                 CommandParameter="{x:Static browser:FileSortMode.OldestFirst}" />
+                    <RadioButton Classes="sort-option" GroupName="file-sort" Content="Size"
+                                 IsChecked="{Binding IsSortedBySize, Mode=TwoWay}" Click="OnOptionClick"
+                                 Command="{Binding ApplySortCommand}"
+                                 CommandParameter="{x:Static browser:FileSortMode.LargestFirst}" />
+                    <RadioButton Classes="sort-option" GroupName="file-sort" Content="Type"
+                                 IsChecked="{Binding IsSortedByType, Mode=TwoWay}" Click="OnOptionClick"
+                                 Command="{Binding ApplySortCommand}"
+                                 CommandParameter="{x:Static browser:FileSortMode.Type}" />
+
+                    <Border Classes="menu-separator" />
+
+                    <!-- Columns: check slot as wide as a radio circle, so the labels line up with the ones above -->
+                    <ToggleButton Classes="menu-check"
+                                  IsChecked="{Binding ShowHiddenFiles, Mode=TwoWay}"
+                                  Click="OnOptionClick">
+                        <Grid ColumnDefinitions="20,*,Auto">
+                            <avalonia:MaterialIcon Grid.Column="0"
+                                                   Kind="Check"
+                                                   Width="16" Height="16"
+                                                   IsVisible="{Binding ShowHiddenFiles}" />
+                            <TextBlock Grid.Column="1"
+                                       Text="Show Hidden Files"
+                                       Margin="8,0,0,0"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2"
+                                       Classes="shortcut"
+                                       Text="Ctrl+H"
+                                       Margin="24,0,8,0"
+                                       VerticalAlignment="Center" />
+                        </Grid>
+                    </ToggleButton>
+                </StackPanel>
+            </Flyout>
+        </Button.Flyout>
+        <avalonia:MaterialIcon Kind="SortVariant" Width="18" Height="18" />
+    </Button>
+</UserControl>

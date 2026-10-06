@@ -1,0 +1,29 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Section titles and clickable cards of the Computer and Network pages.
+         Included by each view that uses them (PaneView, NetworkView), so every file resolves the classes itself.
+         Fc* brushes follow the theme: DynamicResource -->
+
+    <Style Selector="TextBlock.section-title">
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        <Setter Property="Margin" Value="0,0,0,20" />
+    </Style>
+
+    <Style Selector="Button.card">
+        <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.card:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource FcCardHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+    </Style>
+    <Style Selector="Button.card:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource FcCardPressedBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+    </Style>
+</Styles>

@@ -1,0 +1,33 @@
+<Application xmlns="https://github.com/avaloniaui"
+             
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:themes="clr-namespace:File.Commander.Presentation.Themes"
+             x:Class="File.Commander.App"
+             RequestedThemeVariant="{x:Static themes:CatppuccinThemes.Mocha}">
+    <!-- Mocha until the stored setting is read; App.axaml.cs then follows Settings → Basic → Appearance -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- One palette per Catppuccin flavor, same keys in all: switching RequestedThemeVariant swaps them -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceInclude x:Key="{x:Static themes:CatppuccinThemes.Latte}"
+                                 Source="avares://File.Commander/Presentation/Styles/ThemeLatte.axaml" />
+                <ResourceInclude x:Key="{x:Static themes:CatppuccinThemes.Frappe}"
+                                 Source="avares://File.Commander/Presentation/Styles/ThemeFrappe.axaml" />
+                <ResourceInclude x:Key="{x:Static themes:CatppuccinThemes.Macchiato}"
+                                 Source="avares://File.Commander/Presentation/Styles/ThemeMacchiato.axaml" />
+                <ResourceInclude x:Key="{x:Static themes:CatppuccinThemes.Mocha}"
+                                 Source="avares://File.Commander/Presentation/Styles/ThemeMocha.axaml" />
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
+    <Application.Styles>
+        <FluentTheme />
+        <avalonia:MaterialIconStyles />
+        <StyleInclude Source="avares://File.Commander/Presentation/Styles/TextBlock.axaml" />
+        <StyleInclude Source="avares://File.Commander/Presentation/Styles/Button.axaml" />
+        <StyleInclude Source="avares://File.Commander/Presentation/Styles/ScrollBar.axaml" />
+        <StyleInclude Source="avares://File.Commander/Presentation/Styles/ContextMenu.axaml" />
+    </Application.Styles>
+</Application>

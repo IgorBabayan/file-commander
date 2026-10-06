@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=File Commander
+Comment=Modern file commander
+Exec=File.Commander
+Icon=file-commander
+Categories=Utility;FileManager;
+Terminal=false
+StartupWMClass=file-commander

@@ -1,0 +1,830 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:File.Commander.Presentation.ViewModels.Settings"
+        xmlns:plugin="clr-namespace:File.Commander.Presentation.ViewModels.Plugin"
+        xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:sys="using:System"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
+        x:Class="File.Commander.Presentation.Views.Settings.SettingsWindow"
+        x:DataType="vm:SettingsViewModel"
+        Title="Settings — File Commander"
+        WindowDecorations="None"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent">
+    <!-- DialogService sizes this window to cover the owner; the card is centered on a dimmed backdrop -->
+
+    <Window.Styles>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{DynamicResource BaseBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BoxShadow" Value="0 12 40 0 #66000000" />
+        </Style>
+
+        <!-- ===== Navigation ===== -->
+        <Style Selector="ListBox.settings-nav">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="8,0,8,12" />
+        </Style>
+        <Style Selector="ListBox.settings-nav ListBoxItem">
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Margin" Value="0,1" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="ListBox.settings-nav ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style Selector="ListBox.settings-nav ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="ListBox.settings-nav ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BlueBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="ListBox.settings-nav ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource LavenderBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+
+        <Style Selector="TextBlock.nav-group">
+            <Setter Property="FontSize" Value="20" />
+        </Style>
+        <Style Selector="TextBlock.nav-section">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Margin" Value="18,0,0,0" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext1Brush}" />
+        </Style>
+        <Style Selector="ListBoxItem:selected TextBlock.nav-section">
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+
+        <!-- ===== Content ===== -->
+        <Style Selector="TextBlock.group-title">
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="Margin" Value="0,28,0,0" />
+        </Style>
+        <Style Selector="TextBlock.group-title.first">
+            <Setter Property="Margin" Value="0" />
+        </Style>
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext1Brush}" />
+            <Setter Property="Margin" Value="2,18,0,8" />
+        </Style>
+        <Style Selector="StackPanel.section">
+            <Setter Property="Spacing" Value="2" />
+        </Style>
+        <Style Selector="Border.setting-row">
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="MinHeight" Value="40" />
+        </Style>
+        <Style Selector="TextBlock.setting-label">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="CheckBox.setting">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="ComboBox.setting">
+            <Setter Property="Width" Value="260" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <!-- ===== Keymap ===== -->
+        <Style Selector="TextBlock.keymap-hint">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="2,0,0,6" />
+        </Style>
+        <Style Selector="TextBlock.keymap-notice">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource PeachBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="2,0,0,6" />
+        </Style>
+        <Style Selector="TextBox.keymap-search">
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextBrush}" />
+            <Setter Property="PlaceholderForeground" Value="{DynamicResource Overlay1Brush}" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource BlueBrush}" />
+            <Setter Property="SelectionForegroundBrush" Value="{DynamicResource CrustBrush}" />
+        </Style>
+        <Style Selector="TextBox.keymap-search /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="TextBox.keymap-search:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        <Style Selector="TextBox.keymap-search:focus /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BlueBrush}" />
+        </Style>
+        <Style Selector="TextBox.keymap-search:pointerover, TextBox.keymap-search:focus">
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="TextBox.keymap-search avalonia|MaterialIcon.search-icon">
+            <Setter Property="Width" Value="16" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+        </Style>
+        <Style Selector="Button.keymap-search-clear">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,5,0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Button.keymap-search-clear:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Surface2Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.keymap-empty">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontStyle" Value="Italic" />
+            <Setter Property="Margin" Value="10,8" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+        </Style>
+        <Style Selector="Border.keymap-panel">
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="4" />
+        </Style>
+
+        <Style Selector="ToggleButton.keymap-group">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="6,5" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource BlueBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.keymap-group:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource BlueBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.keymap-group:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BlueBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.keymap-group:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Surface2Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BlueBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.keymap-group avalonia|MaterialIcon.chevron">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+            <Setter Property="RenderTransform" Value="rotate(0deg)" />
+        </Style>
+        <Style Selector="ToggleButton.keymap-group:checked avalonia|MaterialIcon.chevron">
+            <Setter Property="RenderTransform" Value="rotate(90deg)" />
+        </Style>
+
+        <Style Selector="Border.keymap-row">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="Margin" Value="26,0,0,0" />
+            <Setter Property="MinHeight" Value="32" />
+        </Style>
+        <Style Selector="Border.keymap-row:pointerover">
+            <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+        </Style>
+        <Style Selector="Border.keymap-row.selected">
+            <Setter Property="Background" Value="{DynamicResource Surface2Brush}" />
+        </Style>
+        <Style Selector="Border.keymap-row.recording">
+            <Setter Property="BorderBrush" Value="{DynamicResource BlueBrush}" />
+        </Style>
+        <Style Selector="TextBlock.keymap-title">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.keymap-unassigned">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontStyle" Value="Italic" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+        </Style>
+        <Style Selector="TextBlock.keymap-recording">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource BlueBrush}" />
+        </Style>
+        <Style Selector="Border.key-cap">
+            <Setter Property="MinWidth" Value="22" />
+            <Setter Property="Padding" Value="6,1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Overlay0Brush}" />
+            <Setter Property="Background" Value="{DynamicResource BaseBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Border.key-cap TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext1Brush}" />
+        </Style>
+
+        <!-- ===== Plugins ===== -->
+        <Style Selector="Border.plugin-row">
+            <Setter Property="Padding" Value="12,8" />
+        </Style>
+        <Style Selector="TextBlock.plugin-name">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector="TextBlock.plugin-version">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+        </Style>
+        <Style Selector="TextBlock.plugin-description">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext0Brush}" />
+        </Style>
+        <Style Selector="TextBlock.plugin-status">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+        </Style>
+        <Style Selector="TextBlock.plugin-status.attention">
+            <Setter Property="Foreground" Value="{DynamicResource PeachBrush}" />
+        </Style>
+        <Style Selector="TextBlock.plugin-error">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource RedBrush}" />
+        </Style>
+        <Style Selector="TextBlock.plugin-hint">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="2,6,0,0" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+        </Style>
+        <Style Selector="TextBlock.plugin-page-title">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext1Brush}" />
+        </Style>
+        <Style Selector="TextBlock.plugin-saved">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource GreenBrush}" />
+        </Style>
+        <Style Selector="Border.plugin-page">
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="12" />
+        </Style>
+        <Style Selector="Button.plugin-delete">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.plugin-delete:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Surface2Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource RedBrush}" />
+        </Style>
+
+        <Style Selector="TextBlock.save-error">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource RedBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+    </Window.Styles>
+
+    <Panel>
+        <!-- Clicking the dimmed area closes the window -->
+        <Border Background="{DynamicResource FcBackdropBrush}" PointerPressed="OnBackdropPressed" />
+
+        <Border Classes="card" MaxWidth="780" MaxHeight="600" Margin="32">
+            <Grid ColumnDefinitions="210,*" RowDefinitions="44,*">
+                <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto" Margin="0,0,8,0">
+                    <TextBlock Grid.Column="0"
+                               Classes="save-error"
+                               Text="{Binding SaveError}"
+                               IsVisible="{Binding HasSaveError}" />
+                    <Button Grid.Column="1"
+                            Classes="window-button close"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Close (Esc)"
+                            Click="OnCloseClick">
+                        <avalonia:MaterialIcon Kind="WindowClose" />
+                    </Button>
+                </Grid>
+
+                <!-- ================= Navigation ================= -->
+                <ListBox x:Name="Navigation"
+                         Grid.Row="1" Grid.Column="0"
+                         Classes="settings-nav"
+                         ItemsSource="{Binding NavItems}"
+                         SelectedItem="{Binding SelectedNavItem}"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.DataTemplates>
+                        <DataTemplate DataType="vm:SettingsNavGroup">
+                            <TextBlock Classes="nav-group" Text="{Binding Title}" />
+                        </DataTemplate>
+                        <DataTemplate DataType="vm:SettingsNavSection">
+                            <TextBlock Classes="nav-section" Text="{Binding Title}" ToolTip.Tip="{Binding Title}" />
+                        </DataTemplate>
+                    </ListBox.DataTemplates>
+                </ListBox>
+
+                <!-- ================= Content ================= -->
+                <!-- Every heading's Tag is the Key of its navigation entry -->
+                <Border Grid.Row="1" Grid.Column="1"
+                        Background="{DynamicResource MantleBrush}"
+                        CornerRadius="10"
+                        Margin="0,0,12,12"
+                        ClipToBounds="True">
+                    <ScrollViewer x:Name="ContentScroll" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel x:Name="ContentHost" Margin="24,16,24,24">
+
+                            <!-- ===== Basic ===== -->
+                            <TextBlock Classes="group-title first" Text="Basic" Tag="basic" />
+
+                            <TextBlock Classes="section-title" Text="Appearance" Tag="appearance" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="setting-label" Text="Theme:" />
+                                        <ComboBox Grid.Column="1" Classes="setting"
+                                                  ItemsSource="{Binding ThemeOptions}"
+                                                  SelectedItem="{Binding Theme}" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Keymap" Tag="keymap" />
+                            <StackPanel Classes="section">
+                                <TextBlock Classes="keymap-hint"
+                                           Text="Right-click a shortcut to change, add, remove or reset it. Double-click changes it." />
+                                <TextBox x:Name="KeymapSearch"
+                                         Classes="keymap-search"
+                                         PlaceholderText="Search keybindings by name"
+                                         Text="{Binding Keymap.SearchText}">
+                                    <TextBox.InnerLeftContent>
+                                        <avalonia:MaterialIcon Classes="search-icon" Kind="Magnify" />
+                                    </TextBox.InnerLeftContent>
+                                    <TextBox.InnerRightContent>
+                                        <Button Classes="keymap-search-clear"
+                                                Focusable="False"
+                                                ToolTip.Tip="Clear search (Esc)"
+                                                Command="{Binding Keymap.ClearSearchCommand}"
+                                                IsVisible="{Binding Keymap.SearchText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                            <avalonia:MaterialIcon Kind="Close" Width="14" Height="14" />
+                                        </Button>
+                                    </TextBox.InnerRightContent>
+                                </TextBox>
+                                <TextBlock Classes="keymap-notice"
+                                           Text="{Binding Keymap.Notice}"
+                                           IsVisible="{Binding Keymap.HasNotice}" />
+                                <!-- No Tag inside: Tags mark the navigation anchors -->
+                                <Border Classes="keymap-panel" IsVisible="{Binding !Keymap.HasNoMatches}">
+                                    <ItemsControl x:Name="KeymapGroups" ItemsSource="{Binding Keymap.Groups}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="vm:KeymapGroupViewModel">
+                                                <StackPanel Spacing="1" IsVisible="{Binding HasItems}">
+                                                    <ToggleButton Classes="keymap-group" IsChecked="{Binding IsExpanded}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <avalonia:MaterialIcon Classes="chevron" Kind="ChevronRight"
+                                                                                   Width="16" Height="16" />
+                                                            <avalonia:MaterialIcon Kind="Folder" Width="16" Height="16" />
+                                                            <TextBlock Text="{Binding Title}" FontSize="14"
+                                                                       VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </ToggleButton>
+
+                                                    <ItemsControl ItemsSource="{Binding Items}" IsVisible="{Binding IsExpanded}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate DataType="vm:KeymapItemViewModel">
+                                                                <Border Classes="keymap-row"
+                                                                        Classes.selected="{Binding IsSelected}"
+                                                                        Classes.recording="{Binding IsRecording}">
+                                                                    <Border.ContextMenu>
+                                                                        <ContextMenu x:DataType="vm:KeymapItemViewModel">
+                                                                            <MenuItem Header="Change keybinding…" Command="{Binding EditCommand}" />
+                                                                            <MenuItem Header="Add keybinding…" Command="{Binding AddCommand}" />
+                                                                            <MenuItem Header="Remove keybinding" Command="{Binding RemoveCommand}" />
+                                                                            <Separator />
+                                                                            <MenuItem Header="Reset to default" Command="{Binding ResetCommand}" />
+                                                                        </ContextMenu>
+                                                                    </Border.ContextMenu>
+                                                                    <Grid ColumnDefinitions="*,Auto">
+                                                                        <TextBlock Classes="keymap-title" Text="{Binding Title}" />
+
+                                                                        <ItemsControl Grid.Column="1"
+                                                                                      ItemsSource="{Binding Keys}"
+                                                                                      IsVisible="{Binding ShowKeys}">
+                                                                            <ItemsControl.ItemsPanel>
+                                                                                <ItemsPanelTemplate>
+                                                                                    <StackPanel Orientation="Horizontal" Spacing="4" />
+                                                                                </ItemsPanelTemplate>
+                                                                            </ItemsControl.ItemsPanel>
+                                                                            <ItemsControl.ItemTemplate>
+                                                                                <DataTemplate x:DataType="sys:String">
+                                                                                    <Border Classes="key-cap">
+                                                                                        <TextBlock Text="{Binding}" />
+                                                                                    </Border>
+                                                                                </DataTemplate>
+                                                                            </ItemsControl.ItemTemplate>
+                                                                        </ItemsControl>
+
+                                                                        <TextBlock Grid.Column="1"
+                                                                                   Classes="keymap-unassigned"
+                                                                                   Text="Unassigned"
+                                                                                   IsVisible="{Binding ShowUnassigned}" />
+                                                                        <TextBlock Grid.Column="1"
+                                                                                   Classes="keymap-recording"
+                                                                                   Text="Press a key combination… (Esc to cancel)"
+                                                                                   IsVisible="{Binding IsRecording}" />
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Border>
+                                <TextBlock Classes="keymap-empty"
+                                           Text="No keybindings match your search."
+                                           IsVisible="{Binding Keymap.HasNoMatches}" />
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Open behavior" Tag="open-behavior" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting"
+                                              Content="Always open folder in new window"
+                                              IsChecked="{Binding AlwaysOpenFolderInNewWindow}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="setting-label" Text="Open file:" />
+                                        <ComboBox Grid.Column="1" Classes="setting"
+                                                  ItemsSource="{Binding OpenFileOptions}"
+                                                  SelectedItem="{Binding OpenFile}" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="New window and tab" Tag="new-window-tab" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="setting-label" Text="Open from default window:" />
+                                        <ComboBox Grid.Column="1" Classes="setting"
+                                                  ItemsSource="{Binding StartLocationOptions}"
+                                                  SelectedItem="{Binding StartLocation}" />
+                                    </Grid>
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="setting-label" Text="Open in new tab:" />
+                                        <ComboBox Grid.Column="1" Classes="setting"
+                                                  ItemsSource="{Binding NewTabOptions}"
+                                                  SelectedItem="{Binding NewTabLocation}" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Files and folders" Tag="files-folders" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Show hidden files"
+                                              IsChecked="{Binding ShowHiddenFiles}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Show file extensions"
+                                              IsChecked="{Binding ShowFileExtensions}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Mix sorting of files and folders"
+                                              IsChecked="{Binding MixFilesAndFolders}" />
+                                </Border>
+                            </StackPanel>
+
+                            <!-- ===== Sidebar ===== -->
+                            <TextBlock Classes="group-title" Text="Sidebar" Tag="sidebar" />
+
+                            <TextBlock Classes="section-title" Text="Items on sidebar" Tag="sidebar-items" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Recent" IsChecked="{Binding ShowRecent}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Home" IsChecked="{Binding ShowHome}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="User folders (Desktop, Documents, Downloads…)"
+                                              IsChecked="{Binding ShowUserFolders}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Trash" IsChecked="{Binding ShowTrash}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Computer" IsChecked="{Binding ShowComputer}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Partitions" IsChecked="{Binding ShowPartitions}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Network" IsChecked="{Binding ShowNetwork}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="setting-label"
+                                                   Text="Drag items on the sidebar to reorder them" />
+                                        <Button Grid.Column="1"
+                                                Content="Reset order"
+                                                Command="{Binding ResetSidebarOrderCommand}" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- ===== Workspace ===== -->
+                            <TextBlock Classes="group-title" Text="Workspace" Tag="workspace" />
+
+                            <TextBlock Classes="section-title" Text="View" Tag="view" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="setting-label" Text="Default view:" />
+                                        <ComboBox Grid.Column="1" Classes="setting"
+                                                  ItemsSource="{Binding ViewOptions}"
+                                                  SelectedItem="{Binding DefaultView}" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Thumbnail preview" Tag="thumbnails" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Images" IsChecked="{Binding PreviewImages}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Videos" IsChecked="{Binding PreviewVideos}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Text files" IsChecked="{Binding PreviewText}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Documents (PDF, office files)"
+                                              IsChecked="{Binding PreviewDocuments}" />
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Computer display" Tag="computer-display" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Hide the system disk"
+                                              IsChecked="{Binding HideSystemDisk}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Show the file system on disk icons"
+                                              IsChecked="{Binding ShowFileSystemOnDisks}" />
+                                </Border>
+                            </StackPanel>
+
+                            <!-- ===== Advanced ===== -->
+                            <TextBlock Classes="group-title" Text="Advanced" Tag="advanced" />
+
+                            <TextBlock Classes="section-title" Text="Search" Tag="search" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Full-text search (indexes file contents)"
+                                              IsChecked="{Binding FullTextSearch}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Index external drives"
+                                              IsChecked="{Binding IndexExternalDrives}" />
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Mount" Tag="mount" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Mount drives when they're plugged in"
+                                              IsChecked="{Binding AutoMount}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Open the drive after it's mounted"
+                                              IsChecked="{Binding OpenAfterAutoMount}"
+                                              IsEnabled="{Binding AutoMount}" />
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Dialog" Tag="dialog" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Ask before deleting files permanently"
+                                              IsChecked="{Binding ConfirmPermanentDelete}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Show progress for copy and move"
+                                              IsChecked="{Binding ShowOperationProgress}" />
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="File history" Tag="file-history" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="setting-label" Text="Show files used:" />
+                                        <ComboBox Grid.Column="1" Classes="setting"
+                                                  ItemsSource="{Binding FileHistoryOptions}"
+                                                  SelectedItem="{Binding FileHistoryDays}" />
+                                    </Grid>
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Show recently used folders"
+                                              IsChecked="{Binding ShowRecentFolders}" />
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Trash" Tag="trash" />
+                            <StackPanel Classes="section">
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Ask before emptying the trash"
+                                              IsChecked="{Binding ConfirmEmptyTrash}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Empty the trash of other drives too"
+                                              IsChecked="{Binding EmptyTrashOnAllDrives}" />
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="Updates" Tag="updates" />
+                            <StackPanel Classes="section">
+                                <TextBlock Classes="keymap-notice"
+                                           Text="Updates are installed only when File Commander runs from its AppImage."
+                                           IsVisible="{Binding !CanInstallUpdates}" />
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Automatically install updates on startup"
+                                              IsChecked="{Binding AutoUpdate}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <TextBlock Classes="setting-label" Text="{Binding AppVersionText}" />
+                                </Border>
+                            </StackPanel>
+
+                            <!-- ===== Plugins ===== -->
+                            <TextBlock Classes="group-title" Text="Plugins" Tag="plugins" />
+
+                            <TextBlock Classes="section-title" Text="Plugins list" Tag="plugins-list" />
+                            <StackPanel Classes="section">
+                                <TextBlock Classes="keymap-notice"
+                                           Text="Restart File Commander to apply the changes to plugins."
+                                           IsVisible="{Binding Plugins.NeedsRestart}" />
+                                <Border Classes="setting-row" IsVisible="{Binding !Plugins.HasPlugins}">
+                                    <TextBlock Classes="setting-label" Text="No plugins are installed." />
+                                </Border>
+                                <ItemsControl ItemsSource="{Binding Plugins.Items}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Spacing="2" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="vm:PluginItemViewModel">
+                                            <Border Classes="setting-row plugin-row">
+                                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <TextBlock Classes="plugin-name" Text="{Binding Name}" />
+                                                            <TextBlock Classes="plugin-version" Text="{Binding Version}" />
+                                                        </StackPanel>
+                                                        <TextBlock Classes="plugin-description"
+                                                                   Text="{Binding Description}"
+                                                                   IsVisible="{Binding HasDescription}" />
+                                                        <TextBlock Classes="plugin-status"
+                                                                   Classes.attention="{Binding NeedsRestart}"
+                                                                   Text="{Binding StatusText}" />
+                                                        <TextBlock Classes="plugin-error"
+                                                                   Text="{Binding Error}"
+                                                                   IsVisible="{Binding HasError}" />
+                                                    </StackPanel>
+                                                    <CheckBox Grid.Column="1"
+                                                              Classes="setting"
+                                                              Margin="12,0"
+                                                              Content="Enabled"
+                                                              IsChecked="{Binding IsEnabled}"
+                                                              IsEnabled="{Binding CanToggle}" />
+                                                    <Button Grid.Column="2"
+                                                            Classes="plugin-delete"
+                                                            ToolTip.Tip="Delete plugin"
+                                                            Command="{Binding RemoveCommand}">
+                                                        <avalonia:MaterialIcon Kind="DeleteOutline" Width="18" Height="18" />
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Classes="plugin-hint" Text="{Binding Plugins.FolderHint}" />
+                            </StackPanel>
+
+                            <!-- One section per loaded plugin with settings pages; its heading's Tag is its NavKey -->
+                            <ItemsControl ItemsSource="{Binding Plugins.Sections}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:PluginSettingsSectionViewModel">
+                                        <StackPanel>
+                                            <TextBlock Classes="section-title" Text="{Binding Title}" Tag="{Binding NavKey}" />
+                                            <StackPanel Classes="section">
+                                                <ItemsControl ItemsSource="{Binding Pages}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Spacing="6" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="plugin:PluginSettingsTabViewModel">
+                                                            <Border Classes="plugin-page">
+                                                                <StackPanel Spacing="6">
+                                                                    <TextBlock Classes="plugin-page-title"
+                                                                               Text="{Binding Title}"
+                                                                               IsVisible="{Binding ShowTitle}" />
+                                                                    <ContentControl Content="{Binding View}"
+                                                                                    IsEnabled="{Binding IsLoaded}" />
+                                                                    <TextBlock Classes="plugin-error"
+                                                                               Text="{Binding Error}"
+                                                                               IsVisible="{Binding HasError}" />
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <StackPanel Orientation="Horizontal"
+                                                            HorizontalAlignment="Right"
+                                                            Spacing="10"
+                                                            Margin="0,6,0,0"
+                                                            IsVisible="{Binding HasSaveButton}">
+                                                    <TextBlock Classes="plugin-saved" Text="{Binding SavedText}" />
+                                                    <Button Content="Save" Command="{Binding SaveCommand}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+        </Border>
+    </Panel>
+</Window>

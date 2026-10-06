@@ -1,0 +1,525 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:browser="clr-namespace:File.Commander.Presentation.ViewModels.Browser"
+             xmlns:converters="clr-namespace:File.Commander.Presentation.Converters"
+             xmlns:controls="clr-namespace:File.Commander.Presentation.Controls"
+             xmlns:views="clr-namespace:File.Commander.Presentation.Views.Browser"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             x:Class="File.Commander.Presentation.Views.Browser.DirectoryView"
+             x:DataType="browser:DirectoryViewModel">
+    <!-- Fc* brushes live in the theme dictionaries (Presentation/Styles/Theme*.axaml), so they must be
+         DynamicResource here: a StaticResource would keep the old colors after the theme changes. -->
+    <!-- Detail column widths. DirectoryView.axaml.cs shrinks them when the view is narrow (split view),
+         so the cells trim their text instead of overlapping -->
+    <UserControl.Resources>
+        <x:Double x:Key="ColSizeWidth">76</x:Double>
+        <x:Double x:Key="ColTypeWidth">110</x:Double>
+        <x:Double x:Key="ColModifiedWidth">128</x:Double>
+        <x:Double x:Key="ColCreatedWidth">128</x:Double>
+        <x:Double x:Key="ColAccessedWidth">128</x:Double>
+        <x:Double x:Key="ColPermissionsWidth">84</x:Double>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <!-- ===== List and grid: same items, same selection look ===== -->
+        <Style Selector="ListBox.files">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="ListBox.files ListBoxItem">
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <!-- Cut (Ctrl+X) until pasted or Esc: the container gets the "cut" class (CutMark.cs) -->
+        <Style Selector="ListBox.files ListBoxItem" x:DataType="browser:FileEntryViewModel">
+            <Setter Property="views:CutMark.Path" Value="{Binding FullPath}" />
+        </Style>
+        <Style Selector="ListBox.files ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.files ListBoxItem:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.files ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <!-- Cut: a lighter accent, selected or not. After hover and selection, so it wins over both -->
+        <Style Selector="ListBox.files ListBoxItem.cut /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcCutBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+
+        <!-- ===== List ===== -->
+        <Style Selector="ListBox.file-list">
+            <Setter Property="Padding" Value="12,0,12,12" />
+        </Style>
+        <Style Selector="ListBox.file-list ListBoxItem">
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="Margin" Value="0,1" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <!-- ===== Grid ===== -->
+        <Style Selector="ListBox.file-grid">
+            <Setter Property="Padding" Value="14,14,14,12" />
+        </Style>
+        <Style Selector="ListBox.file-grid ListBoxItem">
+            <Setter Property="Width" Value="112" />
+            <Setter Property="Padding" Value="8,12,8,10" />
+            <Setter Property="Margin" Value="4" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Top" />
+        </Style>
+
+        <!-- ===== Tree: a quieter selection, so folder and file glyphs keep their colors ===== -->
+        <Style Selector="TreeView.file-tree">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="12,0,12,12" />
+        </Style>
+        <Style Selector="TreeView.file-tree TreeViewItem" x:DataType="browser:FileTreeNodeViewModel">
+            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+            <Setter Property="views:CutMark.Path" Value="{Binding FullPath}" />
+            <Setter Property="IsEnabled" Value="{Binding !IsPlaceholder}" />
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="TreeView.file-tree TreeViewItem:pointerover /template/ Border#PART_LayoutRoot">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+        </Style>
+        <Style Selector="TreeView.file-tree TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+        </Style>
+        <Style Selector="TreeView.file-tree TreeViewItem:selected:pointerover /template/ Border#PART_LayoutRoot">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+        </Style>
+        <Style Selector="TreeView.file-tree TreeViewItem.cut /template/ Border#PART_LayoutRoot">
+            <Setter Property="Background" Value="{DynamicResource FcCutBrush}" />
+        </Style>
+
+        <!-- ===== Glyphs and secondary text. Order matters: later styles win, so :selected comes last ===== -->
+        <Style Selector="avalonia|MaterialIcon.entry-icon">
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <Style Selector="avalonia|MaterialIcon.entry-icon.folder">
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="TextBlock.meta">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <!-- Dot files (only listed when hidden files are shown) -->
+        <Style Selector="views|DetailRowPanel.hidden, StackPanel.hidden">
+            <Setter Property="Opacity" Value="0.55" />
+        </Style>
+        <Style Selector="TextBlock.placeholder">
+            <Setter Property="FontStyle" Value="Italic" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.files ListBoxItem:selected avalonia|MaterialIcon.entry-icon">
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="ListBox.files ListBoxItem:selected TextBlock.meta">
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <!-- Cut: the lighter background keeps the usual glyph and text colors, selected or not -->
+        <Style Selector="ListBox.files ListBoxItem.cut avalonia|MaterialIcon.entry-icon">
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.files ListBoxItem.cut avalonia|MaterialIcon.entry-icon.folder">
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="ListBox.files ListBoxItem.cut TextBlock.meta">
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+
+        <!-- ===== Column headers (list and tree) ===== -->
+        <!-- margin = control padding + item padding; the tree adds the expander column -->
+        <!-- Separators: in the gap before every detail column, where it is resized; accent while hovered or dragged -->
+        <Style Selector="views|DetailRowPanel.column-headers">
+            <Setter Property="Margin" Value="22,14,22,6" />
+            <Setter Property="SeparatorBrush" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="HotSeparatorBrush" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="views|DetailRowPanel.column-headers.tree">
+            <Setter Property="Margin" Value="48,14,22,6" />
+        </Style>
+
+        <!-- ===== Detail columns: header and rows share these, so they line up.
+             Header buttons and row TextBlocks both carry the col-* classes; :is(Control) matches either
+             and gives the setters a target type (a bare class selector has none: AVLN2200) ===== -->
+        <Style Selector="TextBlock.cell">
+            <Setter Property="Margin" Value="12,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector=":is(Control).col-size">
+            <Setter Property="Width" Value="{DynamicResource ColSizeWidth}" />
+        </Style>
+        <Style Selector="TextBlock.col-size">
+            <Setter Property="TextAlignment" Value="Right" />
+        </Style>
+        <Style Selector=":is(Control).col-type">
+            <Setter Property="Width" Value="{DynamicResource ColTypeWidth}" />
+        </Style>
+        <Style Selector=":is(Control).col-modified">
+            <Setter Property="Width" Value="{DynamicResource ColModifiedWidth}" />
+        </Style>
+        <Style Selector=":is(Control).col-created">
+            <Setter Property="Width" Value="{DynamicResource ColCreatedWidth}" />
+        </Style>
+        <Style Selector=":is(Control).col-accessed">
+            <Setter Property="Width" Value="{DynamicResource ColAccessedWidth}" />
+        </Style>
+        <Style Selector=":is(Control).col-permissions">
+            <Setter Property="Width" Value="{DynamicResource ColPermissionsWidth}" />
+        </Style>
+
+        <!-- Columns turned off in the header's context menu (classes set on the root grid) -->
+        <Style Selector="Grid.hide-size :is(Control).col-size">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.hide-type :is(Control).col-type">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.hide-modified :is(Control).col-modified">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.hide-created :is(Control).col-created">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.hide-accessed :is(Control).col-accessed">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.hide-permissions :is(Control).col-permissions">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+
+        <!-- Columns that don't fit even when shrunk (classes set by DirectoryView.axaml.cs): rightmost go first -->
+        <Style Selector="Grid.drop-size :is(Control).col-size">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.drop-type :is(Control).col-type">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.drop-modified :is(Control).col-modified">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.drop-created :is(Control).col-created">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.drop-accessed :is(Control).col-accessed">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.drop-permissions :is(Control).col-permissions">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+
+        <!-- Column headers: a click sorts this folder by that column. Same left margin as TextBlock.cell -->
+        <Style Selector="Button.column-header">
+            <Setter Property="Margin" Value="12,0,0,0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcHeaderTextBrush}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <!-- Name fills the rest and lines up with the names below, right after the icon slot -->
+        <Style Selector="Button.column-header.name">
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
+        <Style Selector="Button.column-header:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.column-header:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <!-- The header being dragged to another place (DirectoryView.ColumnHeaders.cs) -->
+        <Style Selector="Button.column-header.dragging">
+            <Setter Property="Opacity" Value="0.7" />
+        </Style>
+        <Style Selector="Button.column-header.dragging /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <!-- ===== Rubber band (DirectoryView.RubberBand.cs): accent outline over a faint accent fill ===== -->
+        <Style Selector="Border.rubber-band">
+            <Setter Property="BorderBrush" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="2" />
+        </Style>
+        <Style Selector="Border.rubber-band-fill">
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Opacity" Value="0.18" />
+        </Style>
+
+        <Style Selector="avalonia|MaterialIcon.sort-arrow">
+            <Setter Property="Width" Value="12" />
+            <Setter Property="Height" Value="12" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid x:Name="Root"
+          RowDefinitions="Auto,*"
+          Classes.hide-size="{Binding !Columns.ShowSize}"
+          Classes.hide-type="{Binding !Columns.ShowType}"
+          Classes.hide-modified="{Binding !Columns.ShowModified}"
+          Classes.hide-created="{Binding !Columns.ShowCreated}"
+          Classes.hide-accessed="{Binding !Columns.ShowAccessed}"
+          Classes.hide-permissions="{Binding !Columns.ShowPermissions}">
+        <!-- Same layout as the rows (DetailRowPanel): icon slot left, name next, then the detail columns
+             in the user's order. The grid view has no columns, so no headers.
+             Click a header to sort, drag it sideways to move its column, drag the gap on a column's left
+             to resize it (double-click there for its default width): DirectoryView.ColumnHeaders.cs.
+             Right-click to choose the columns. -->
+        <views:DetailRowPanel x:Name="ColumnHeaders"
+                              Grid.Row="0"
+                              Classes="column-headers"
+                              Classes.tree="{Binding IsTreeView}"
+                              Background="Transparent"
+                              IsVisible="{Binding !IsGridView}"
+                              ToolTip.Tip="Click to sort, drag to move, drag the gap between columns to resize, right-click to choose columns">
+            <views:DetailRowPanel.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Name" ToggleType="CheckBox" IsChecked="True" IsEnabled="False" />
+                    <Separator />
+                    <MenuItem Header="Size" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowSize, Mode=TwoWay}" />
+                    <MenuItem Header="Type" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowType, Mode=TwoWay}" />
+                    <MenuItem Header="Modified" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowModified, Mode=TwoWay}" />
+                    <MenuItem Header="Created" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowCreated, Mode=TwoWay}" />
+                    <MenuItem Header="Accessed" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowAccessed, Mode=TwoWay}" />
+                    <MenuItem Header="Permissions" ToggleType="CheckBox" IsChecked="{Binding Columns.ShowPermissions, Mode=TwoWay}" />
+                    <Separator />
+                    <MenuItem Header="Reset columns" Command="{Binding Columns.ResetCommand}" />
+                </ContextMenu>
+            </views:DetailRowPanel.ContextMenu>
+
+            <Border views:DetailRowPanel.IsLeading="True" Width="28" />
+            <Button Classes="column-header name"
+                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Name}">
+                <DockPanel>
+                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
+                                           Kind="{Binding SortArrow}"
+                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Name}}" />
+                    <TextBlock Text="Name" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+            </Button>
+            <!-- The arrow is docked before the text, so a narrow column trims the text, not the arrow -->
+            <!-- Right-aligned like its cells: the arrow goes before the text -->
+            <Button Classes="column-header col-size" HorizontalContentAlignment="Right"
+                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Size}">
+                <DockPanel>
+                    <avalonia:MaterialIcon DockPanel.Dock="Left" Classes="sort-arrow" Margin="0,0,4,0"
+                                           Kind="{Binding SortArrow}"
+                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Size}}" />
+                    <TextBlock Text="Size" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+            </Button>
+            <Button Classes="column-header col-type"
+                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Type}">
+                <DockPanel>
+                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
+                                           Kind="{Binding SortArrow}"
+                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Type}}" />
+                    <TextBlock Text="Type" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+            </Button>
+            <Button Classes="column-header col-modified"
+                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Modified}">
+                <DockPanel>
+                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
+                                           Kind="{Binding SortArrow}"
+                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Modified}}" />
+                    <TextBlock Text="Modified" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+            </Button>
+            <Button Classes="column-header col-created"
+                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Created}">
+                <DockPanel>
+                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
+                                           Kind="{Binding SortArrow}"
+                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Created}}" />
+                    <TextBlock Text="Created" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+            </Button>
+            <Button Classes="column-header col-accessed"
+                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Accessed}">
+                <DockPanel>
+                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
+                                           Kind="{Binding SortArrow}"
+                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Accessed}}" />
+                    <TextBlock Text="Accessed" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+            </Button>
+            <Button Classes="column-header col-permissions"
+                    Command="{Binding SortByCommand}" CommandParameter="{x:Static browser:FileSortColumn.Permissions}">
+                <DockPanel>
+                    <avalonia:MaterialIcon DockPanel.Dock="Right" Classes="sort-arrow" Margin="4,0,0,0"
+                                           Kind="{Binding SortArrow}"
+                                           IsVisible="{Binding Sort, Converter={x:Static converters:SortConverters.IsSortedBy}, ConverterParameter={x:Static browser:FileSortColumn.Permissions}}" />
+                    <TextBlock Text="Permissions" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+            </Button>
+        </views:DetailRowPanel>
+
+        <ProgressBar Grid.Row="0"
+                     IsIndeterminate="True"
+                     IsVisible="{Binding IsLoading}"
+                     VerticalAlignment="Bottom"
+                     Height="2" MinHeight="2" />
+
+        <!-- Multiple selection: Ctrl+click toggles, Shift+click and Shift+arrows select a range.
+             No SelectedItem bindings: written back while several items are selected, they would
+             collapse the selection to one. DirectoryView.axaml.cs syncs the selection both ways instead. -->
+        <Panel Grid.Row="1" IsVisible="{Binding !HasError}">
+            <!-- ===== List ===== -->
+            <ListBox x:Name="FileList"
+                     Classes="files file-list"
+                     ItemsSource="{Binding Entries}"
+                     SelectionMode="Multiple"
+                     IsVisible="{Binding IsListView}"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="browser:FileEntryViewModel">
+                        <!-- Laid out like the header: the cells follow the columns' order and widths -->
+                        <views:DetailRowPanel Classes.hidden="{Binding IsHidden}" ToolTip.Tip="{Binding FullPath}">
+                            <controls:EntryIcon views:DetailRowPanel.IsLeading="True"
+                                                FilePath="{Binding FullPath}"
+                                                IsFolder="{Binding IsDirectory}"
+                                                Kind="{Binding Icon}"
+                                                Width="20" Height="20"
+                                                Margin="0,0,8,0"
+                                                VerticalAlignment="Center" />
+                            <TextBlock Classes="meta cell col-permissions" Text="{Binding PermissionsText}" />
+                            <TextBlock Classes="meta cell col-accessed" Text="{Binding AccessedText}" />
+                            <TextBlock Classes="meta cell col-created" Text="{Binding CreatedText}" />
+                            <TextBlock Classes="meta cell col-modified" Text="{Binding ModifiedText}" />
+                            <TextBlock Classes="meta cell col-type" Text="{Binding TypeText}" />
+                            <TextBlock Classes="meta cell col-size" Text="{Binding SizeText}" />
+                            <TextBlock Text="{Binding DisplayName}"
+                                       FontSize="14"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" />
+                        </views:DetailRowPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <!-- ===== Grid ===== -->
+            <ListBox x:Name="GridList"
+                     Classes="files file-grid"
+                     ItemsSource="{Binding GridEntries}"
+                     SelectionMode="Multiple"
+                     IsVisible="{Binding IsGridView}"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="browser:FileEntryViewModel">
+                        <StackPanel Spacing="8" Classes.hidden="{Binding IsHidden}" ToolTip.Tip="{Binding FullPath}">
+                            <controls:EntryIcon FilePath="{Binding FullPath}"
+                                                IsFolder="{Binding IsDirectory}"
+                                                Kind="{Binding Icon}"
+                                                Width="48" Height="48"
+                                                HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding DisplayName}"
+                                       FontSize="13"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       MaxLines="2"
+                                       TextTrimming="CharacterEllipsis"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <!-- ===== Tree: folders expand in place and are read on first expand ===== -->
+            <TreeView x:Name="FileTree"
+                      Classes="file-tree"
+                      ItemsSource="{Binding TreeRoots}"
+                      SelectionMode="Multiple"
+                      IsVisible="{Binding IsTreeView}"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <TreeView.ItemTemplate>
+                    <TreeDataTemplate x:DataType="browser:FileTreeNodeViewModel" ItemsSource="{Binding Children}">
+                        <views:DetailRowPanel Classes.hidden="{Binding IsHidden}" ToolTip.Tip="{Binding FullPath}">
+                            <!-- Fixed slot, so a placeholder's text lines up with the names around it -->
+                            <Panel views:DetailRowPanel.IsLeading="True" Width="28">
+                                <controls:EntryIcon FilePath="{Binding FullPath}"
+                                                    IsFolder="{Binding IsDirectory}"
+                                                    Kind="{Binding Icon}"
+                                                    IsVisible="{Binding !IsPlaceholder}"
+                                                    Width="20" Height="20"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Center" />
+                            </Panel>
+                            <TextBlock Classes="meta cell col-permissions" Text="{Binding PermissionsText}" />
+                            <TextBlock Classes="meta cell col-accessed" Text="{Binding AccessedText}" />
+                            <TextBlock Classes="meta cell col-created" Text="{Binding CreatedText}" />
+                            <TextBlock Classes="meta cell col-modified" Text="{Binding ModifiedText}" />
+                            <TextBlock Classes="meta cell col-type" Text="{Binding TypeText}" />
+                            <TextBlock Classes="meta cell col-size" Text="{Binding SizeText}" />
+                            <TextBlock Classes.placeholder="{Binding IsPlaceholder}"
+                                       Text="{Binding Name}"
+                                       FontSize="14"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" />
+                        </views:DetailRowPanel>
+                    </TreeDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
+
+            <!-- Over the views, never hit: the pointer events stay with the view being dragged on -->
+            <Canvas x:Name="RubberBandLayer" IsHitTestVisible="False" ClipToBounds="True">
+                <Border x:Name="RubberBand" Classes="rubber-band" IsVisible="False">
+                    <Border Classes="rubber-band-fill" />
+                </Border>
+            </Canvas>
+        </Panel>
+
+        <!-- Never hit: a right click on it is a right click on the empty folder (the folder's context menu) -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding EmptyText}"
+                   IsVisible="{Binding IsEmpty}"
+                   IsHitTestVisible="False"
+                   FontSize="14"
+                   Foreground="{DynamicResource FcSubtleTextBrush}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+
+        <StackPanel Grid.Row="1"
+                    IsVisible="{Binding HasError}"
+                    Spacing="12"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+            <avalonia:MaterialIcon Kind="FolderAlertOutline"
+                                   Width="56" Height="56"
+                                   Foreground="{DynamicResource FcHeaderTextBrush}" />
+            <TextBlock Text="{Binding Error}"
+                       FontSize="14"
+                       Foreground="{DynamicResource FcSubtleTextBrush}"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+    </Grid>
+</UserControl>

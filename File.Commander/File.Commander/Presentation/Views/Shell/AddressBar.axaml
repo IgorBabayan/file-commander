@@ -1,0 +1,311 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="clr-namespace:File.Commander.Presentation.ViewModels.Shell"
+             xmlns:controls="clr-namespace:File.Commander.Presentation.Controls"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             x:Class="File.Commander.Presentation.Views.Shell.AddressBar"
+             x:DataType="shell:AddressBarViewModel">
+    <!-- Fc* brushes follow the theme: DynamicResource, so they update when it changes -->
+    <UserControl.Styles>
+        <!-- ===== Bar ===== -->
+        <Style Selector="Border.address-bar">
+            <Setter Property="Height" Value="36" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Background" Value="{DynamicResource FcNavGroupBrush}" />
+            <Setter Property="Cursor" Value="Ibeam" />
+        </Style>
+        <Style Selector="Border.address-bar:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource FcHoverBrush}" />
+        </Style>
+        <Style Selector="Border.address-bar.editing">
+            <Setter Property="BorderBrush" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="Border.address-bar.error">
+            <Setter Property="BorderBrush" Value="{DynamicResource RedBrush}" />
+        </Style>
+
+        <!-- ===== Breadcrumb ===== -->
+        <Style Selector="Button.crumb">
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Arrow" />
+        </Style>
+        <Style Selector="Button.crumb.current">
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="Button.crumb:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.crumb:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+
+        <!-- ===== Chevron (opens the folder drop-down) ===== -->
+        <Style Selector="ToggleButton.chevron">
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Arrow" />
+        </Style>
+        <Style Selector="ToggleButton.chevron:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.chevron:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.chevron:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.chevron avalonia|MaterialIcon">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+            <Setter Property="RenderTransform" Value="rotate(0deg)" />
+        </Style>
+        <Style Selector="ToggleButton.chevron:checked avalonia|MaterialIcon">
+            <Setter Property="RenderTransform" Value="rotate(90deg)" />
+        </Style>
+
+        <!-- ===== Drop-down ===== -->
+        <Style Selector="Border.dropdown">
+            <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="4" />
+            <Setter Property="MinWidth" Value="220" />
+            <Setter Property="MaxWidth" Value="360" />
+            <Setter Property="BoxShadow" Value="0 6 18 0 #66000000" />
+        </Style>
+        <Style Selector="Button.child-item">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.child-item.active">
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="Button.child-item:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.child-item:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+
+        <!-- ===== Autocomplete ===== -->
+        <Style Selector="Border.suggestions">
+            <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="4" />
+            <Setter Property="BoxShadow" Value="0 6 18 0 #66000000" />
+        </Style>
+        <Style Selector="Button.suggestion">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="Cursor" Value="Arrow" />
+        </Style>
+        <Style Selector="Button.suggestion.selected">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+        </Style>
+        <Style Selector="Button.suggestion:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.suggestion:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+
+        <!-- ===== Path editor: no box of its own, the bar is the box ===== -->
+        <Style Selector="TextBox.address-input">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="SelectionForegroundBrush" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="TextBox.address-input /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="TextBox.address-input:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="TextBox.address-input:focus /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="TextBox.address-input:pointerover">
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="TextBox.address-input:focus">
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Border x:Name="Bar"
+            Classes="address-bar"
+            Classes.editing="{Binding IsEditing}"
+            Classes.error="{Binding HasEditError}"
+            ToolTip.Tip="{Binding EditError}">
+        <Panel>
+            <ItemsControl ItemsSource="{Binding Segments}"
+                          IsVisible="{Binding !IsEditing}"
+                          Margin="3,0"
+                          HorizontalAlignment="Left"
+                          VerticalAlignment="Center">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <controls:BreadcrumbPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="shell:AddressSegmentViewModel">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Classes="crumb"
+                                    Classes.current="{Binding IsCurrent}"
+                                    Command="{Binding NavigateCommand}"
+                                    ToolTip.Tip="{Binding Location}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <avalonia:MaterialIcon Kind="{Binding Icon}"
+                                                           IsVisible="{Binding HasIcon}"
+                                                           Width="16" Height="16"
+                                                           VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Name}"
+                                               FontSize="13"
+                                               MaxWidth="220"
+                                               TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <Panel IsVisible="{Binding HasDropDown}">
+                                <ToggleButton Classes="chevron" IsChecked="{Binding IsDropDownOpen}">
+                                    <avalonia:MaterialIcon Kind="ChevronRight" Width="14" Height="14" />
+                                </ToggleButton>
+
+                                <!-- Light dismiss swallows the closing click, so clicking the chevron again just closes -->
+                                <Popup IsOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
+                                       Placement="BottomEdgeAlignedLeft"
+                                       VerticalOffset="6"
+                                       IsLightDismissEnabled="True">
+                                    <Border Classes="dropdown">
+                                        <Panel>
+                                            <ScrollViewer MaxHeight="360" HorizontalScrollBarVisibility="Disabled">
+                                                <ItemsControl ItemsSource="{Binding Children}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="shell:AddressChildViewModel">
+                                                            <Button Classes="child-item"
+                                                                    Classes.active="{Binding IsActive}"
+                                                                    Command="{Binding OpenCommand}"
+                                                                    ToolTip.Tip="{Binding Location}">
+                                                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                                                    <avalonia:MaterialIcon Kind="{Binding Icon}"
+                                                                                           Width="16" Height="16"
+                                                                                           Foreground="{DynamicResource FcAccentBrush}" />
+                                                                    <TextBlock Text="{Binding Name}"
+                                                                               FontSize="13"
+                                                                               TextTrimming="CharacterEllipsis"
+                                                                               VerticalAlignment="Center" />
+                                                                </StackPanel>
+                                                            </Button>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </ScrollViewer>
+
+                                            <TextBlock Text="No folders"
+                                                       IsVisible="{Binding IsDropDownEmpty}"
+                                                       Margin="10,8"
+                                                       FontSize="13"
+                                                       Foreground="{DynamicResource FcSubtleTextBrush}" />
+
+                                            <ProgressBar IsIndeterminate="True"
+                                                         IsVisible="{Binding IsLoadingChildren}"
+                                                         Margin="10,12"
+                                                         Height="2" MinHeight="2" />
+                                        </Panel>
+                                    </Border>
+                                </Popup>
+                            </Panel>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBox x:Name="Input"
+                     Classes="address-input"
+                     Text="{Binding EditText}"
+                     IsVisible="{Binding IsEditing}"
+                     VerticalAlignment="Stretch" />
+
+            <!-- Not light-dismiss: it closes when editing ends. Rows aren't focusable, so a click
+                 doesn't steal focus from the text box (which would cancel the edit). -->
+            <Popup IsOpen="{Binding IsSuggestionsOpen}"
+                   PlacementTarget="{Binding #Bar}"
+                   Placement="BottomEdgeAlignedLeft"
+                   VerticalOffset="4">
+                <Border Classes="suggestions" Width="{Binding #Bar.Bounds.Width}">
+                    <ScrollViewer MaxHeight="320" HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl x:Name="SuggestionList" ItemsSource="{Binding Suggestions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="shell:AddressSuggestionViewModel">
+                                    <Button Classes="suggestion"
+                                            Classes.selected="{Binding IsSelected}"
+                                            Focusable="False"
+                                            Command="{Binding OpenCommand}"
+                                            ToolTip.Tip="{Binding FullPath}">
+                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                            <avalonia:MaterialIcon Kind="FolderOutline"
+                                                                   Width="16" Height="16"
+                                                                   Foreground="{DynamicResource FcAccentBrush}" />
+                                            <TextBlock Text="{Binding Text}"
+                                                       FontSize="13"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </Popup>
+        </Panel>
+    </Border>
+</UserControl>
