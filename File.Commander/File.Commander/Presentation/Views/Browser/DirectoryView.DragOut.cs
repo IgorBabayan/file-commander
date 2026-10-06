@@ -2,7 +2,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.VisualTree;
-using File.Commander.Presentation.ViewModels.Browser;
 
 namespace File.Commander.Presentation.Views.Browser;
 

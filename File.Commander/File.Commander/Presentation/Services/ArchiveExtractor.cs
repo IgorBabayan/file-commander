@@ -1,6 +1,5 @@
 using System.Formats.Tar;
 using System.IO.Compression;
-using File.Commander.Application.Operations;
 
 namespace File.Commander.Presentation.Services;
 
@@ -183,7 +182,7 @@ public static class ArchiveExtractor
         if (token.IsCancellationRequested)
             return;
 
-        CreateLinks(links, root, progress);
+        CreateLinks(links, progress);
         FinishFolders(folders);
     }
 
@@ -288,7 +287,7 @@ public static class ArchiveExtractor
             }
         }
 
-        CreateLinks(links, root, progress);
+        CreateLinks(links, progress);
         FinishFolders(folders);
     }
 
@@ -310,7 +309,6 @@ public static class ArchiveExtractor
         return IOPath.Combine(root, string.Join('/', parts));
     }
 
-    /// <param name="progress">Null: bytes are counted by the caller.</param>
     private static void WriteFile(Stream input, string path, IOperationProgress? progress, CancellationToken token)
     {
         Directory.CreateDirectory(FileOperations.ParentOf(path));
@@ -328,7 +326,7 @@ public static class ArchiveExtractor
     }
 
     /// <summary>Made once every file is written, so nothing is written through them.</summary>
-    private static void CreateLinks(List<(string Path, string Target, string Name)> links, string root,
+    private static void CreateLinks(List<(string Path, string Target, string Name)> links,
         IOperationProgress progress)
     {
         foreach (var (path, target, name) in links)

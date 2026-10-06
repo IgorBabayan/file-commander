@@ -1,4 +1,3 @@
-using File.Commander.Presentation.Services;
 using Material.Icons;
 
 namespace File.Commander.Presentation.ViewModels.Helpers;

@@ -1,6 +1,3 @@
-using File.Commander.Presentation.ViewModels.ActionCenter;
-using File.Commander.Presentation.ViewModels.Dialogs;
-
 namespace File.Commander.Presentation.ViewModels.Shell;
 
 /// <summary>The Action center: the button between split view and Search, and what runs in it.</summary>

@@ -2,8 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using File.Commander.Application.Operations;
-using File.Commander.Presentation.ViewModels.Helpers;
+
 using Material.Icons;
 
 namespace File.Commander.Presentation.ViewModels.ActionCenter;
@@ -245,7 +244,6 @@ public sealed partial class OperationViewModel : ViewModelBase, IOperationProgre
     }
 
     /// <summary>Called once, on the UI thread, when the worker has returned.</summary>
-    /// <param name="error">Why it failed as a whole, if it threw.</param>
     public void Finish(OperationState state, string? error = null)
     {
         Refresh();

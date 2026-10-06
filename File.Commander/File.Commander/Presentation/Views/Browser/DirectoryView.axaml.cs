@@ -5,7 +5,6 @@ using Avalonia.Controls.Selection;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
-using File.Commander.Presentation.ViewModels.Browser;
 
 namespace File.Commander.Presentation.Views.Browser;
 
@@ -290,7 +289,7 @@ public partial class DirectoryView : UserControl
             // Only real changes: every row re-measures when a width resource changes
             var key = "Col" + name + "Width";
             var value = width ?? DetailColumnsLayout.Clamp(column, columns.WidthOf(column) ?? DetailColumnsLayout.PreferredWidth(column));
-            if (!Resources.TryGetValue(key, out var current) || current is not double d || d != value)
+            if (!Resources.TryGetValue(key, out var current) || current is not double d || !EqualityComparer<double>.Default.Equals(d, value))
                 Resources[key] = value;
         }
     }

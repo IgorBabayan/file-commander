@@ -1,8 +1,3 @@
-using File.Commander.Presentation.Services;
-using File.Commander.Presentation.ViewModels.ActionCenter;
-using File.Commander.Presentation.ViewModels.Dialogs;
-using File.Commander.Presentation.ViewModels.Settings;
-
 namespace File.Commander.Presentation.ViewModels.Shell;
 
 /// <summary>What the sidebar's context menu does. The menu itself is built by MainWindow.SidebarMenu.cs.</summary>

@@ -3,7 +3,6 @@ using System.Globalization;
 using Avalonia.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using File.Commander.Application.Keyboard;
 
 namespace File.Commander.Presentation.ViewModels.Settings;
 

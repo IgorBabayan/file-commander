@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
-using File.Commander.Application.Operations;
 
 namespace File.Commander.Presentation.Services;
 
@@ -46,12 +45,6 @@ public static class TrashBins
         }
     });
 
-    /// <summary>Deletes every item of <paramref name="bins"/> for good. Never throws.</summary>
-    /// <param name="progress">
-    /// The Action center: told how many items there are and each one deleted. Canceling stops before the next
-    /// item; what's left stays in the trash, restorable.
-    /// </param>
-    /// <returns>How many items couldn't be deleted; they keep their info file, so they can still be restored.</returns>
     public static int Empty(IReadOnlyList<string> bins, IOperationProgress? progress = null)
     {
         // Listed up front, so the Action center knows how much there is to do
@@ -169,11 +162,6 @@ public static class TrashBins
         Directory.CreateDirectory(IOPath.Combine(bin, "info"), ownerOnly);
     }
 
-    /// <summary>
-    /// Writes the info file first, as the spec asks: its exclusive creation reserves the name in files/.
-    /// A taken name gets a number. Without the move, the info file is removed again.
-    /// </summary>
-    /// <param name="topDir">The drive's top for a drive trash: its info files store paths relative to it.</param>
     private static void MoveIntoBin(string path, string bin, string? topDir)
     {
         var files = IOPath.Combine(bin, "files");
@@ -282,7 +270,7 @@ public static class TrashBins
         }
     }
 
-    private static bool TryDeleteTree(string path) => TryDeleteTree(path, out _);
+    private static void TryDeleteTree(string path) => TryDeleteTree(path, out _);
 
     private static bool TryDeleteTree(string path, out string? error)
     {

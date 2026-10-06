@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using File.Commander.Application.Settings;
 
 namespace File.Commander.Presentation.ViewModels.Settings;
 
@@ -80,7 +79,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly ISettingsService _settings;
     private readonly bool _loaded;
 
-    /// <param name="section">Key of the navigation entry to open at (e.g. <see cref="TrashSection"/>). Null: the top.</param>
     public SettingsViewModel(ISettingsService settings, string? section = null)
     {
         _settings = settings;

@@ -1,5 +1,3 @@
-using File.Commander.Application.Settings;
-
 namespace File.Commander.Application.Keyboard;
 
 /// <summary>
@@ -34,7 +32,7 @@ public sealed class Keymap
         var byAction = new Dictionary<string, IReadOnlyList<KeyChord>>();
         foreach (var action in KeymapActions.All)
         {
-            byAction[action.Id] = overrides?.TryGetValue(action.Id, out var stored) == true && stored is not null
+            byAction[action.Id] = overrides?.TryGetValue(action.Id, out var stored) == true
                 ? Parse(stored)
                 : action.Defaults;
         }

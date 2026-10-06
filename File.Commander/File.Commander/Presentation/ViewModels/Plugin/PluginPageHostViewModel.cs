@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using File.Commander.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace File.Commander.Presentation.ViewModels.Plugin;

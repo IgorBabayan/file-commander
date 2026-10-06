@@ -3,9 +3,6 @@ using System.IO.Enumeration;
 using Avalonia;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
-using File.Commander.Application.FileSystem;
-using File.Commander.Presentation.ViewModels.Browser;
-using File.Commander.Presentation.ViewModels.Helpers;
 using Material.Icons;
 
 namespace File.Commander.Presentation.ViewModels.Info;
@@ -227,10 +224,10 @@ public sealed partial class ItemInfoViewModel : ObservableObject, IDisposable
         try
         {
             var walk = new FileSystemEnumerable<long>(path,
-                (ref FileSystemEntry entry) => entry.IsDirectory ? 0 : entry.Length,
+                (ref entry) => entry.IsDirectory ? 0 : entry.Length,
                 options)
             {
-                ShouldRecursePredicate = (ref FileSystemEntry entry) =>
+                ShouldRecursePredicate = (ref entry) =>
                     (entry.Attributes & FileAttributes.ReparsePoint) == 0,
             };
 

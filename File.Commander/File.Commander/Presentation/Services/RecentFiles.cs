@@ -16,7 +16,6 @@ public static class RecentFiles
     /// Local files and folders that still exist, most recently used first. A source that is missing,
     /// unreadable or half-written is skipped, so this never throws for it.
     /// </summary>
-    /// <param name="usedSince">UTC. Only what was used at or after it; null: any time.</param>
     public static IReadOnlyList<FileSystemInfo> Read(CancellationToken token, DateTime? usedSince = null)
     {
         var used = new Dictionary<string, DateTime>(StringComparer.Ordinal);

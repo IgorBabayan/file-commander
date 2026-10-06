@@ -1,7 +1,4 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using File.Commander.Presentation.Services;
-using File.Commander.Presentation.ViewModels.Browser;
-using File.Commander.Presentation.ViewModels.Pages;
 
 namespace File.Commander.Presentation.ViewModels.Shell;
 
@@ -17,7 +14,6 @@ public sealed partial class PaneViewModel : ViewModelBase, INavigator
     private PageViewModel _currentPage;
     private DirectoryViewMode _viewMode;
 
-    /// <param name="createPage">Builds a page for this pane: the pane is the page's navigator, so its links open here.</param>
     public PaneViewModel(string location, DirectoryViewMode viewMode, Func<PaneViewModel, string, PageViewModel> createPage)
     {
         _createPage = createPage;

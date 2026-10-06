@@ -1,9 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
-using File.Commander.Application.Keyboard;
-using File.Commander.Presentation.ViewModels.Browser;
-using File.Commander.Presentation.Views.Browser;
 using Material.Icons;
 
 namespace File.Commander.Presentation.Views.Shell;

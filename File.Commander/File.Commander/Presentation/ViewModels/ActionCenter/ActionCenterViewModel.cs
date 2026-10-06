@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using File.Commander.Application.Operations;
 
 namespace File.Commander.Presentation.ViewModels.ActionCenter;
 
@@ -105,7 +104,6 @@ public sealed partial class ActionCenterViewModel : ViewModelBase
     /// Runs <paramref name="work"/> on a background thread and lists it in the Action center until it is
     /// dismissed. Call it on the UI thread. Never throws: what went wrong ends up in the returned action.
     /// </summary>
-    /// <param name="details">Where it happens, shown under the title.</param>
     public async Task<OperationViewModel> RunAsync(OperationKind kind, OperationTitles titles, string? details,
         Func<IOperationProgress, Task> work)
     {

@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using File.Commander.Presentation.ViewModels.Browser;
 
 namespace File.Commander.Presentation.ViewModels.Shell;
 

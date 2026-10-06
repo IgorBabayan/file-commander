@@ -4,15 +4,6 @@ using System.Windows.Input;
 using Avalonia.Input;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
-using File.Commander.Application.Keyboard;
-using File.Commander.Application.Path;
-using File.Commander.Application.Settings;
-using File.Commander.Presentation.Services;
-using File.Commander.Presentation.ViewModels.ActionCenter;
-using File.Commander.Presentation.ViewModels.Browser;
-using File.Commander.Presentation.ViewModels.Computer;
-using File.Commander.Presentation.ViewModels.Pages;
-using File.Commander.Presentation.ViewModels.Settings;
 using Material.Icons;
 
 namespace File.Commander.Presentation.ViewModels.Shell;
@@ -367,7 +358,6 @@ public partial class MainViewModel : ViewModelBase, INavigator
     /// <summary>
     /// Runs the action bound to this key press in Settings → Keymap.
     /// </summary>
-    /// <param name="isTyping">A text box has focus: only actions that don't fight typing run.</param>
     /// <returns>True when an action ran, so the key press is consumed.</returns>
     public bool HandleKey(Key key, KeyModifiers modifiers, bool isTyping)
     {

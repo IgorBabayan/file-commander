@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
-using File.Commander.Presentation.ViewModels.Dialogs;
 
 namespace File.Commander.Presentation.Views.Dialogs;
 

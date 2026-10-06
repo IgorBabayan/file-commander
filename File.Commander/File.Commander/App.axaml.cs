@@ -1,9 +1,6 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
-using File.Commander.Application.Settings;
-using File.Commander.Presentation.Themes;
-using File.Commander.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace File.Commander;

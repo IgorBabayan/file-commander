@@ -5,8 +5,6 @@ namespace File.Commander.Presentation.Services;
 /// <summary>The system's folder chooser, for Move to… and Copy to…. Never throws.</summary>
 public static class FolderPicker
 {
-    /// <param name="startFolder">Where the chooser opens; the system's choice when it can't be opened.</param>
-    /// <returns>The local path of the chosen folder; null when canceled or not a local folder.</returns>
     public static async Task<string?> PickAsync(string title, string? startFolder)
     {
         try

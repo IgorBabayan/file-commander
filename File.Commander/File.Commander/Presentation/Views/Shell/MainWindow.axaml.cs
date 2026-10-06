@@ -6,9 +6,6 @@ using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
-using File.Commander.Application.Path;
-using File.Commander.Presentation.Services;
-using File.Commander.Presentation.Views.Browser;
 
 namespace File.Commander.Presentation.Views.Shell;
 

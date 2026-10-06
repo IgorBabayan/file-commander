@@ -1,7 +1,3 @@
-using File.Commander.Application.Keyboard;
-using File.Commander.Application.Settings;
-using File.Commander.Presentation.Services;
-using File.Commander.Presentation.Views.Settings;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace File.Commander.Extensions;
@@ -12,7 +8,7 @@ static class ServiceCollectionExtensions
     {
         public IServiceCollection RegisterViewModels() 
             => services
-                .AddSingleton<global::File.Commander.Presentation.ViewModels.ActionCenter.ActionCenterViewModel>()
+                .AddSingleton<ActionCenterViewModel>()
                 .AddSingleton<MainViewModel>();
 
         public IServiceCollection RegisterPlugins()
@@ -62,9 +58,9 @@ static class ServiceCollectionExtensions
                 .AddSingleton<ISettingsService>(_ => new SettingsService(SettingsService.DefaultPath))
                 .AddSingleton<IKeymapService, KeymapService>()
                 .AddTransient<SettingsWindow>()
-                .AddTransient<global::File.Commander.Presentation.Views.Dialogs.PromptWindow>()
-                .AddTransient<global::File.Commander.Presentation.Views.Dialogs.PasteConflictWindow>()
-                .AddTransient<global::File.Commander.Presentation.Views.Dialogs.PropertiesWindow>();
+                .AddTransient<PromptWindow>()
+                .AddTransient<PasteConflictWindow>()
+                .AddTransient<PropertiesWindow>();
         }
         
         private static AppSettings LoadStartupSettings()

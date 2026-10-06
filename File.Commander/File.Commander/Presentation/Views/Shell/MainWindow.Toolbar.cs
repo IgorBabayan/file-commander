@@ -228,7 +228,7 @@ public partial class MainWindow
             hosts.Add(host);
         }
 
-        if (!ToolbarArea.Children.SequenceEqual<Control>(hosts))
+        if (!ToolbarArea.Children.SequenceEqual(hosts))
         {
             ToolbarArea.Children.Clear();
             ToolbarArea.Children.AddRange(hosts);
@@ -538,7 +538,7 @@ public partial class MainWindow
         return ToolbarDropTarget.None;
     }
 
-    private static bool IsPointerOver(Visual visual, PointerEventArgs e)
+    private new static bool IsPointerOver(Visual visual, PointerEventArgs e)
         => new Rect(visual.Bounds.Size).Contains(e.GetPosition(visual));
 
     /// <summary>A picture of the pressed item that follows the pointer, as the system's drag image does in Firefox.</summary>

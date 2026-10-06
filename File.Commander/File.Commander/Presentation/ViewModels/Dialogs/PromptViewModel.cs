@@ -50,7 +50,6 @@ public sealed partial class PromptViewModel : ViewModelBase
     public static PromptViewModel ForNotice(string title, string message)
         => new(title, message, "OK", cancelText: null, isDestructive: false, input: null);
 
-    /// <param name="text">Shown in the box, selected, when the dialog opens.</param>
     public static PromptViewModel ForInput(string title, string message, string text, string acceptText)
         => new(title, message, acceptText, "Cancel", isDestructive: false, input: text);
 

@@ -67,7 +67,7 @@ public partial class MainWindow
     private void OpenSidebarMenu(SidebarItem item, PlacementMode placement)
     {
         if (ViewModel is not { } vm || _sidebarMenu is { IsOpen: true }
-            || SidebarList.ContainerFromItem(item) is not Control container)
+            || SidebarList.ContainerFromItem(item) is not { } container)
             return;
 
         var menu = new ContextMenu { Placement = placement };

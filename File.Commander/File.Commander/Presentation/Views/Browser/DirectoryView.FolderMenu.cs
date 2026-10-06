@@ -1,6 +1,5 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using File.Commander.Presentation.ViewModels.Browser;
 
 namespace File.Commander.Presentation.Views.Browser;
 

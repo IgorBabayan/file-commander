@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using File.Commander.Plugins;
 
 namespace File.Commander.Application.Plugins;
 

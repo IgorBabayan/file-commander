@@ -1,5 +1,3 @@
-using File.Commander.Plugins;
-
 namespace File.Commander.PluginCatalog;
 
 public sealed record LoadedPlugin(IPlugin Plugin, string Directory);

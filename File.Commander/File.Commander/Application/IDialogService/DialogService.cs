@@ -1,6 +1,4 @@
 using Avalonia.Controls;
-using File.Commander.Presentation.ViewModels.Settings;
-using File.Commander.Presentation.Views.Settings;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace File.Commander.Application.IDialogService;
@@ -19,16 +17,10 @@ class DialogService : IDialogService
         Window dialog = viewModel switch
         {
             SettingsViewModel => _serviceProvider.GetRequiredService<SettingsWindow>(),
-            global::File.Commander.Presentation.ViewModels.Dialogs.PromptViewModel
-                => _serviceProvider.GetRequiredService<global::File.Commander.Presentation.Views.Dialogs.PromptWindow>(),
-            global::File.Commander.Presentation.ViewModels.Dialogs.PasteConflictViewModel
-                => _serviceProvider.GetRequiredService<global::File.Commander.Presentation.Views.Dialogs.PasteConflictWindow>(),
-            global::File.Commander.Presentation.ViewModels.Dialogs.PropertiesViewModel
-                => _serviceProvider.GetRequiredService<global::File.Commander.Presentation.Views.Dialogs.PropertiesWindow>(),
-            /*ConfirmDialogViewModel => _serviceProvider.GetRequiredService<ConfirmDialogWindow>(),
-            ImportFolderViewModel => _serviceProvider.GetRequiredService<ImportFolderWindow>(),
-            PluginSettingsDialogViewModel => _serviceProvider.GetRequiredService<PluginSettingsDialogWindow>(),*/
-
+            PromptViewModel => _serviceProvider.GetRequiredService<PromptWindow>(),
+            PasteConflictViewModel => _serviceProvider.GetRequiredService<PasteConflictWindow>(),
+            PropertiesViewModel => _serviceProvider.GetRequiredService<PropertiesWindow>(),
+            
             _ => throw new InvalidOperationException($"No dialog registered for {typeof(TViewModel).Name}")
         };
 

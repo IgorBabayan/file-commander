@@ -5,7 +5,6 @@ using Avalonia.Controls.Selection;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using File.Commander.Presentation.ViewModels.Browser;
 
 namespace File.Commander.Presentation.Views.Browser;
 
@@ -312,7 +311,7 @@ public partial class DirectoryView
         var offset = Math.Clamp(scroll.Offset.Y + step, 0, max);
 
         // ScrollChanged updates the band
-        if (offset != scroll.Offset.Y)
+        if (!EqualityComparer<double>.Default.Equals(offset, scroll.Offset.Y))
             scroll.Offset = new Vector(scroll.Offset.X, offset);
     }
 

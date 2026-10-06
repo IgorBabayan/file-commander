@@ -100,8 +100,6 @@ public sealed class ActivityRing : Control
             DrawArc(context, pen, center, radius, 0, sweep);
     }
 
-    /// <param name="startAngle">Degrees clockwise from the top.</param>
-    /// <param name="sweep">Part of a full turn, 0–1.</param>
     private static void DrawArc(DrawingContext context, IPen pen, Point center, double radius, double startAngle,
         double sweep)
     {

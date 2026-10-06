@@ -4,10 +4,7 @@ using System.IO.Enumeration;
 using System.Runtime.InteropServices;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using File.Commander.Application.FileSystem;
-using File.Commander.Presentation.Services;
-using File.Commander.Presentation.ViewModels.Browser;
-using File.Commander.Presentation.ViewModels.Helpers;
+
 using Material.Icons;
 
 namespace File.Commander.Presentation.ViewModels.Dialogs;
@@ -54,7 +51,6 @@ public sealed partial class PropertiesViewModel : ViewModelBase
     public ObservableCollection<PropertyRowViewModel> Rows { get; } = [];
 
     /// <summary>Call on the UI thread: the counts report their progress to the thread that started them.</summary>
-    /// <param name="allTrashBins">The trash counts the trash folders of every drive, as Empty trash would empty them.</param>
     public static PropertiesViewModel For(SidebarItem item, bool allTrashBins) => item.Location switch
     {
         Locations.Trash => ForTrash(item, TrashBins.Find(allTrashBins)),
@@ -304,10 +300,10 @@ public sealed partial class PropertiesViewModel : ViewModelBase
             try
             {
                 var walk = new FileSystemEnumerable<long>(root,
-                    (ref FileSystemEntry entry) => entry.IsDirectory ? 0 : entry.Length,
+                    (ref entry) => entry.IsDirectory ? 0 : entry.Length,
                     options)
                 {
-                    ShouldRecursePredicate = (ref FileSystemEntry entry) =>
+                    ShouldRecursePredicate = (ref entry) =>
                         (entry.Attributes & FileAttributes.ReparsePoint) == 0,
                 };
 

@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using File.Commander.Presentation.ViewModels.ActionCenter;
 
 namespace File.Commander.Presentation.Views.Shell;
 

@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.IO.Compression;
 using System.IO.Enumeration;
 using System.Text;
-using File.Commander.Application.Operations;
 
 namespace File.Commander.Presentation.Services;
 
@@ -474,11 +473,11 @@ public static class FileOperations
             };
 
             var walk = new FileSystemEnumerable<long>(path,
-                (ref FileSystemEntry entry) =>
+                (ref entry) =>
                     entry.IsDirectory || (entry.Attributes & FileAttributes.ReparsePoint) != 0 ? 0 : entry.Length,
                 options)
             {
-                ShouldRecursePredicate = (ref FileSystemEntry entry) =>
+                ShouldRecursePredicate = (ref entry) =>
                     (entry.Attributes & FileAttributes.ReparsePoint) == 0,
             };
 

@@ -1,6 +1,5 @@
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
-using File.Commander.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace File.Commander.Presentation.ViewModels.Plugin;

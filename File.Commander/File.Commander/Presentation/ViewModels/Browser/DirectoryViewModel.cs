@@ -1,8 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using File.Commander.Presentation.Services;
-using File.Commander.Presentation.ViewModels.Helpers;
-using File.Commander.Presentation.ViewModels.Pages;
+
 using Material.Icons;
 
 namespace File.Commander.Presentation.ViewModels.Browser;
@@ -52,8 +50,6 @@ public sealed partial class DirectoryViewModel : PageViewModel
     /// The Recent page: the same views, filled with recently used files from all over instead of one folder.
     /// Opens newest first, whatever the sort menu says; the menu and the headers still re-sort it.
     /// </summary>
-    /// <param name="maxAgeDays">Settings → File history: only what was used in this many days. 0: any time.</param>
-    /// <param name="includeFolders">Settings → File history: list recently used folders too.</param>
     public static DirectoryViewModel ForRecent(DirectoryViewMode viewMode, FolderOptions options,
         FileColumnsViewModel columns, INavigator navigator, int maxAgeDays = 0, bool includeFolders = true)
         => new(Locations.Recent, "Recent",
@@ -64,9 +60,6 @@ public sealed partial class DirectoryViewModel : PageViewModel
     /// The Trash page: the same views, filled with what's in the trash folders instead of one folder.
     /// Items are listed under the name they had before they were trashed; folders open as usual.
     /// </summary>
-    /// <param name="allDrives">
-    /// Settings → Trash: the trash folders of other drives too, so the page lists what Empty trash would empty.
-    /// </param>
     public static DirectoryViewModel ForTrash(DirectoryViewMode viewMode, FileSort sort, FolderOptions options,
         FileColumnsViewModel columns, INavigator navigator, bool allDrives = true)
         => new(Locations.Trash, "Trash",

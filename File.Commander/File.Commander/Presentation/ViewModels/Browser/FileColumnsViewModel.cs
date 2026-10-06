@@ -85,7 +85,7 @@ public sealed partial class FileColumnsViewModel : ObservableObject
     /// <summary>Gives <paramref name="column"/> a width of the user's, or its default one back (null).</summary>
     public void SetWidth(DetailColumn column, double? width)
     {
-        if (WidthOf(column) == width)
+        if (EqualityComparer<double?>.Default.Equals(WidthOf(column), width))
             return;
 
         var widths = new Dictionary<DetailColumn, double>(Widths);
@@ -126,7 +126,8 @@ public sealed partial class FileColumnsViewModel : ObservableObject
             }
         }
 
-        if (widths.Count != Widths.Count || widths.Any(w => WidthOf(w.Key) != w.Value))
+        
+        if (widths.Count != Widths.Count || widths.Any(w => !EqualityComparer<double?>.Default.Equals(WidthOf(w.Key), w.Value)))
             Widths = widths.Count == 0 ? NoWidths : widths;
     }
 
@@ -157,7 +158,7 @@ public sealed partial class FileColumnsViewModel : ObservableObject
     // By name only: "3" would parse too, and a hand-edited file may have anything
     private static bool TryParse(string? name, out DetailColumn column)
         => Enum.TryParse(name, ignoreCase: true, out column) && Enum.IsDefined(column)
-           && !char.IsDigit(name![0]);
+           && !char.IsDigit(name[0]);
 
     /// <summary>The header's context menu: every column shown, in the default order and width.</summary>
     [RelayCommand]

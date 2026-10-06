@@ -1,7 +1,4 @@
 using Avalonia.Controls;
-using File.Commander.Application.Keyboard;
-using File.Commander.Presentation.ViewModels.Browser;
-using File.Commander.Presentation.Views.Browser;
 using Material.Icons;
 using Material.Icons.Avalonia;
 
@@ -88,7 +85,7 @@ public partial class MainWindow
         };
 
         paste.Items.Add(ShortcutEntry(vm, "Paste", MaterialIconKind.ContentPaste, KeymapActions.Paste,
-            () => _ = vm.PasteIntoAsync(page, PasteMode.Ask)));
+            () => _ = vm.PasteIntoAsync(page)));
         paste.Items.Add(ShortcutEntry(vm, "Paste with replace", MaterialIconKind.FileReplaceOutline,
             KeymapActions.PasteWithReplace, () => _ = vm.PasteIntoAsync(page, PasteMode.Replace)));
         paste.Items.Add(ShortcutEntry(vm, "Paste without replace", MaterialIconKind.ContentDuplicate,

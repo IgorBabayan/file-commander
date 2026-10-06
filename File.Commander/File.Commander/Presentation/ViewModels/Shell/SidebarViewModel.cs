@@ -1,6 +1,4 @@
 using System.Collections.ObjectModel;
-using File.Commander.Presentation.Services;
-using File.Commander.Presentation.ViewModels.Helpers;
 using Material.Icons;
 
 namespace File.Commander.Presentation.ViewModels.Shell;

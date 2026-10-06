@@ -1,5 +1,4 @@
 using Avalonia.Data.Converters;
-using File.Commander.Presentation.ViewModels.Browser;
 
 namespace File.Commander.Presentation.Converters;
 

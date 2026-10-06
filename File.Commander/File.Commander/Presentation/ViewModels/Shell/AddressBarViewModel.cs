@@ -1,8 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using File.Commander.Presentation.Services;
-using File.Commander.Presentation.ViewModels.Helpers;
-using File.Commander.Presentation.ViewModels.Pages;
 using Material.Icons;
 
 namespace File.Commander.Presentation.ViewModels.Shell;

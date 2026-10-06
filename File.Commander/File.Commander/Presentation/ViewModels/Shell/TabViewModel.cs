@@ -1,9 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using File.Commander.Presentation.ViewModels.Browser;
-using File.Commander.Presentation.ViewModels.Computer;
-using File.Commander.Presentation.ViewModels.Pages;
 using Material.Icons;
 
 namespace File.Commander.Presentation.ViewModels.Shell;
@@ -17,7 +14,6 @@ public sealed partial class TabViewModel : ViewModelBase
     private readonly Func<string, DirectoryViewMode, PaneViewModel> _createPane;
     private PaneViewModel _activePane;
 
-    /// <param name="createPane">Builds a view that opens <c>location</c> in the given layout.</param>
     public TabViewModel(string location, DirectoryViewMode viewMode,
         Func<string, DirectoryViewMode, PaneViewModel> createPane)
     {

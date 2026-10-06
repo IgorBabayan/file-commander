@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using File.Commander.Application.Settings;
 using Material.Icons;
 
 namespace File.Commander.Presentation.ViewModels.Shell;

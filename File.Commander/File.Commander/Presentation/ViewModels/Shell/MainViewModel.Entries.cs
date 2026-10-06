@@ -1,9 +1,4 @@
 using CommunityToolkit.Mvvm.Input;
-using File.Commander.Application.Keyboard;
-using File.Commander.Presentation.Services;
-using File.Commander.Presentation.ViewModels.ActionCenter;
-using File.Commander.Presentation.ViewModels.Browser;
-using File.Commander.Presentation.ViewModels.Dialogs;
 
 namespace File.Commander.Presentation.ViewModels.Shell;
 
@@ -184,7 +179,7 @@ public partial class MainViewModel
                 case PasteConflictChoice.Rename when !string.IsNullOrEmpty(newName):
                     taken.Add(newName);
                     // Taken in the meantime: it gets a number rather than replacing anything
-                    items.Add(new TransferItem(source, newName, NameConflict.KeepBoth));
+                    items.Add(new TransferItem(source, newName));
                     break;
 
                 case PasteConflictChoice.Skip:
@@ -363,7 +358,7 @@ public partial class MainViewModel
     private Task CopySelection() => CopyAsync(SelectedEntries);
 
     [RelayCommand(CanExecute = nameof(CanPaste))]
-    private Task Paste() => PasteAsync(PasteMode.Ask);
+    private Task Paste() => PasteAsync();
 
     [RelayCommand(CanExecute = nameof(CanPaste))]
     private Task PasteWithoutReplace() => PasteAsync(PasteMode.KeepBoth);
@@ -427,8 +422,6 @@ public partial class MainViewModel
     /// <summary>
     /// Rebuilds every view showing one of <paramref name="folders"/>; in the tree, every view whose tree reaches it.
     /// </summary>
-    /// <param name="entriesMoved">Files left their place: Recent lists them by path.</param>
-    /// <param name="trashChanged">Something went into the trash: the Trash page lists it.</param>
     private void RefreshFolders(IEnumerable<string> folders, bool entriesMoved = false, bool trashChanged = false)
     {
         var changed = folders.Select(Locations.Normalize).Distinct(StringComparer.Ordinal).ToList();

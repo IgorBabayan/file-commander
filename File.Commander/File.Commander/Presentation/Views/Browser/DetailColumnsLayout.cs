@@ -1,5 +1,3 @@
-using File.Commander.Presentation.ViewModels.Browser;
-
 namespace File.Commander.Presentation.Views.Browser;
 
 /// <summary>

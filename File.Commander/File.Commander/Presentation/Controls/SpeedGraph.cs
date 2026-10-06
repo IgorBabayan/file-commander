@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
-using File.Commander.Presentation.ViewModels.ActionCenter;
 
 namespace File.Commander.Presentation.Controls;
 

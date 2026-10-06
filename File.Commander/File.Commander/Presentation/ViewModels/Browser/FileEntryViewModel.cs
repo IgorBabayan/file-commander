@@ -1,5 +1,4 @@
 using System.Globalization;
-using File.Commander.Presentation.ViewModels.Helpers;
 using Material.Icons;
 
 namespace File.Commander.Presentation.ViewModels.Browser;
@@ -79,10 +78,6 @@ public sealed class FileEntryViewModel
     /// <summary>ls-style mode, e.g. "drwxr-xr-x". Empty where the mode can't be read.</summary>
     public string PermissionsText { get; }
 
-    /// <param name="name">
-    /// Shown and sorted by instead of the name on disk: the name a trashed item had before, as files/
-    /// may hold it under another one. Null: the name on disk.
-    /// </param>
     public static FileEntryViewModel From(FileSystemInfo info, bool showExtension = true, string? name = null)
         => new(info, Details.Read(info), showExtension, name);
 
