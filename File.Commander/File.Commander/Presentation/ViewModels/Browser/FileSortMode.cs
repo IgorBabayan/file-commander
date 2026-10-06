@@ -49,8 +49,13 @@ public static class FileSorting
             var result = sort.Column switch
             {
                 FileSortColumn.Name => Directed(ByName(a, b), descending),
+                // Folder is a type of its own that leads every file type, also when files and folders are mixed:
+                // comparing "Folder" as text would put it after "AXAML source", "Archive"...
                 FileSortColumn.Type => Directed(
-                    string.Compare(a.TypeText, b.TypeText, StringComparison.CurrentCultureIgnoreCase), descending),
+                    a.IsDirectory != b.IsDirectory
+                        ? a.IsDirectory ? -1 : 1
+                        : string.Compare(a.TypeText, b.TypeText, StringComparison.CurrentCultureIgnoreCase),
+                    descending),
                 // Folders have no size, so among them this falls through to the name
                 FileSortColumn.Size => MissingLast(a.Size, b.Size, descending),
                 FileSortColumn.Modified => MissingLast(a.Modified, b.Modified, descending),
