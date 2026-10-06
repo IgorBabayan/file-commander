@@ -36,6 +36,7 @@ public partial class MainViewModel
         {
             Locations.Trash => MaterialIconKind.TrashCanOutline,
             Locations.Recent => MaterialIconKind.ClockOutline,
+            _ when page.IsSearch => MaterialIconKind.Magnify,
             _ => MaterialIconKind.FolderOutline,
         };
 

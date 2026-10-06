@@ -76,7 +76,9 @@ public sealed partial class AddressBarViewModel(INavigator navigator) : ViewMode
     public void BeginEdit()
     {
         _suppressSuggestions = true;
-        EditText = _location;
+
+        // Search results: the folder that was searched, not the search://… address
+        EditText = SearchQuery.TryParse(_location)?.Folder ?? _location;
         _suppressSuggestions = false;
 
         EditError = null;
@@ -295,6 +297,15 @@ public sealed partial class AddressBarViewModel(INavigator navigator) : ViewMode
                 return Finish([Segment("Trash", location, MaterialIconKind.TrashCanOutline, null)]);
             case Locations.Network:
                 return Finish([Segment("Network", location, MaterialIconKind.LanConnect, null)]);
+        }
+
+        // Search results: "Computer › Home › Documents › Search “report”"; the folder breadcrumbs lead back to it
+        if (SearchQuery.TryParse(location) is { } search)
+        {
+            var folder = new List<AddressSegmentViewModel>(Build(search.Folder));
+            folder[^1].IsCurrent = false;
+            folder.Add(Segment(search.ShortTitle, location, MaterialIconKind.Magnify, null));
+            return Finish(folder);
         }
 
         // Inside a network share: "Network › media on nas › Movies", not GVfs's folder of mounts

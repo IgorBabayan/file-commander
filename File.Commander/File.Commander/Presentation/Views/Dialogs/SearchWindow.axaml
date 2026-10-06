@@ -1,0 +1,57 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:shell="clr-namespace:File.Commander.Presentation.ViewModels.Shell"
+        xmlns:shellViews="clr-namespace:File.Commander.Presentation.Views.Shell"
+        xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
+        x:Class="File.Commander.Presentation.Views.Dialogs.SearchWindow"
+        x:DataType="shell:SearchViewModel"
+        Title="Search"
+        WindowDecorations="None"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent">
+    <!-- Ctrl+F while the Search button isn't on the toolbar. DialogService sizes this window to cover the owner;
+         the card is centered on a dimmed backdrop, like the other dialogs -->
+
+    <Window.Styles>
+        <Style Selector="Border.dialog-card">
+            <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BoxShadow" Value="0 12 40 0 #66000000" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="32" />
+        </Style>
+        <Style Selector="TextBlock.dialog-title">
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </Window.Styles>
+
+    <Panel>
+        <!-- Clicking the dimmed area closes -->
+        <Border Background="{DynamicResource FcBackdropBrush}" PointerPressed="OnBackdropPressed" />
+
+        <Border Classes="dialog-card">
+            <StackPanel Margin="20,18,20,18" Spacing="14">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <avalonia:MaterialIcon Kind="Magnify"
+                                           Width="20" Height="20"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource FcAccentBrush}" />
+                    <TextBlock Classes="dialog-title" Text="Search" />
+                </StackPanel>
+
+                <shellViews:SearchPanel x:Name="Bar" />
+            </StackPanel>
+        </Border>
+    </Panel>
+</Window>

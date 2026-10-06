@@ -107,12 +107,43 @@ public partial class MainWindow : Window
         base.OnDataContextChanged(e);
 
         if (_subscribed is not null)
+        {
             _subscribed.PropertyChanged -= OnViewModelPropertyChanged;
+            _subscribed.SearchShowRequested -= OnSearchShowRequested;
+        }
 
         _subscribed = ViewModel;
 
         if (_subscribed is not null)
+        {
             _subscribed.PropertyChanged += OnViewModelPropertyChanged;
+            _subscribed.SearchShowRequested += OnSearchShowRequested;
+        }
+    }
+
+    /// <summary>
+    /// Ctrl+F: the search bar under the Search button. The button may not be on the toolbar (Customize Toolbar…):
+    /// then the search opens as a dialog.
+    /// </summary>
+    private void OnSearchShowRequested(object? sender, EventArgs e)
+    {
+        if (_toolbarControls.GetValueOrDefault("search") is SearchButton { } button && button.TryOpen())
+            return;
+
+        if (ViewModel is { } vm)
+            _ = ShowSearchDialogAsync(vm);
+    }
+
+    private static async Task ShowSearchDialogAsync(MainViewModel vm)
+    {
+        try
+        {
+            await vm.ShowSearchDialogAsync();
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"Can't open the search dialog: {ex}");
+        }
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)

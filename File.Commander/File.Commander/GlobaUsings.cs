@@ -39,4 +39,3 @@ global using File.Commander.Application.Path;
 global using File.Commander.Presentation.ViewModels.Computer;
 global using File.Commander.Presentation.Views.Browser;
 global using File.Commander.Presentation.ViewModels.Network;
-global using File.Commander.Presentation.Views.Network;

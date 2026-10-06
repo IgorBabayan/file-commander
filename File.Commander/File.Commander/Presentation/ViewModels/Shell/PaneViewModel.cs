@@ -112,6 +112,10 @@ public sealed partial class PaneViewModel : ViewModelBase, INavigator
 
     private static string? ParentOf(string location)
     {
+        // Search results: Up goes back to the folder that was searched
+        if (SearchQuery.TryParse(location) is { } search)
+            return search.Folder;
+
         if (Locations.IsVirtual(location))
             return null;
 

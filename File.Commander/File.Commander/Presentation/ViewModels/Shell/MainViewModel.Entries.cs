@@ -461,6 +461,10 @@ public partial class MainViewModel
         {
             Locations.Trash => trashChanged,
             Locations.Recent => entriesMoved,
+            // Search results: something changed where it searched, so what matches may have too
+            _ when page is DirectoryViewModel { Search: { } search } => changed.Any(folder => search.IncludeSubfolders
+                ? FileOperations.IsSameOrInside(folder, search.Folder)
+                : Locations.AreEqual(folder, search.Folder)),
             _ => page is DirectoryViewModel directory && changed.Any(folder => directory.IsTreeView
                 ? FileOperations.IsSameOrInside(folder, directory.Location)
                 : Locations.AreEqual(folder, directory.Location)),

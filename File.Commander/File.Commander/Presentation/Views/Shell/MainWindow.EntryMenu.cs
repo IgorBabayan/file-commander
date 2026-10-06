@@ -64,6 +64,15 @@ public partial class MainWindow
         yield return EntryMenuItem("Open in a new tab", MaterialIconKind.TabPlus,
             () => vm.OpenEntriesInNewTabs(entries),
             isEnabled: hasFolders);
+
+        // Search results come from all over: the folder an item is in
+        if (page.IsSearch)
+        {
+            yield return EntryMenuItem("Open item location", MaterialIconKind.FolderOutline,
+                () => vm.Navigate(FileOperations.ParentOf(single!.FullPath)),
+                isEnabled: single is not null);
+        }
+
         yield return new Separator();
 
         yield return ShortcutEntry(vm, "Cut", MaterialIconKind.ContentCut, KeymapActions.Cut,

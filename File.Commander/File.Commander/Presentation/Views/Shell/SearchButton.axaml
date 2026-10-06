@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="clr-namespace:File.Commander.Presentation.ViewModels.Shell"
+             xmlns:shellViews="clr-namespace:File.Commander.Presentation.Views.Shell"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             x:Class="File.Commander.Presentation.Views.Shell.SearchButton"
+             x:DataType="shell:SearchViewModel">
+    <!-- The Search button of the title bar, with the search bar under it (Ctrl+F). Fc* brushes follow the theme -->
+    <UserControl.Styles>
+        <!-- While the bar is open -->
+        <Style Selector="Button.window-button:flyout-open /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcNavGroupBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+
+        <!-- Like the sort menu; wide enough for the bar and its options -->
+        <Style Selector="FlyoutPresenter.search-menu">
+            <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="14" />
+            <Setter Property="MaxWidth" Value="520" />
+            <Setter Property="MaxHeight" Value="720" />
+        </Style>
+    </UserControl.Styles>
+
+    <Button x:Name="Toggle" Classes="window-button" ToolTip.Tip="Search (Ctrl+F)">
+        <Button.Flyout>
+            <Flyout Placement="BottomEdgeAlignedRight" FlyoutPresenterClasses="search-menu">
+                <shellViews:SearchPanel />
+            </Flyout>
+        </Button.Flyout>
+        <avalonia:MaterialIcon Kind="Magnify" />
+    </Button>
+</UserControl>

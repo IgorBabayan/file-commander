@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -14,6 +15,12 @@ public sealed partial class DirectoryViewModel : PageViewModel
     // Skips nothing: dot files included
     private static readonly EnumerationOptions WithHidden = new() { IgnoreInaccessible = false, AttributesToSkip = 0 };
 
+    /// <summary>A search stops after this many results: more wouldn't be looked through anyway.</summary>
+    public const int MaxSearchResults = 10_000;
+
+    // How often what a search found so far is shown
+    private static readonly TimeSpan SearchBatchDelay = TimeSpan.FromMilliseconds(250);
+
     private readonly INavigator _navigator;
     private readonly FolderOptions _options;
     private readonly CancellationTokenSource _cts = new();
@@ -24,6 +31,9 @@ public sealed partial class DirectoryViewModel : PageViewModel
     // The entries TreeRoots was built from: switching views keeps the expanded folders
     private IReadOnlyList<FileEntryViewModel>? _treeSource;
 
+    // A search page: folders it never enters (external drives, unless Settings → Search says otherwise)
+    private readonly IReadOnlyCollection<string> _searchSkipped = [];
+
     public DirectoryViewModel(string path, DirectoryViewMode viewMode, FileSort sort, FolderOptions options,
         FileColumnsViewModel columns, INavigator navigator)
         : this(Locations.Normalize(path), null, null, "This folder is empty", viewMode, sort, options, columns, navigator)
@@ -33,10 +43,13 @@ public sealed partial class DirectoryViewModel : PageViewModel
     private DirectoryViewModel(string location, string? title,
         Func<IComparer<FileEntryViewModel>, FolderOptions, CancellationToken, IReadOnlyList<FileEntryViewModel>>? read,
         string emptyText, DirectoryViewMode viewMode, FileSort sort, FolderOptions options,
-        FileColumnsViewModel columns, INavigator navigator)
+        FileColumnsViewModel columns, INavigator navigator, SearchQuery? search = null,
+        IReadOnlyCollection<string>? searchSkipped = null)
     {
         _navigator = navigator;
         _options = options;
+        Search = search;
+        _searchSkipped = searchSkipped ?? [];
         _read = read ?? ((comparer, folderOptions, token) => ReadEntries(location, comparer, folderOptions, token));
         Columns = columns;
         Location = location;
@@ -66,7 +79,28 @@ public sealed partial class DirectoryViewModel : PageViewModel
             (comparer, folderOptions, token) => ReadTrash(comparer, folderOptions, allDrives, token),
             "Trash is empty", viewMode, sort, options, columns, navigator);
 
+    /// <summary>
+    /// The search page: the same views, filled with what a search finds under a folder. Results come in while it
+    /// runs; <paramref name="location"/> (search://…) holds the query, so going back runs it again.
+    /// </summary>
+    /// <param name="skippedFolders">Folders the search never enters, e.g. the mount points of external drives.</param>
+    public static DirectoryViewModel ForSearch(string location, SearchQuery query, DirectoryViewMode viewMode,
+        FileSort sort, FolderOptions options, FileColumnsViewModel columns, INavigator navigator,
+        IReadOnlyCollection<string> skippedFolders)
+        => new(location, query.Title, null, "No items match your search", viewMode, sort, options, columns,
+            navigator, query, skippedFolders);
+
     public override string Location { get; }
+
+    /// <summary>What this page searches for. Null: it lists a folder, Recent or the trash.</summary>
+    public SearchQuery? Search { get; }
+
+    public bool IsSearch => Search is not null;
+
+    /// <summary>The search found <see cref="MaxSearchResults"/> items and stopped looking.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StatusText))]
+    public partial bool SearchLimitReached { get; set; }
 
     public override string Title { get; }
 
@@ -166,14 +200,15 @@ public sealed partial class DirectoryViewModel : PageViewModel
     public bool IsEmpty => !IsLoading && Error is null && Entries.Count == 0;
 
     public override string StatusText => IsLoading
-        ? "Loading…"
+        ? (IsSearch ? $"Searching… {ItemsText}" : "Loading…")
         : Error is not null
             ? string.Empty
             : SelectedEntries.Count == 0
                 ? ItemsText
                 : $"{ItemsText} · {SelectionText()}";
 
-    private string ItemsText => Entries.Count == 1 ? "1 item" : $"{Entries.Count} items";
+    private string ItemsText => (Entries.Count == 1 ? "1 item" : $"{Entries.Count:N0} items")
+                                + (SearchLimitReached ? $" (stopped at {MaxSearchResults:N0})" : string.Empty);
 
     /// <summary>"3 selected (4.2 MB)": the size counts files only, as the Size column does.</summary>
     private string SelectionText()
@@ -266,9 +301,15 @@ public sealed partial class DirectoryViewModel : PageViewModel
         RequestSelection(SelectedEntries.Where(shown.Contains).ToList());
     }
 
-    /// <summary>Reads the folder on a background thread. Never throws.</summary>
+    /// <summary>Reads the folder (or runs the search) on a background thread. Never throws.</summary>
     public async Task LoadAsync()
     {
+        if (Search is { } search)
+        {
+            await SearchAsync(search);
+            return;
+        }
+
         var token = _cts.Token;
         IsLoading = true;
         Error = null;
@@ -306,6 +347,84 @@ public sealed partial class DirectoryViewModel : PageViewModel
         {
             IsLoading = false;
         }
+    }
+
+    /// <summary>
+    /// Runs the search on a background thread and shows what it found so far every <see cref="SearchBatchDelay"/>,
+    /// so the first results can be used while it goes on. Never throws.
+    /// </summary>
+    private async Task SearchAsync(SearchQuery query)
+    {
+        var token = _cts.Token;
+        IsLoading = true;
+        Error = null;
+        SearchLimitReached = false;
+
+        var found = new ConcurrentQueue<FileEntryViewModel>();
+        var options = _options;
+        var skipped = _searchSkipped;
+
+        // True when it stopped at MaxSearchResults
+        var search = Task.Run(() =>
+        {
+            var count = 0;
+            foreach (var item in FileSearch.Find(query, options.ShowHidden, skipped, token))
+            {
+                found.Enqueue(FileEntryViewModel.From(item, options.ShowExtensions));
+                if (++count >= MaxSearchResults)
+                    return true;
+            }
+
+            return false;
+        }, token);
+
+        try
+        {
+            while (!search.IsCompleted)
+            {
+                // WhenAny doesn't throw: a cancelled delay just ends the wait
+                await Task.WhenAny(search, Task.Delay(SearchBatchDelay, token));
+                token.ThrowIfCancellationRequested();
+                ShowFound(found);
+            }
+
+            var limitReached = await search;
+            ShowFound(found);
+            SearchLimitReached = limitReached;
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Error = "You don't have permission to search this folder.";
+        }
+        catch (DirectoryNotFoundException)
+        {
+            Error = "The folder to search in doesn't exist anymore.";
+        }
+        catch (IOException ex)
+        {
+            Error = ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    /// <summary>Adds what the search found since the last call to <see cref="Entries"/>, in the current order.</summary>
+    private void ShowFound(ConcurrentQueue<FileEntryViewModel> found)
+    {
+        if (found.IsEmpty || _cts.IsCancellationRequested)
+            return;
+
+        var entries = new List<FileEntryViewModel>(Entries);
+        while (found.TryDequeue(out var entry))
+            entries.Add(entry);
+
+        entries.Sort(CurrentComparer());
+        Entries = entries;
     }
 
     /// <summary>
