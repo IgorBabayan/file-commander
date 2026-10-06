@@ -29,6 +29,87 @@
         <Style Selector="Border.pane.split.active">
             <Setter Property="BorderBrush" Value="{DynamicResource FcAccentBrush}" />
         </Style>
+
+        <!-- Computer page cards: defined here, next to the templates that use them,
+             so the XAML compiler and IDE resolve the classes in this file -->
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="Margin" Value="0,0,0,20" />
+        </Style>
+
+        <Style Selector="Button.card">
+            <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Button.card:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcCardHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.card:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcCardPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+
+        <Style Selector="Button.directory-card">
+            <Setter Property="Width" Value="106" />
+            <Setter Property="Height" Value="136" />
+            <Setter Property="Margin" Value="0,0,22,22" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.disk-card">
+            <Setter Property="Width" Value="282" />
+            <Setter Property="Height" Value="82" />
+            <Setter Property="Margin" Value="0,0,22,22" />
+            <Setter Property="Padding" Value="16,0,22,0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <!-- Drive glyph -->
+        <Style Selector="Border.disk-body">
+            <Setter Property="Background" Value="{DynamicResource FcDiskBodyBrush}" />
+        </Style>
+        <Style Selector="Border.disk-body.removable">
+            <Setter Property="Background" Value="{DynamicResource FcDiskBodyRemovableBrush}" />
+        </Style>
+        <Style Selector="Border.disk-base">
+            <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Surface2Brush}" />
+            <Setter Property="BorderThickness" Value="1,0,1,1" />
+        </Style>
+        <Style Selector="Border.disk-base.removable">
+            <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource MauveBrush}" />
+        </Style>
+        <Style Selector="Ellipse.disk-led">
+            <Setter Property="Fill" Value="{DynamicResource GreenBrush}" />
+        </Style>
+        <Style Selector="Ellipse.disk-led.removable">
+            <Setter Property="Fill" Value="{DynamicResource MauveBrush}" />
+        </Style>
+
+        <!-- Usage bar -->
+        <Style Selector="ProgressBar.usage">
+            <Setter Property="Height" Value="5" />
+            <Setter Property="MinHeight" Value="5" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Minimum" Value="0" />
+            <Setter Property="Maximum" Value="100" />
+            <Setter Property="Background" Value="{DynamicResource FcTrackBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcUsageNormalBrush}" />
+        </Style>
+        <Style Selector="ProgressBar.usage.warning">
+            <Setter Property="Foreground" Value="{DynamicResource FcUsageWarningBrush}" />
+        </Style>
     </UserControl.Styles>
 
     <!-- Transparent background: a click on empty space still hits the view and makes it the active one -->
