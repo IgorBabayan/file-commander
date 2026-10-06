@@ -28,6 +28,16 @@ public static class LocationIcons
         _ => MaterialIconKind.Folder,
     };
  
+    /// <summary>A network share or server, by how it is reached.</summary>
+    public static MaterialIconKind ForNetwork(NetworkProtocol protocol) => protocol switch
+    {
+        NetworkProtocol.Smb => MaterialIconKind.FolderNetworkOutline,
+        NetworkProtocol.Sftp => MaterialIconKind.Console,
+        NetworkProtocol.WebDav => MaterialIconKind.Web,
+        NetworkProtocol.Ftp or NetworkProtocol.Nfs => MaterialIconKind.ServerNetwork,
+        _ => MaterialIconKind.LanConnect,
+    };
+
     public static MaterialIconKind ForSidebar(VolumeKind kind) => kind switch
     {
         VolumeKind.Removable => MaterialIconKind.Usb,

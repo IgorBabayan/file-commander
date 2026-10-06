@@ -20,6 +20,11 @@ public sealed partial class AddressBarViewModel(INavigator navigator) : ViewMode
     private bool _suppressSuggestions;
     private int _selectedIndex = -1;
 
+    /// <summary>
+    /// A server address was typed (smb://nas/media, sftp://me@server…): the shell connects to it on the Network page.
+    /// </summary>
+    public event EventHandler<string>? ConnectRequested;
+
     /// <summary>Used to pick the breadcrumb root. Refreshed by the shell whenever the Computer page is built.</summary>
     internal IReadOnlyList<Volume> Volumes { get; set; } = [];
 
@@ -90,6 +95,14 @@ public sealed partial class AddressBarViewModel(INavigator navigator) : ViewMode
     [RelayCommand]
     public void CommitEdit()
     {
+        if (NetworkLocations.IsRemoteUri(EditText))
+        {
+            IsEditing = false;
+            CloseSuggestions();
+            ConnectRequested?.Invoke(this, EditText.Trim());
+            return;
+        }
+
         if (Resolve(EditText) is not { } target)
         {
             EditError = $"Can't find \"{EditText.Trim()}\". Check the path and try again.";
@@ -284,6 +297,18 @@ public sealed partial class AddressBarViewModel(INavigator navigator) : ViewMode
                 return Finish([Segment("Network", location, MaterialIconKind.LanConnect, null)]);
         }
 
+        // Inside a network share: "Network › media on nas › Movies", not GVfs's folder of mounts
+        if (NetworkLocations.FindMount(location) is { } mount)
+        {
+            List<AddressSegmentViewModel> network =
+            [
+                Segment("Network", Locations.Network, MaterialIconKind.LanConnect, null),
+                Segment(mount.Name, mount.MountPoint, LocationIcons.ForNetwork(mount.Protocol),
+                    () => ListSubdirectories(mount.MountPoint)),
+            ];
+            return Finish(AppendFolders(network, mount.MountPoint, location));
+        }
+
         var segments = new List<AddressSegmentViewModel>
         {
             Segment("Computer", Locations.Computer, MaterialIconKind.Monitor, ListComputer)
@@ -295,19 +320,26 @@ public sealed partial class AddressBarViewModel(INavigator navigator) : ViewMode
         var (rootName, rootPath, rootIcon) = FindRoot(location);
         segments.Add(Segment(rootName, rootPath, rootIcon, () => ListSubdirectories(rootPath)));
 
+        return Finish(AppendFolders(segments, rootPath, location));
+    }
+
+    /// <summary>A breadcrumb for each folder between <paramref name="rootPath"/> and <paramref name="location"/>.</summary>
+    private List<AddressSegmentViewModel> AppendFolders(List<AddressSegmentViewModel> segments, string rootPath,
+        string location)
+    {
         var relative = IOPath.GetRelativePath(rootPath, location);
-        if (relative != ".")
+        if (relative == ".")
+            return segments;
+
+        var current = rootPath;
+        foreach (var part in relative.Split('/', StringSplitOptions.RemoveEmptyEntries))
         {
-            var current = rootPath;
-            foreach (var part in relative.Split('/', StringSplitOptions.RemoveEmptyEntries))
-            {
-                current = IOPath.Combine(current, part);
-                var path = current;
-                segments.Add(Segment(part, path, null, () => ListSubdirectories(path)));
-            }
+            current = IOPath.Combine(current, part);
+            var path = current;
+            segments.Add(Segment(part, path, null, () => ListSubdirectories(path)));
         }
 
-        return Finish(segments);
+        return segments;
     }
 
     private AddressSegmentViewModel Segment(string name, string location, MaterialIconKind? icon,

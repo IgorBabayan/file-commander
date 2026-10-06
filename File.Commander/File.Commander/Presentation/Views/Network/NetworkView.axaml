@@ -1,0 +1,356 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:network="clr-namespace:File.Commander.Presentation.ViewModels.Network"
+             xmlns:controls="clr-namespace:File.Commander.Presentation.Controls"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             x:Class="File.Commander.Presentation.Views.Network.NetworkView"
+             x:DataType="network:NetworkViewModel">
+    <!-- The Network page. Card and section styles (Button.card, TextBlock.section-title) live in MainWindow.Styles;
+         Fc* brushes follow the theme: DynamicResource -->
+    <UserControl.Styles>
+        <!-- ===== Connect to server ===== -->
+        <Style Selector="TextBox.server-address">
+            <Setter Property="MinHeight" Value="36" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="PlaceholderForeground" Value="{DynamicResource FcHeaderTextBrush}" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="SelectionForegroundBrush" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="TextBox.server-address /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="TextBox.server-address:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource FcCardHoverBrush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        <Style Selector="TextBox.server-address:focus /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="TextBox.server-address:pointerover, TextBox.server-address:focus">
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="TextBox.server-address avalonia|MaterialIcon.address-icon">
+            <Setter Property="Width" Value="16" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource FcHeaderTextBrush}" />
+        </Style>
+
+        <Style Selector="Button.connect">
+            <Setter Property="Height" Value="36" />
+            <Setter Property="MinWidth" Value="96" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="Button.connect:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="Button.connect:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="Button.connect:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcDisabledTextBrush}" />
+        </Style>
+
+        <Style Selector="TextBlock.hint">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+
+        <!-- ===== Cards: the size of a disk card on the Computer page ===== -->
+        <Style Selector="Button.network-card">
+            <Setter Property="Width" Value="282" />
+            <Setter Property="Height" Value="82" />
+            <Setter Property="Margin" Value="0,0,22,22" />
+            <Setter Property="Padding" Value="16,0,10,0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.share-card">
+            <Setter Property="Height" Value="56" />
+        </Style>
+        <Style Selector="Border.network-glyph">
+            <Setter Property="Width" Value="46" />
+            <Setter Property="Height" Value="46" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Background" Value="{DynamicResource FcDiskBodyBrush}" />
+        </Style>
+        <Style Selector="Button.share-card Border.network-glyph">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+
+        <!-- Small round buttons: eject on a card, refresh and close next to a section title -->
+        <Style Selector="Button.icon-button">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.icon-button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcOverlayHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.icon-button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcOverlayPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.icon-button:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcDisabledTextBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="22,22,0,0">
+
+            <!-- ===== Connect to server ===== -->
+            <TextBlock Classes="section-title" Text="Connect to Server" />
+
+            <Grid ColumnDefinitions="*,Auto"
+                  MaxWidth="586"
+                  Margin="0,0,22,8"
+                  HorizontalAlignment="Stretch"
+                  IsEnabled="{Binding CanMount}">
+                <TextBox Grid.Column="0"
+                         Classes="server-address"
+                         PlaceholderText="smb://server/share"
+                         Text="{Binding ServerAddress}"
+                         KeyDown="OnAddressKeyDown">
+                    <TextBox.InnerLeftContent>
+                        <avalonia:MaterialIcon Classes="address-icon" Kind="LanConnect" />
+                    </TextBox.InnerLeftContent>
+                </TextBox>
+                <Button Grid.Column="1"
+                        Classes="connect"
+                        Margin="8,0,0,0"
+                        Content="Connect"
+                        Command="{Binding ConnectCommand}" />
+            </Grid>
+
+            <TextBlock Classes="hint"
+                       MaxWidth="586"
+                       HorizontalAlignment="Left"
+                       Margin="0,0,22,0"
+                       IsVisible="{Binding CanMount}"
+                       Text="smb://server/share · sftp://user@server · ftp://server · dav://server/path · nfs://server/export" />
+            <TextBlock Classes="hint"
+                       MaxWidth="586"
+                       HorizontalAlignment="Left"
+                       Margin="0,0,22,0"
+                       IsVisible="{Binding !CanMount}"
+                       Text="Connecting to servers needs GVfs: install the gvfs package (and gvfs-smb for Windows shares)." />
+
+            <StackPanel Orientation="Horizontal"
+                        Spacing="10"
+                        Margin="0,12,0,0"
+                        IsVisible="{Binding IsConnecting}">
+                <controls:ActivityRing Width="18" Height="18"
+                                       StrokeThickness="2"
+                                       IsIndeterminate="True"
+                                       Stroke="{DynamicResource FcAccentBrush}"
+                                       Track="{DynamicResource FcTrackBrush}" />
+                <TextBlock Text="{Binding ConnectingText}"
+                           FontSize="13"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource FcSubtleTextBrush}" />
+            </StackPanel>
+
+            <Border Height="28" />
+
+            <!-- ===== Shares of a Windows server that was connected to without a share ===== -->
+            <StackPanel IsVisible="{Binding HasShares}">
+                <StackPanel DataContext="{Binding Shares}" x:DataType="network:ServerSharesViewModel">
+                    <Grid ColumnDefinitions="Auto,Auto" Margin="0,0,0,20">
+                        <TextBlock Grid.Column="0"
+                                   Classes="section-title"
+                                   Margin="0"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding Title}" />
+                        <Button Grid.Column="1"
+                                Classes="icon-button"
+                                Margin="8,0,0,0"
+                                ToolTip.Tip="Close"
+                                Command="{Binding CloseCommand}">
+                            <avalonia:MaterialIcon Kind="Close" Width="16" Height="16" />
+                        </Button>
+                    </Grid>
+
+                    <TextBlock Classes="hint"
+                               Margin="0,0,0,22"
+                               IsVisible="{Binding IsEmpty}"
+                               Text="The server lists no shares. Type the share into Connect to Server: smb://server/share." />
+
+                    <ItemsControl ItemsSource="{Binding Items}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="network:NetworkShareCardViewModel">
+                                <Button Classes="card network-card share-card"
+                                        ToolTip.Tip="{Binding Uri}"
+                                        Command="{Binding ConnectCommand}">
+                                    <Grid ColumnDefinitions="Auto,*">
+                                        <Border Grid.Column="0" Classes="network-glyph">
+                                            <avalonia:MaterialIcon Kind="FolderNetworkOutline"
+                                                                   Width="18" Height="18"
+                                                                   Foreground="{DynamicResource FcOnAccentBrush}" />
+                                        </Border>
+                                        <TextBlock Grid.Column="1"
+                                                   Margin="14,0,8,0"
+                                                   FontSize="15"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Text="{Binding Name}" />
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- ===== Shares mounted now ===== -->
+            <StackPanel IsVisible="{Binding HasMounts}">
+                <TextBlock Classes="section-title" Text="Connected" />
+
+                <ItemsControl ItemsSource="{Binding Mounts}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="network:NetworkMountCardViewModel">
+                            <Button Classes="card network-card"
+                                    ToolTip.Tip="{Binding MountPoint}"
+                                    Command="{Binding OpenCommand}">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Grid.Column="0" Classes="network-glyph">
+                                        <avalonia:MaterialIcon Kind="{Binding Icon}"
+                                                               Width="24" Height="24"
+                                                               Foreground="{DynamicResource FcOnAccentBrush}" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1"
+                                                Margin="16,0,8,0"
+                                                VerticalAlignment="Center"
+                                                Spacing="6">
+                                        <TextBlock Text="{Binding Name}"
+                                                   FontSize="16"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding Details}"
+                                                   FontSize="12"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource FcSubtleTextBrush}" />
+                                    </StackPanel>
+                                    <!-- A button in the card: its click doesn't open the share -->
+                                    <Button Grid.Column="2"
+                                            Classes="icon-button"
+                                            ToolTip.Tip="Disconnect"
+                                            Command="{Binding DisconnectCommand}">
+                                        <avalonia:MaterialIcon Kind="Eject" Width="18" Height="18" />
+                                    </Button>
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- ===== Servers announced on the local network ===== -->
+            <Grid ColumnDefinitions="Auto,Auto,Auto" Margin="0,0,0,20">
+                <TextBlock Grid.Column="0"
+                           Classes="section-title"
+                           Margin="0"
+                           VerticalAlignment="Center"
+                           Text="On This Network" />
+                <Button Grid.Column="1"
+                        Classes="icon-button"
+                        Margin="8,0,0,0"
+                        ToolTip.Tip="Search again"
+                        Command="{Binding RefreshCommand}"
+                        IsVisible="{Binding !IsSearching}">
+                    <avalonia:MaterialIcon Kind="Refresh" Width="18" Height="18" />
+                </Button>
+                <controls:ActivityRing Grid.Column="2"
+                                       Width="18" Height="18"
+                                       Margin="12,0,0,0"
+                                       VerticalAlignment="Center"
+                                       StrokeThickness="2"
+                                       IsIndeterminate="True"
+                                       Stroke="{DynamicResource FcAccentBrush}"
+                                       Track="{DynamicResource FcTrackBrush}"
+                                       IsVisible="{Binding IsSearching}" />
+            </Grid>
+
+            <TextBlock Classes="hint"
+                       MaxWidth="586"
+                       HorizontalAlignment="Left"
+                       Margin="0,0,22,22"
+                       IsVisible="{Binding IsNothingFound}"
+                       Text="No servers found. Servers that announce themselves (Windows shares, NAS, SFTP…) show up here; others can be reached with Connect to Server." />
+
+            <ItemsControl ItemsSource="{Binding Services}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="network:NetworkServiceCardViewModel">
+                        <Button Classes="card network-card"
+                                ToolTip.Tip="{Binding Uri}"
+                                Command="{Binding ConnectCommand}">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <Border Grid.Column="0" Classes="network-glyph">
+                                    <avalonia:MaterialIcon Kind="{Binding Icon}"
+                                                           Width="24" Height="24"
+                                                           Foreground="{DynamicResource FcOnAccentBrush}" />
+                                </Border>
+                                <StackPanel Grid.Column="1"
+                                            Margin="16,0,8,0"
+                                            VerticalAlignment="Center"
+                                            Spacing="6">
+                                    <TextBlock Text="{Binding Name}"
+                                               FontSize="16"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding Details}"
+                                               FontSize="12"
+                                               TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource FcSubtleTextBrush}" />
+                                </StackPanel>
+                            </Grid>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

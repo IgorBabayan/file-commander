@@ -111,7 +111,16 @@ public sealed partial class PaneViewModel : ViewModelBase, INavigator
     }
 
     private static string? ParentOf(string location)
-        => Locations.IsVirtual(location) ? null : IOPath.GetDirectoryName(location); // null for "/"
+    {
+        if (Locations.IsVirtual(location))
+            return null;
+
+        // The top folder of a network share: Up goes back to the Network page, not into GVfs's folder of mounts
+        if (NetworkLocations.FindMount(location) is { } mount && Locations.AreEqual(mount.MountPoint, location))
+            return Locations.Network;
+
+        return IOPath.GetDirectoryName(location); // null for "/"
+    }
 
     protected override void OnDispose()
     {

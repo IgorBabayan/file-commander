@@ -106,6 +106,9 @@ public static class SystemLocations
             .ToList();
     }
 
+    /// <summary>Every line of the mount table: device (or source), mount point and filesystem type.</summary>
+    internal static IReadOnlyList<(string Device, string MountPoint, string Format)> GetMountTable() => ReadMounts();
+
     /// <summary>Every mount point, pseudo filesystems included. Read once per operation for <see cref="MountPointOf"/>.</summary>
     public static IReadOnlyList<string> GetMountPoints() => ReadMounts().Select(m => m.MountPoint).ToList();
 

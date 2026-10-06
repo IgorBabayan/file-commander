@@ -5,6 +5,8 @@
              xmlns:pages="clr-namespace:File.Commander.Presentation.ViewModels.Pages"
              xmlns:browser="clr-namespace:File.Commander.Presentation.ViewModels.Browser"
              xmlns:browserViews="clr-namespace:File.Commander.Presentation.Views.Browser"
+             xmlns:network="clr-namespace:File.Commander.Presentation.ViewModels.Network"
+             xmlns:networkViews="clr-namespace:File.Commander.Presentation.Views.Network"
              xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              x:Class="File.Commander.Presentation.Views.Shell.PaneView"
              x:DataType="shell:PaneViewModel">
@@ -166,6 +168,10 @@
 
                     <DataTemplate DataType="browser:DirectoryViewModel">
                         <browserViews:DirectoryView />
+                    </DataTemplate>
+
+                    <DataTemplate DataType="network:NetworkViewModel">
+                        <networkViews:NetworkView />
                     </DataTemplate>
 
                     <DataTemplate DataType="pages:PlaceholderPageViewModel">

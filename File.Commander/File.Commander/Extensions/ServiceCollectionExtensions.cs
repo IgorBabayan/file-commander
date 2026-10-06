@@ -60,7 +60,8 @@ static class ServiceCollectionExtensions
                 .AddTransient<SettingsWindow>()
                 .AddTransient<PromptWindow>()
                 .AddTransient<PasteConflictWindow>()
-                .AddTransient<PropertiesWindow>();
+                .AddTransient<PropertiesWindow>()
+                .AddTransient<NetworkLoginWindow>();
         }
         
         private static AppSettings LoadStartupSettings()

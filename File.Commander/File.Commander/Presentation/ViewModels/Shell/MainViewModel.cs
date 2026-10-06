@@ -4,7 +4,6 @@ using System.Windows.Input;
 using Avalonia.Input;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
-using Material.Icons;
 
 namespace File.Commander.Presentation.ViewModels.Shell;
 
@@ -194,6 +193,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
         Sidebar.OrderChanged += OnSidebarOrderChanged;
         Sidebar.FavoritesChanged += OnSidebarFavoritesChanged;
         AddressBar = new AddressBarViewModel(this);
+        AddressBar.ConnectRequested += (_, address) => ConnectToServer(address);
         Toolbar = new ToolbarViewModel(settings);
 
         // Before the first page: it is created with this order
@@ -215,6 +215,17 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
     /// <summary>Opens <paramref name="location"/> in the active view as a new history entry. Clears Forward.</summary>
     public void Navigate(string location) => ActivePane.Navigate(location);
+
+    /// <summary>
+    /// A server address typed into the address bar (smb://nas/media, sftp://me@server…): the active view opens the
+    /// Network page, which connects to it and opens the share.
+    /// </summary>
+    private void ConnectToServer(string address)
+    {
+        Navigate(Locations.Network);
+        if (CurrentPage is NetworkViewModel network)
+            _ = network.ConnectAsync(address); // never throws, reports problems in a notice
+    }
 
     /// <summary>
     /// Makes <paramref name="pane"/> the view the shell acts on. Called by a click or focus inside it.
@@ -813,7 +824,8 @@ public partial class MainViewModel : ViewModelBase, INavigator
                 return trash;
             }
             case Locations.Network:
-                return new PlaceholderPageViewModel(location, "Network", MaterialIconKind.LanConnect);
+                // Read on every visit: what is mounted now, and a new search of the network
+                return new NetworkViewModel(pane, _dialogService);
         }
 
         var directory = Watch(new DirectoryViewModel(location, pane.ViewMode, FileSort.Of(SortMode), CurrentFolderOptions(), _columns, pane));

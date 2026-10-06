@@ -60,6 +60,7 @@ public sealed partial class TabViewModel : ViewModelBase
     public MaterialIconKind Icon => ActivePane.CurrentPage switch
     {
         ComputerViewModel => MaterialIconKind.Monitor,
+        NetworkViewModel => MaterialIconKind.LanConnect,
         PlaceholderPageViewModel placeholder => placeholder.Icon,
         _ => MaterialIconKind.Folder,
     };

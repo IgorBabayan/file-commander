@@ -21,7 +21,7 @@ public abstract class PageViewModel : ViewModelBase
     public virtual string StatusText => string.Empty;
 }
 
-/// <summary>For virtual locations that aren't implemented yet (Recent, Trash, Network).</summary>
+/// <summary>For virtual locations that aren't implemented yet.</summary>
 public sealed class PlaceholderPageViewModel(string location, string title, MaterialIconKind icon) : PageViewModel
 {
     public override string Location { get; } = location;
