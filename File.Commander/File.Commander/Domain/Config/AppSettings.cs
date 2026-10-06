@@ -40,6 +40,10 @@ public record AppSettings
     [JsonPropertyName(nameof(Columns))]
     public ColumnSettings? Columns { get; set; } = new();
 
+    /// <summary>The title bar's items, as set with Customize Toolbar… (a right click on the title bar).</summary>
+    [JsonPropertyName(nameof(Toolbar))]
+    public ToolbarSettings? Toolbar { get; set; } = new();
+
     public bool IsAddonEnabled(string key) => !Addons!.TryGetValue(key, out var enabled) || enabled;
 }
 

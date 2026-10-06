@@ -43,6 +43,9 @@ public partial class MainViewModel : ViewModelBase, INavigator
 
     public AddressBarViewModel AddressBar { get; }
 
+    /// <summary>The title bar's items and Customize Toolbar….</summary>
+    public ToolbarViewModel Toolbar { get; }
+
     /// <summary>The tabs of the window (Ctrl+T). Each has its own views, split view and info panel.</summary>
     public ObservableCollection<TabViewModel> Tabs { get; } = [];
 
@@ -200,6 +203,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
         Sidebar.OrderChanged += OnSidebarOrderChanged;
         Sidebar.FavoritesChanged += OnSidebarFavoritesChanged;
         AddressBar = new AddressBarViewModel(this);
+        Toolbar = new ToolbarViewModel(settings);
 
         // Before the first page: it is created with this order
         SortMode = ToSortMode(basic.SortOrder);
@@ -666,6 +670,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
     {
         _settings.Changed -= OnSettingsChanged;
         _columns.PropertyChanged -= OnColumnsChanged;
+        Toolbar.Dispose();
 
         // The window closes right after a change: store it now
         if (_pendingColumnsSave is not null)

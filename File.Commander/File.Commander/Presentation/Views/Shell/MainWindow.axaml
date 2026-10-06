@@ -307,10 +307,12 @@
     <Border Background="{DynamicResource FcContentBrush}">
         <Grid RowDefinitions="52,*">
             <!-- ================= Title bar ================= -->
-            <Border Grid.Row="0"
+            <!-- A right click anywhere on it opens "Customize Toolbar…" (MainWindow.Toolbar.cs) -->
+            <Border x:Name="TitleBar"
+                    Grid.Row="0"
                     Background="{DynamicResource FcTitleBarBrush}"
                     PointerPressed="OnPointerPressed">
-                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto" Margin="12,0,10,0">
+                <Grid ColumnDefinitions="Auto,*,Auto" Margin="12,0,10,0">
                     <Image Grid.Column="0"
                            Source="/Assets/logo.png"
                            Width="30" Height="30"
@@ -318,58 +320,118 @@
                            VerticalAlignment="Center"
                            RenderOptions.BitmapInterpolationMode="HighQuality" />
 
-                    <Border Grid.Column="1" Classes="nav-group" VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal">
-                            <Button Classes="nav" ToolTip.Tip="Back (Alt+Left)" Command="{Binding GoBackCommand}">
-                                <avalonia:MaterialIcon Kind="ChevronLeft" Width="20" Height="20" />
-                            </Button>
-                            <Button Classes="nav" ToolTip.Tip="Forward (Alt+Right)" Command="{Binding GoForwardCommand}">
-                                <avalonia:MaterialIcon Kind="ChevronRight" Width="20" Height="20" />
-                            </Button>
-                            <Button Classes="nav" ToolTip.Tip="Up (Alt+Up)" Command="{Binding GoUpCommand}">
-                                <avalonia:MaterialIcon Kind="ArrowUp" Width="18" Height="18" />
-                            </Button>
-                        </StackPanel>
-                    </Border>
+                    <!-- The customizable items, left to right as set with Customize Toolbar…. Filled by
+                         MainWindow.Toolbar.cs with the controls of ToolbarPool, each in a Border.toolbar-item -->
+                    <shellViews:ToolbarPanel x:Name="ToolbarArea"
+                                             Grid.Column="1"
+                                             Margin="0,0,12,0"
+                                             Spacing="8">
+                        <shellViews:ToolbarPanel.Styles>
+                            <Style Selector="Border.toolbar-item">
+                                <Setter Property="VerticalAlignment" Value="Center" />
+                            </Style>
+                            <!-- Flexible space: just room, until customizing shows it -->
+                            <Style Selector="Border.toolbar-item.spring">
+                                <Setter Property="MinWidth" Value="16" />
+                                <Setter Property="Height" Value="36" />
+                            </Style>
+                            <Style Selector="Border.toolbar-item.spring avalonia|MaterialIcon">
+                                <Setter Property="IsVisible" Value="False" />
+                                <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+                            </Style>
 
-                    <!-- New, Select all, Copy, Paste: between navigation and Computer.
-                         They act on the active view's folder and selection, like their shortcuts. -->
-                    <shellViews:FileActionsBar Grid.Column="2"
-                                               Margin="12,0,0,0"
-                                               VerticalAlignment="Center" />
+                            <!-- Customizing: items are something to drag, not to use -->
+                            <Style Selector="shellViews|ToolbarPanel.customizing > Border.toolbar-item">
+                                <Setter Property="Cursor" Value="Hand" />
+                            </Style>
+                            <Style Selector="shellViews|ToolbarPanel.customizing > Border.toolbar-item:not(.nav-group)">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="CornerRadius" Value="8" />
+                            </Style>
+                            <Style Selector="shellViews|ToolbarPanel.customizing > Border.toolbar-item:not(.nav-group):pointerover">
+                                <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+                            </Style>
+                            <Style Selector="shellViews|ToolbarPanel.customizing > Border.toolbar-item.spring">
+                                <Setter Property="MinWidth" Value="48" />
+                                <Setter Property="Background" Value="{DynamicResource FcNavGroupBrush}" />
+                            </Style>
+                            <Style Selector="shellViews|ToolbarPanel.customizing > Border.toolbar-item.spring avalonia|MaterialIcon">
+                                <Setter Property="IsVisible" Value="True" />
+                            </Style>
+                            <!-- The dragged item, where it will land -->
+                            <Style Selector="Border.toolbar-item.dragging">
+                                <Setter Property="Opacity" Value="0.35" />
+                            </Style>
+                        </shellViews:ToolbarPanel.Styles>
+                    </shellViews:ToolbarPanel>
 
-                    <Button Grid.Column="3"
-                            Classes="view-toggle"
-                            Margin="12,0,0,0"
-                            VerticalAlignment="Center"
-                            ToolTip.Tip="Computer"
-                            Command="{Binding GoComputerCommand}">
-                        <avalonia:MaterialIcon Kind="Monitor" Width="18" Height="18" />
-                    </Button>
+                    <!-- Every item the toolbar can show; Tag = its id in ToolbarViewModel.Catalog.
+                         The ones that aren't on the toolbar wait here, hidden -->
+                    <Panel x:Name="ToolbarPool" Grid.Column="1" IsVisible="False">
+                        <Button Tag="back" Classes="nav" ToolTip.Tip="Back (Alt+Left)" Command="{Binding GoBackCommand}">
+                            <avalonia:MaterialIcon Kind="ChevronLeft" Width="20" Height="20" />
+                        </Button>
+                        <Button Tag="forward" Classes="nav" ToolTip.Tip="Forward (Alt+Right)" Command="{Binding GoForwardCommand}">
+                            <avalonia:MaterialIcon Kind="ChevronRight" Width="20" Height="20" />
+                        </Button>
+                        <Button Tag="up" Classes="nav" ToolTip.Tip="Up (Alt+Up)" Command="{Binding GoUpCommand}">
+                            <avalonia:MaterialIcon Kind="ArrowUp" Width="18" Height="18" />
+                        </Button>
 
-                    <!-- Address bar: breadcrumbs, click the empty part (or Ctrl+L) to type a path.
-                         F5 still refreshes; the view switcher took the refresh button's place. -->
-                    <Grid Grid.Column="4"
-                          ColumnDefinitions="*,Auto,Auto,Auto"
-                          Margin="12,0,16,0"
-                          VerticalAlignment="Center">
-                        <shellViews:AddressBar Grid.Column="0" DataContext="{Binding AddressBar}" />
-                        <shellViews:SortButton Grid.Column="1" Margin="10,0,0,0" />
-                        <shellViews:ViewModeSwitcher Grid.Column="2" Margin="6,0,0,0" />
-                        <!-- Action center: right after split view, before Search -->
-                        <shellViews:ActionCenterButton Grid.Column="3"
-                                                       Margin="2,0,0,0"
-                                                       DataContext="{Binding ActionCenter}" />
-                    </Grid>
+                        <!-- New, Select all, Copy, Paste: they act on the active view's folder and selection,
+                             like their shortcuts. A pill of its own (Border.nav-group inside) -->
+                        <shellViews:FileActionsBar Tag="file-actions" />
 
-                    <StackPanel Grid.Column="5"
-                                Orientation="Horizontal"
-                                VerticalAlignment="Center"
-                                Spacing="6">
-                        <Button Classes="window-button" ToolTip.Tip="Search">
+                        <Button Tag="computer"
+                                Classes="view-toggle"
+                                ToolTip.Tip="Computer"
+                                Command="{Binding GoComputerCommand}">
+                            <avalonia:MaterialIcon Kind="Monitor" Width="18" Height="18" />
+                        </Button>
+
+                        <!-- Address bar: breadcrumbs, click the empty part (or Ctrl+L) to type a path.
+                             Can be moved but not removed, like Firefox's -->
+                        <shellViews:AddressBar Tag="address" DataContext="{Binding AddressBar}" />
+                        <shellViews:SortButton Tag="sort" />
+                        <shellViews:ViewModeSwitcher Tag="view-mode" />
+                        <shellViews:ActionCenterButton Tag="action-center" DataContext="{Binding ActionCenter}" />
+
+                        <Button Tag="search" Classes="window-button" ToolTip.Tip="Search">
                             <avalonia:MaterialIcon Kind="Magnify" />
                         </Button>
 
+                        <!-- In the palette only, until the user drags them onto the toolbar -->
+                        <Button Tag="refresh"
+                                Classes="window-button"
+                                ToolTip.Tip="Refresh (F5)"
+                                Command="{Binding RefreshCommand}">
+                            <avalonia:MaterialIcon Kind="Refresh" />
+                        </Button>
+                        <Button Tag="new-tab"
+                                Classes="window-button"
+                                ToolTip.Tip="New tab (Ctrl+T)"
+                                Command="{Binding NewTabCommand}">
+                            <avalonia:MaterialIcon Kind="TabPlus" />
+                        </Button>
+                        <Button Tag="info-panel"
+                                Classes="window-button"
+                                ToolTip.Tip="Info panel (Space)"
+                                Command="{Binding ToggleInfoPanelCommand}">
+                            <avalonia:MaterialIcon Kind="InformationOutline" />
+                        </Button>
+                        <Button Tag="hidden-files"
+                                Classes="window-button"
+                                ToolTip.Tip="Show hidden files (Ctrl+H)"
+                                Command="{Binding ToggleHiddenFilesCommand}">
+                            <avalonia:MaterialIcon Kind="EyeOutline" />
+                        </Button>
+                    </Panel>
+
+                    <!-- Not customizable, like Firefox's menu button and window controls -->
+                    <StackPanel Grid.Column="2"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Spacing="6">
                         <Button Classes="window-button"
                                 ToolTip.Tip="Settings"
                                 Command="{Binding SettingsCommand}"
@@ -399,6 +461,20 @@
                     </StackPanel>
                 </Grid>
             </Border>
+
+            <!-- Customize Toolbar…: the palette takes the place of the window's content until Done -->
+            <shellViews:ToolbarCustomizer x:Name="Customizer"
+                                          Grid.Row="1"
+                                          ZIndex="1"
+                                          IsVisible="False"
+                                          DataContext="{Binding Toolbar}" />
+
+            <!-- An item dragged while customizing follows the pointer here -->
+            <Canvas x:Name="DragLayer"
+                    Grid.Row="0"
+                    Grid.RowSpan="2"
+                    ZIndex="2"
+                    IsHitTestVisible="False" />
 
             <!-- ================= Body ================= -->
             <Grid Grid.Row="1" ColumnDefinitions="200,*">

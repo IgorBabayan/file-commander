@@ -1,0 +1,124 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="clr-namespace:File.Commander.Presentation.ViewModels.Shell"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             x:Class="File.Commander.Presentation.Views.Shell.ToolbarCustomizer"
+             x:DataType="shell:ToolbarViewModel">
+    <!-- Fc* brushes follow the theme: DynamicResource, so they update when it changes -->
+    <UserControl.Styles>
+        <Style Selector="TextBlock.customize-hint">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="Margin" Value="4,0,0,14" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+
+        <!-- ===== Palette: also where items are dragged to take them off the toolbar ===== -->
+        <Style Selector="Border.palette">
+            <Setter Property="Background" Value="{DynamicResource FcSidebarBrush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="10" />
+        </Style>
+        <Style Selector="Border.palette.drop-target">
+            <Setter Property="BorderBrush" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="Border.palette-item">
+            <Setter Property="Width" Value="112" />
+            <Setter Property="Height" Value="84" />
+            <Setter Property="Margin" Value="4" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Border.palette-item:pointerover">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+        </Style>
+        <Style Selector="Border.palette-item avalonia|MaterialIcon">
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Border.palette-item TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+
+        <!-- ===== Bottom bar ===== -->
+        <Style Selector="Button.customize-button">
+            <Setter Property="MinWidth" Value="110" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.customize-button.primary">
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="Button.customize-button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="Button.customize-button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Border Background="{DynamicResource FcContentBrush}">
+        <DockPanel Margin="24,20,24,20">
+            <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="0,16,0,0">
+                <!-- Undo takes the place of Restore Defaults right after it, until the next change -->
+                <Panel Grid.Column="0">
+                    <Button Classes="customize-button"
+                            Content="Restore Defaults"
+                            IsVisible="{Binding !CanUndoRestore}"
+                            Command="{Binding RestoreDefaultsCommand}" />
+                    <Button Classes="customize-button"
+                            Content="Undo"
+                            IsVisible="{Binding CanUndoRestore}"
+                            Command="{Binding UndoRestoreCommand}" />
+                </Panel>
+
+                <Button Grid.Column="2"
+                        Classes="customize-button primary"
+                        Content="Done"
+                        Command="{Binding DoneCommand}" />
+            </Grid>
+
+            <TextBlock DockPanel.Dock="Top"
+                       Classes="customize-hint"
+                       Text="Drag your favorite items into the toolbar." />
+
+            <Border x:Name="PaletteArea" Classes="palette">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl x:Name="PaletteList" ItemsSource="{Binding PaletteItems}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="shell:ToolbarItemInfo">
+                                <Border Classes="palette-item" ToolTip.Tip="{Binding Label}">
+                                    <StackPanel Spacing="8"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center">
+                                        <avalonia:MaterialIcon Kind="{Binding Icon}"
+                                                               Width="22" Height="22"
+                                                               HorizontalAlignment="Center" />
+                                        <TextBlock Text="{Binding Label}"
+                                                   MaxWidth="104"
+                                                   TextAlignment="Center"
+                                                   TextWrapping="Wrap"
+                                                   HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+        </DockPanel>
+    </Border>
+</UserControl>

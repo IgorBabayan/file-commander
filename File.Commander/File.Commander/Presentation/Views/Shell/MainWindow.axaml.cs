@@ -39,6 +39,10 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        // The title bar's items and Customize Toolbar… (MainWindow.Toolbar.cs). First: its Esc ends
+        // customizing before the shortcut handler below sees the key
+        InitializeToolbar();
+
         // Tunnel: works wherever the pointer or focus is, before a child control can swallow the event
         AddHandler(PointerPressedEvent, OnNavigationPointerPressed, RoutingStrategies.Tunnel);
         AddHandler(KeyDownEvent, OnNavigationKeyDown, RoutingStrategies.Tunnel);
