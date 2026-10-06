@@ -58,6 +58,11 @@ public partial class MainWindow
             single is { IsDirectory: false } ? MaterialIconKind.OpenInApp : MaterialIconKind.FolderOpenOutline,
             () => vm.OpenEntries(page, entries),
             isEnabled: single is not null || hasFiles);
+
+        // The system's "Open with" dialog: one file at a time, as the portal takes one
+        yield return EntryMenuItem("Open with…", MaterialIconKind.OpenInNew,
+            () => _ = vm.OpenWithAsync(single!),
+            isEnabled: single is { IsDirectory: false });
         yield return EntryMenuItem("Open in a view", MaterialIconKind.ViewSplitVertical,
             () => vm.OpenEntryInSplitView(single!),
             isEnabled: single is { IsDirectory: true });

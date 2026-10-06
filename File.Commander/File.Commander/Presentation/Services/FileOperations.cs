@@ -11,6 +11,8 @@ namespace File.Commander.Presentation.Services;
 /// fails is listed there and the rest goes on. Symlinks are copied as links, never followed into.
 /// What happens to a name that is taken is decided per item (<see cref="NameConflict"/>): by default it gets a
 /// number, "report (2).pdf"; a replaced item is only removed once its replacement fully arrived.
+/// What the user isn't allowed to do (writing to /usr, deleting a file owned by root…) is done with administrator
+/// rights, asked for in the system's dialog (<see cref="AdminRights"/>): once per action, for all the items refused.
 /// </summary>
 public static class FileOperations
 {
@@ -43,6 +45,9 @@ public static class FileOperations
 
         IReadOnlyList<string> mounts = move ? SystemLocations.GetMountPoints() : [];
         var targetMount = move ? SystemLocations.MountPointOf(target, mounts) : null;
+
+        // What was refused: done with administrator rights once every other item is done
+        var admin = AdminRights.IsAvailable ? new List<AdminStep>() : null;
 
         for (var i = 0; i < items.Count; i++)
         {
@@ -106,11 +111,17 @@ public static class FileOperations
             }
 
             var sameDrive = move && SystemLocations.MountPointOf(parent, mounts) == targetMount;
+
+            // The steps of one item depend on each other: its source is deleted only once all of it arrived
+            var group = i;
+            var pending = admin?.Count ?? 0;
             try
             {
                 if (replace)
                 {
-                    ReplaceEntry(source, destination, move, sameDrive, progress, token, count, bytes);
+                    if (ReplaceEntry(source, destination, move, sameDrive, progress, token, count, bytes))
+                        DeleteSource(source, name, admin, group);
+
                     continue;
                 }
 
@@ -120,19 +131,67 @@ public static class FileOperations
                     continue;
                 }
 
-                // Across drives: the source goes only when all of it arrived
-                if (CopyEntry(source, destination, progress, token) && move)
-                    DeleteTree(source);
+                // Across drives: the source goes only when all of it arrived. Parts of it copied with administrator
+                // rights arrive at the end: so does the deletion, after them.
+                if (CopyEntry(source, destination, progress, token, admin, group) && move)
+                {
+                    if (admin is not null && admin.Count > pending)
+                        admin.Add(new AdminStep(name, AdminRights.Delete(source), 0, 0, group));
+                    else
+                        DeleteSource(source, name, admin, group);
+                }
+            }
+            catch (Exception ex) when (AdminRights.IsDenied(ex) && admin is not null)
+            {
+                // Refused before anything of it was written: all of it is done as root
+                admin.RemoveRange(pending, admin.Count - pending);
+                admin.Add(new AdminStep(name,
+                    AdminTransfer(source, destination, target, move, replace, sameDrive), count, bytes, group));
+                if (move && !sameDrive)
+                    admin.Add(new AdminStep(name, AdminRights.Delete(source), 0, 0, group));
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 progress.Fail(name, ex.Message);
             }
         }
+
+        if (admin is not null)
+            AdminRights.RunInto(admin, progress);
     }
 
-    /// <summary>Renames <paramref name="path"/> in its folder. Returns what went wrong, or null.</summary>
-    public static string? Rename(string path, string newName)
+    /// <summary>The commands that copy, move or replace one item as root, as <see cref="Transfer(IReadOnlyList{TransferItem}, string, bool, IOperationProgress)"/> does.</summary>
+    private static string AdminTransfer(string source, string destination, string target, bool move, bool replace,
+        bool sameDrive)
+    {
+        var rename = move && sameDrive;
+        if (replace)
+        {
+            var staging = UniquePath(ParentOf(destination), $".{IOPath.GetFileName(destination)}.replacing");
+            return AdminRights.Replace(source, destination, staging, rename);
+        }
+
+        return rename ? AdminRights.Move(source, destination) : AdminRights.Copy(source, destination, target);
+    }
+
+    /// <summary>A moved item's source, once all of it arrived. Not allowed: deleted as root at the end.</summary>
+    private static void DeleteSource(string source, string name, List<AdminStep>? admin, int group)
+    {
+        try
+        {
+            DeleteTree(source);
+        }
+        catch (Exception ex) when (AdminRights.IsDenied(ex) && admin is not null)
+        {
+            admin.Add(new AdminStep(name, AdminRights.Delete(source), 0, 0, group));
+        }
+    }
+
+    /// <summary>
+    /// Renames <paramref name="path"/> in its folder, with administrator rights when the user isn't allowed to.
+    /// Returns what went wrong, or null.
+    /// </summary>
+    public static async Task<string?> RenameAsync(string path, string newName)
     {
         if (ValidateName(newName) is { } problem)
             return problem;
@@ -146,14 +205,21 @@ public static class FileOperations
             MoveEntry(path, destination);
             return null;
         }
+        catch (Exception ex) when (AdminRights.IsDenied(ex) && AdminRights.IsAvailable)
+        {
+            return await AdminRights.RunOneAsync(IOPath.GetFileName(path), AdminRights.Move(path, destination));
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             return ex.Message;
         }
     }
 
-    /// <summary>New folder: an empty folder <paramref name="name"/> in <paramref name="folder"/>. Returns what went wrong, or null.</summary>
-    public static string? CreateFolder(string folder, string name)
+    /// <summary>
+    /// New folder: an empty folder <paramref name="name"/> in <paramref name="folder"/>, with administrator rights when
+    /// the user isn't allowed to write there. Returns what went wrong, or null.
+    /// </summary>
+    public static async Task<string?> CreateFolderAsync(string folder, string name)
     {
         if (ValidateName(name) is { } problem)
             return problem;
@@ -167,14 +233,21 @@ public static class FileOperations
             Directory.CreateDirectory(path);
             return null;
         }
+        catch (Exception ex) when (AdminRights.IsDenied(ex) && AdminRights.IsAvailable)
+        {
+            return await AdminRights.RunOneAsync(name, AdminRights.CreateFolder(path));
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             return ex.Message;
         }
     }
 
-    /// <summary>New text document: an empty file <paramref name="name"/> in <paramref name="folder"/>. Returns what went wrong, or null.</summary>
-    public static string? CreateFile(string folder, string name)
+    /// <summary>
+    /// New text document: an empty file <paramref name="name"/> in <paramref name="folder"/>, with administrator rights
+    /// when the user isn't allowed to write there. Returns what went wrong, or null.
+    /// </summary>
+    public static async Task<string?> CreateFileAsync(string folder, string name)
     {
         if (ValidateName(name) is { } problem)
             return problem;
@@ -192,6 +265,10 @@ public static class FileOperations
 
             return null;
         }
+        catch (Exception ex) when (AdminRights.IsDenied(ex) && AdminRights.IsAvailable)
+        {
+            return await AdminRights.RunOneAsync(name, AdminRights.CreateFile(path));
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             return ex.Message;
@@ -200,7 +277,8 @@ public static class FileOperations
 
     /// <summary>
     /// Packs <paramref name="sources"/> into a new zip file at <paramref name="archivePath"/>, each under its own name.
-    /// Linked folders are stored empty, not followed. A canceled or failed archive is deleted.
+    /// Linked folders are stored empty, not followed. A canceled or failed archive is deleted. In a folder the user
+    /// can't write to, it is packed in the cache folder, then moved in with administrator rights.
     /// </summary>
     public static void Compress(IReadOnlyList<string> sources, string archivePath, IOperationProgress progress)
     {
@@ -208,11 +286,12 @@ public static class FileOperations
         var sizes = sources.Select(source => Measure(source, token)).ToList();
         progress.SetTotal(sizes.Sum(size => size.Items), sizes.Sum(size => size.Bytes));
 
+        var writtenPath = archivePath;
         var created = false;
         var complete = false;
         try
         {
-            using (var stream = new FileStream(archivePath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            using (var stream = CreateArchiveFile(archivePath, out writtenPath))
             {
                 created = true;
                 using var archive = new ZipArchive(stream, ZipArchiveMode.Create);
@@ -233,7 +312,36 @@ public static class FileOperations
         {
             // A half-written archive can't be opened: don't leave it behind
             if (created && !complete)
-                TryDelete(archivePath);
+                TryDelete(writtenPath);
+        }
+
+        if (complete && writtenPath != archivePath)
+        {
+            AdminRights.RunInto([
+                new AdminStep(IOPath.GetFileName(archivePath),
+                    AdminRights.Place(writtenPath, archivePath, ParentOf(archivePath)), 0, 0)
+            ], progress);
+
+            // Still there when it couldn't be moved in
+            TryDelete(writtenPath);
+        }
+    }
+
+    /// <summary>
+    /// The archive's file, at <paramref name="archivePath"/>; in the staging folder when the user can't write there
+    /// and administrator rights can be asked for. <paramref name="writtenPath"/> is where it is.
+    /// </summary>
+    private static FileStream CreateArchiveFile(string archivePath, out string writtenPath)
+    {
+        try
+        {
+            writtenPath = archivePath;
+            return new FileStream(archivePath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+        }
+        catch (Exception ex) when (AdminRights.IsDenied(ex) && AdminRights.IsAvailable)
+        {
+            writtenPath = AdminRights.StagingPath(IOPath.GetFileName(archivePath));
+            return new FileStream(writtenPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
         }
     }
 
@@ -341,9 +449,10 @@ public static class FileOperations
     /// <summary>
     /// Puts <paramref name="source"/> in place of what is at <paramref name="destination"/>. It arrives under a hidden
     /// temporary name next to it first; only once all of it is there is the old item deleted and the new one renamed
-    /// into its place. So a copy that fails or is canceled leaves the old item as it was.
+    /// into its place. So a copy that fails or is canceled leaves the old item as it was; so does one that throws.
     /// </summary>
-    private static void ReplaceEntry(string source, string destination, bool move, bool sameDrive,
+    /// <returns>A move across drives replaced it: its source is still to be deleted.</returns>
+    private static bool ReplaceEntry(string source, string destination, bool move, bool sameDrive,
         IOperationProgress progress, CancellationToken token, long items, long bytes)
     {
         var staging = UniquePath(ParentOf(destination), $".{IOPath.GetFileName(destination)}.replacing");
@@ -371,7 +480,7 @@ public static class FileOperations
             if (!complete)
             {
                 TryDeleteTree(staging);
-                return;
+                return false;
             }
         }
 
@@ -391,8 +500,7 @@ public static class FileOperations
         }
 
         // Across drives: the source goes only now that it replaced the old item
-        if (move && !renamed)
-            DeleteTree(source);
+        return move && !renamed;
     }
 
     private static void TryMoveBack(string staging, string source)
@@ -434,8 +542,9 @@ public static class FileOperations
             MoveEntry(source, destination);
             return true;
         }
-        catch (IOException ex)
+        catch (IOException ex) when (!AdminRights.IsDenied(ex))
         {
+            // Not allowed is no reason to copy: the caller renames it with administrator rights
             Trace.WriteLine($"Can't rename '{source}' to '{destination}', copying instead: {ex.Message}");
             return false;
         }
@@ -497,9 +606,12 @@ public static class FileOperations
         }
     }
 
-    /// <summary>Copies one entry and everything in it. True when all of it was copied.</summary>
+    /// <summary>
+    /// Copies one entry and everything in it. True when all of it was copied, or the parts the user isn't allowed to
+    /// read were added to <paramref name="admin"/> (when given), to be copied with administrator rights.
+    /// </summary>
     private static bool CopyEntry(string source, string destination, IOperationProgress progress,
-        CancellationToken token)
+        CancellationToken token, List<AdminStep>? admin = null, int group = -1)
     {
         token.ThrowIfCancellationRequested();
 
@@ -526,6 +638,12 @@ public static class FileOperations
         {
             children = Directory.GetFileSystemEntries(source);
         }
+        catch (Exception ex) when (AdminRights.IsDenied(ex) && admin is not null)
+        {
+            // Can't be listed: its contents are copied as root into the folder just created
+            admin.Add(new AdminStep(source, AdminRights.Copy(source, destination, ParentOf(destination)), 0, 0, group));
+            return true;
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             progress.Fail(source, ex.Message);
@@ -535,9 +653,15 @@ public static class FileOperations
         var complete = true;
         foreach (var child in children)
         {
+            var childDestination = IOPath.Combine(destination, IOPath.GetFileName(child));
             try
             {
-                complete &= CopyEntry(child, IOPath.Combine(destination, IOPath.GetFileName(child)), progress, token);
+                complete &= CopyEntry(child, childDestination, progress, token, admin, group);
+            }
+            catch (Exception ex) when (AdminRights.IsDenied(ex) && admin is not null)
+            {
+                // Can't be read: copied as root at the end (nothing of it was written)
+                admin.Add(new AdminStep(child, AdminRights.Copy(child, childDestination, destination), 1, 0, group));
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
@@ -678,6 +802,9 @@ public static class FileOperations
     {
         progress.SetTotal(paths.Count);
 
+        // What the user isn't allowed to delete: deleted as root once the others are
+        var admin = AdminRights.IsAvailable ? new List<AdminStep>() : null;
+
         foreach (var path in paths)
         {
             if (progress.CancellationToken.IsCancellationRequested)
@@ -690,6 +817,12 @@ public static class FileOperations
             {
                 DeleteTree(path);
             }
+            catch (Exception ex) when (AdminRights.IsDenied(ex) && admin is not null)
+            {
+                // What could be deleted is gone; rm -rf takes the rest. Counted as done once it ran.
+                admin.Add(new AdminStep(name, AdminRights.Delete(path)));
+                continue;
+            }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 progress.Fail(name, ex.Message);
@@ -697,6 +830,9 @@ public static class FileOperations
 
             progress.Advance();
         }
+
+        if (admin is not null)
+            AdminRights.RunInto(admin, progress);
     }
 
     /// <summary>Symlinks are deleted, never followed.</summary>
@@ -712,7 +848,16 @@ public static class FileOperations
         foreach (var child in Directory.GetFileSystemEntries(path))
             DeleteTree(child);
 
-        Directory.Delete(path);
+        try
+        {
+            Directory.Delete(path);
+        }
+        catch (IOException ex) when (!AdminRights.IsDenied(ex)
+                                     && UnixFileAccess.GetEffectiveAccess(ParentOf(path)) is { CanWrite: false })
+        {
+            // .NET reports a refused rmdir as a bare IOException, without the errno: said for what it is
+            throw new UnauthorizedAccessException(ex.Message, ex);
+        }
     }
 
     private static void TryDelete(string path)

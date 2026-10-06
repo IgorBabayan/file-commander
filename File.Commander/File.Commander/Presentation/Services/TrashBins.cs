@@ -67,6 +67,8 @@ public static class TrashBins
     /// Moves <paramref name="paths"/> to the trash, restorable by any file manager. Items of the home drive go to the
     /// home trash; items of another drive to the trash at its top ($topdir/.Trash/$uid, else $topdir/.Trash-$uid),
     /// so nothing is copied across drives. Never throws for one item: it is reported to <paramref name="progress"/>.
+    /// Items the user isn't allowed to move (in a folder owned by root) are moved with administrator rights at the end,
+    /// and then belong to the user, like everything else in their trash.
     /// </summary>
     public static void MoveToTrash(IReadOnlyList<string> paths, IOperationProgress progress)
     {
@@ -75,6 +77,7 @@ public static class TrashBins
         var mounts = SystemLocations.GetMountPoints();
         var homeMount = SystemLocations.MountPointOf(DataHome(), mounts);
         var uid = UserId();
+        var admin = AdminRights.IsAvailable ? new List<AdminStep>() : null;
 
         foreach (var path in paths)
         {
@@ -84,17 +87,19 @@ public static class TrashBins
             var name = IOPath.GetFileName(path);
             progress.Begin(name);
 
+            // Handed over to be moved as root: counted as done once that ran
+            var handedOver = false;
             try
             {
                 var mount = SystemLocations.MountPointOf(FileOperations.ParentOf(path), mounts);
                 if (mount == homeMount)
                 {
                     EnsureBin(HomeTrash);
-                    MoveIntoBin(path, HomeTrash, topDir: null);
+                    handedOver = MoveIntoBin(path, HomeTrash, topDir: null, admin);
                 }
                 else if (DriveBin(mount, uid) is { } bin)
                 {
-                    MoveIntoBin(path, bin, mount);
+                    handedOver = MoveIntoBin(path, bin, mount, admin);
                 }
                 else
                 {
@@ -106,8 +111,12 @@ public static class TrashBins
                 progress.Fail(name, ex.Message);
             }
 
-            progress.Advance();
+            if (!handedOver)
+                progress.Advance();
         }
+
+        if (admin is not null)
+            AdminRights.RunInto(admin, progress);
     }
 
     /// <summary>The trash at the top of another drive: the shared .Trash when it is safe to use, else our own.</summary>
@@ -162,7 +171,8 @@ public static class TrashBins
         Directory.CreateDirectory(IOPath.Combine(bin, "info"), ownerOnly);
     }
 
-    private static void MoveIntoBin(string path, string bin, string? topDir)
+    /// <returns>True when the user isn't allowed to move it, and it was added to <paramref name="admin"/>.</returns>
+    private static bool MoveIntoBin(string path, string bin, string? topDir, List<AdminStep>? admin)
     {
         var files = IOPath.Combine(bin, "files");
         var info = IOPath.Combine(bin, "info");
@@ -192,10 +202,17 @@ public static class TrashBins
                 continue;
             }
 
+            var trashed = IOPath.Combine(files, candidate);
             try
             {
-                FileOperations.MoveEntry(path, IOPath.Combine(files, candidate));
-                return;
+                FileOperations.MoveEntry(path, trashed);
+                return false;
+            }
+            catch (Exception ex) when (AdminRights.IsDenied(ex) && admin is not null)
+            {
+                // The info file stays: it is deleted as root if the move fails there too
+                admin.Add(new AdminStep(name, AdminRights.MoveToTrash(path, trashed, infoFile)));
+                return true;
             }
             catch
             {

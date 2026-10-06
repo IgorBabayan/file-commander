@@ -12,6 +12,8 @@ namespace File.Commander.Presentation.Services;
 /// Extracts into a hidden folder first and moves the result into place once done, so the folder shows complete, and a
 /// canceled or failed extraction leaves nothing behind. Entries that would land outside it ("../", absolute paths)
 /// are skipped. Links are made last, so no entry is ever written through a link from the archive.
+/// Next to an archive in a folder the user can't write to, it is extracted in the cache folder, and the result is moved
+/// into place with administrator rights (<see cref="AdminRights"/>).
 /// </remarks>
 public static class ArchiveExtractor
 {
@@ -62,7 +64,18 @@ public static class ArchiveExtractor
 
         // Hidden while it is being filled: the views don't list it until it is complete
         var staging = IOPath.Combine(folder, $".{name}.extracting-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(staging);
+        var asAdmin = false;
+        try
+        {
+            Directory.CreateDirectory(staging);
+        }
+        catch (Exception ex) when (AdminRights.IsDenied(ex) && AdminRights.IsAvailable)
+        {
+            // Not allowed to write next to it: extracted where the user can, moved in as root
+            staging = AdminRights.StagingPath($"{name}.extracting");
+            Directory.CreateDirectory(staging);
+            asAdmin = true;
+        }
 
         var moved = false;
         try
@@ -75,7 +88,7 @@ public static class ArchiveExtractor
             if (token.IsCancellationRequested)
                 return null;
 
-            var result = MoveIntoPlace(staging, folder, FolderNameFor(name));
+            var result = MoveIntoPlace(staging, folder, FolderNameFor(name), asAdmin ? progress : null);
             moved = true;
             return result;
         }
@@ -98,20 +111,32 @@ public static class ArchiveExtractor
         return null;
     }
 
-    /// <summary>One top-level entry: it goes next to the archive itself. Several: in a folder named after the archive.</summary>
-    private static string MoveIntoPlace(string staging, string folder, string folderName)
+    /// <summary>
+    /// One top-level entry: it goes next to the archive itself. Several: in a folder named after the archive.
+    /// With <paramref name="adminProgress"/>, it is moved with administrator rights, reported there when it can't be.
+    /// </summary>
+    private static string MoveIntoPlace(string staging, string folder, string folderName,
+        IOperationProgress? adminProgress = null)
     {
         var top = Directory.GetFileSystemEntries(staging);
-        if (top.Length == 1)
+        var (source, destination) = top.Length == 1
+            ? (top[0], FileOperations.UniquePath(folder, IOPath.GetFileName(top[0])))
+            : (staging, FileOperations.UniquePath(folder, folderName));
+
+        if (adminProgress is not null)
         {
-            var destination = FileOperations.UniquePath(folder, IOPath.GetFileName(top[0]));
-            FileOperations.MoveEntry(top[0], destination);
+            AdminRights.RunInto([
+                new AdminStep(IOPath.GetFileName(destination), AdminRights.Place(source, destination, folder), 0, 0)
+            ], adminProgress);
             return destination;
         }
 
-        var target = FileOperations.UniquePath(folder, folderName);
-        Directory.Move(staging, target);
-        return target;
+        if (top.Length == 1)
+            FileOperations.MoveEntry(source, destination);
+        else
+            Directory.Move(source, destination);
+
+        return destination;
     }
 
     // ===== Zip =====

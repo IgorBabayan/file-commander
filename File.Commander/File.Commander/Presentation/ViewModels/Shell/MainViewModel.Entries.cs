@@ -59,6 +59,19 @@ public partial class MainViewModel
             OpenInSplitView(entry.FullPath);
     }
 
+    /// <summary>
+    /// Open with…: the system's "Open with" dialog (xdg-desktop-portal), to pick the app that opens
+    /// <paramref name="entry"/> this time, or from now on.
+    /// </summary>
+    public async Task OpenWithAsync(FileEntryViewModel entry)
+    {
+        if (entry.IsDirectory)
+            return;
+
+        if (await OpenWithDialog.ShowAsync(entry.FullPath) is { } problem)
+            await ShowNoticeAsync($"Can't open “{entry.Name}” with another app", problem);
+    }
+
     /// <summary>Open in a new tab: one tab per folder, in their order, the last one selected. Files are skipped.</summary>
     public void OpenEntriesInNewTabs(IReadOnlyList<FileEntryViewModel> entries)
     {
@@ -223,7 +236,8 @@ public partial class MainViewModel
         if (name == entry.Name)
             return;
 
-        if (FileOperations.Rename(entry.FullPath, name) is { } problem)
+        // Asks for administrator rights in the system's dialog when the user isn't allowed to rename it
+        if (await FileOperations.RenameAsync(entry.FullPath, name) is { } problem)
         {
             await ShowNoticeAsync("Can't rename", problem);
             return;
