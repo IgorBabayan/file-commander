@@ -153,6 +153,52 @@ public static class FileOperations
         }
     }
 
+    /// <summary>New folder: an empty folder <paramref name="name"/> in <paramref name="folder"/>. Returns what went wrong, or null.</summary>
+    public static string? CreateFolder(string folder, string name)
+    {
+        if (ValidateName(name) is { } problem)
+            return problem;
+
+        var path = IOPath.Combine(folder, name);
+        if (Exists(path))
+            return $"An item named “{name}” already exists in this folder.";
+
+        try
+        {
+            Directory.CreateDirectory(path);
+            return null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return ex.Message;
+        }
+    }
+
+    /// <summary>New text document: an empty file <paramref name="name"/> in <paramref name="folder"/>. Returns what went wrong, or null.</summary>
+    public static string? CreateFile(string folder, string name)
+    {
+        if (ValidateName(name) is { } problem)
+            return problem;
+
+        var path = IOPath.Combine(folder, name);
+        if (Exists(path))
+            return $"An item named “{name}” already exists in this folder.";
+
+        try
+        {
+            // CreateNew: never truncates a file that showed up in the meantime
+            using (new FileStream(path, FileMode.CreateNew, FileAccess.Write))
+            {
+            }
+
+            return null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return ex.Message;
+        }
+    }
+
     /// <summary>
     /// Packs <paramref name="sources"/> into a new zip file at <paramref name="archivePath"/>, each under its own name.
     /// Linked folders are stored empty, not followed. A canceled or failed archive is deleted.

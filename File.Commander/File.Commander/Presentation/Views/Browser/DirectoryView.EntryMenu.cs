@@ -57,15 +57,20 @@ public partial class DirectoryView
         var atPointer = e.TryGetPosition(owner, out _);
         var entry = EntryAt(source, owner);
 
-        // On empty space there is nothing to act on; the menu key without a focused row acts on the selection
+        // On empty space the menu acts on the folder; the menu key without a focused row acts on the selection
         IReadOnlyList<FileEntryViewModel> entries = entry is not null
             ? vm.SelectedEntries.Contains(entry) ? vm.SelectedEntries : [entry]
             : atPointer ? [] : vm.SelectedEntries;
 
-        if (entries.Count == 0)
-            return;
-
         e.Handled = true;
+
+        // Empty space, or the menu key with nothing selected: the folder's own menu (DirectoryView.FolderMenu.cs)
+        if (entries.Count == 0)
+        {
+            RequestFolderMenu(vm, owner, atPointer);
+            return;
+        }
+
         RaiseEvent(new EntryMenuRequestedEventArgs(vm, entries, RowAt(source, owner) ?? owner, atPointer));
     }
 

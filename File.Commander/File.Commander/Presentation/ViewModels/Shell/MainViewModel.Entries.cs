@@ -83,9 +83,16 @@ public partial class MainViewModel
     /// that is taken depends on <paramref name="mode"/>: Paste (Ctrl+V) asks, Paste without replace (Ctrl+Alt+V)
     /// numbers it, Paste with replace (Ctrl+Shift+V) replaces the item that has it.
     /// </summary>
-    public async Task PasteAsync(PasteMode mode = PasteMode.Ask)
+    public Task PasteAsync(PasteMode mode = PasteMode.Ask)
+        => CurrentPage is DirectoryViewModel page ? PasteIntoAsync(page, mode) : Task.CompletedTask;
+
+    /// <summary>
+    /// <see cref="PasteAsync"/> into the folder of <paramref name="page"/>: the context menu of a folder's empty space
+    /// pastes into the view it was opened on.
+    /// </summary>
+    public async Task PasteIntoAsync(DirectoryViewModel page, PasteMode mode = PasteMode.Ask)
     {
-        if (CurrentPage is not DirectoryViewModel page || Locations.IsVirtual(page.Location))
+        if (!CanCreateIn(page))
             return;
 
         var target = Locations.Normalize(page.Location);
@@ -347,7 +354,7 @@ public partial class MainViewModel
 
     private bool CanRenameSelection() => CanModifySelection() && SelectedEntries.Count == 1;
 
-    private bool CanPaste() => CurrentPage is DirectoryViewModel page && !Locations.IsVirtual(page.Location);
+    private bool CanPaste() => CurrentPage is DirectoryViewModel page && CanCreateIn(page);
 
     [RelayCommand(CanExecute = nameof(CanModifySelection))]
     private Task CutSelection() => CutAsync(SelectedEntries);

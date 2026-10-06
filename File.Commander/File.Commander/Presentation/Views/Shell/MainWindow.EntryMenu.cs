@@ -24,7 +24,7 @@ public partial class MainWindow
         e.Handled = true;
 
         // Kept so a second request (e.g. the menu key right after a click) doesn't stack another menu
-        if (ViewModel is not { } vm || _entryMenu is { IsOpen: true })
+        if (ViewModel is not { } vm || _entryMenu is { IsOpen: true } || _folderMenu is { IsOpen: true })
             return;
 
         // Opened on the window, placed at the row: a menu opened on the row would be its child, so clicks on the

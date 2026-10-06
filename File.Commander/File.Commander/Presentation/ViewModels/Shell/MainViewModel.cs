@@ -422,6 +422,8 @@ public partial class MainViewModel : ViewModelBase, INavigator
         KeymapActions.Rename => (RenameSelectionCommand, null),
         KeymapActions.MoveToTrash => (TrashSelectionCommand, null),
         KeymapActions.Properties => (ShowSelectionPropertiesCommand, null),
+        KeymapActions.NewFolder => (NewFolderCommand, null),
+        KeymapActions.NewTextDocument => (NewTextDocumentCommand, null),
         KeymapActions.SelectAll => (SelectAllCommand, null),
         KeymapActions.SelectNone => (SelectNoneCommand, null),
         KeymapActions.InvertSelection => (InvertSelectionCommand, null),

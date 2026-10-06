@@ -475,9 +475,11 @@
             </Canvas>
         </Panel>
 
+        <!-- Never hit: a right click on it is a right click on the empty folder (the folder's context menu) -->
         <TextBlock Grid.Row="1"
                    Text="{Binding EmptyText}"
                    IsVisible="{Binding IsEmpty}"
+                   IsHitTestVisible="False"
                    FontSize="14"
                    Foreground="{DynamicResource FcSubtleTextBrush}"
                    HorizontalAlignment="Center"

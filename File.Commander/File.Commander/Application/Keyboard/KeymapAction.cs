@@ -39,6 +39,8 @@ public static class KeymapActions
     public const string Rename = "files.rename";
     public const string MoveToTrash = "files.move-to-trash";
     public const string Properties = "files.properties";
+    public const string NewFolder = "files.new-folder";
+    public const string NewTextDocument = "files.new-text-document";
 
     public const string SelectAll = "selection.select-all";
     public const string SelectNone = "selection.select-none";
@@ -91,6 +93,10 @@ public static class KeymapActions
         new(Rename, FilesGroup, "Rename", [new(Key.F2)], WorksWhileTyping: false),
         new(MoveToTrash, FilesGroup, "Move to Trash", [new(Key.Delete)], WorksWhileTyping: false),
         new(Properties, FilesGroup, "Properties", [new(Key.Enter, KeyModifiers.Alt)], WorksWhileTyping: false),
+        // What the context menu of a folder's empty space offers, in the active view's folder
+        new(NewFolder, FilesGroup, "New folder",
+            [new(Key.N, KeyModifiers.Control | KeyModifiers.Shift)], WorksWhileTyping: false),
+        new(NewTextDocument, FilesGroup, "New text document", [], WorksWhileTyping: false),
 
         // Never while typing: Ctrl+A selects the text of a text box there.
         // Esc also clears the selection when it isn't bound and the info panel is closed.

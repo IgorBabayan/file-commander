@@ -64,6 +64,9 @@ public partial class MainWindow : Window
 
         // Right click and the menu key on files and folders of a view (MainWindow.EntryMenu.cs)
         InitializeEntryMenu();
+
+        // Right click on a view's empty space, or the menu key with nothing selected (MainWindow.FolderMenu.cs)
+        InitializeFolderMenu();
     }
 
     private MainViewModel? ViewModel => DataContext as MainViewModel;
