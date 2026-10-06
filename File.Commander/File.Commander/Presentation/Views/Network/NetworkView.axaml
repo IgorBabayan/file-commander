@@ -5,9 +5,11 @@
              xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              x:Class="File.Commander.Presentation.Views.Network.NetworkView"
              x:DataType="network:NetworkViewModel">
-    <!-- The Network page. Card and section styles (Button.card, TextBlock.section-title) live in MainWindow.Styles;
-         Fc* brushes follow the theme: DynamicResource -->
+    <!-- The Network page. Fc* brushes follow the theme: DynamicResource -->
     <UserControl.Styles>
+        <!-- Section titles and the card look (TextBlock.section-title, Button.card), shared with the Computer page -->
+        <StyleInclude Source="avares://File.Commander/Presentation/Styles/Cards.axaml" />
+
         <!-- ===== Connect to server ===== -->
         <Style Selector="TextBox.server-address">
             <Setter Property="MinHeight" Value="36" />
@@ -183,59 +185,64 @@
 
             <Border Height="28" />
 
-            <!-- ===== Shares of a Windows server that was connected to without a share ===== -->
-            <StackPanel IsVisible="{Binding HasShares}">
-                <StackPanel DataContext="{Binding Shares}" x:DataType="network:ServerSharesViewModel">
-                    <Grid ColumnDefinitions="Auto,Auto" Margin="0,0,0,20">
-                        <TextBlock Grid.Column="0"
-                                   Classes="section-title"
-                                   Margin="0"
-                                   VerticalAlignment="Center"
-                                   Text="{Binding Title}" />
-                        <Button Grid.Column="1"
-                                Classes="icon-button"
-                                Margin="8,0,0,0"
-                                ToolTip.Tip="Close"
-                                Command="{Binding CloseCommand}">
-                            <avalonia:MaterialIcon Kind="Close" Width="16" Height="16" />
-                        </Button>
-                    </Grid>
-
-                    <TextBlock Classes="hint"
-                               Margin="0,0,0,22"
-                               IsVisible="{Binding IsEmpty}"
-                               Text="The server lists no shares. Type the share into Connect to Server: smb://server/share." />
-
-                    <ItemsControl ItemsSource="{Binding Items}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="network:NetworkShareCardViewModel">
-                                <Button Classes="card network-card share-card"
-                                        ToolTip.Tip="{Binding Uri}"
-                                        Command="{Binding ConnectCommand}">
-                                    <Grid ColumnDefinitions="Auto,*">
-                                        <Border Grid.Column="0" Classes="network-glyph">
-                                            <avalonia:MaterialIcon Kind="FolderNetworkOutline"
-                                                                   Width="18" Height="18"
-                                                                   Foreground="{DynamicResource FcOnAccentBrush}" />
-                                        </Border>
-                                        <TextBlock Grid.Column="1"
-                                                   Margin="14,0,8,0"
-                                                   FontSize="15"
-                                                   VerticalAlignment="Center"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   Text="{Binding Name}" />
-                                    </Grid>
+            <!-- ===== Shares of a Windows server that was connected to without a share =====
+                 A template typed as ServerSharesViewModel: Shares itself is bound here, against the page -->
+            <ContentControl Content="{Binding Shares}" IsVisible="{Binding HasShares}">
+                <ContentControl.ContentTemplate>
+                    <DataTemplate x:DataType="network:ServerSharesViewModel">
+                        <StackPanel>
+                            <Grid ColumnDefinitions="Auto,Auto" Margin="0,0,0,20">
+                                <TextBlock Grid.Column="0"
+                                           Classes="section-title"
+                                           Margin="0"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding Title}" />
+                                <Button Grid.Column="1"
+                                        Classes="icon-button"
+                                        Margin="8,0,0,0"
+                                        ToolTip.Tip="Close"
+                                        Command="{Binding CloseCommand}">
+                                    <avalonia:MaterialIcon Kind="Close" Width="16" Height="16" />
                                 </Button>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-            </StackPanel>
+                            </Grid>
+
+                            <TextBlock Classes="hint"
+                                       Margin="0,0,0,22"
+                                       IsVisible="{Binding IsEmpty}"
+                                       Text="The server lists no shares. Type the share into Connect to Server: smb://server/share." />
+
+                            <ItemsControl ItemsSource="{Binding Items}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="network:NetworkShareCardViewModel">
+                                        <Button Classes="card network-card share-card"
+                                                ToolTip.Tip="{Binding Uri}"
+                                                Command="{Binding ConnectCommand}">
+                                            <Grid ColumnDefinitions="Auto,*">
+                                                <Border Grid.Column="0" Classes="network-glyph">
+                                                    <avalonia:MaterialIcon Kind="FolderNetworkOutline"
+                                                                           Width="18" Height="18"
+                                                                           Foreground="{DynamicResource FcOnAccentBrush}" />
+                                                </Border>
+                                                <TextBlock Grid.Column="1"
+                                                           Margin="14,0,8,0"
+                                                           FontSize="15"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Text="{Binding Name}" />
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </DataTemplate>
+                </ContentControl.ContentTemplate>
+            </ContentControl>
 
             <!-- ===== Shares mounted now ===== -->
             <StackPanel IsVisible="{Binding HasMounts}">

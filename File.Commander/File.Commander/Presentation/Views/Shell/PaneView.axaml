@@ -30,31 +30,10 @@
             <Setter Property="BorderBrush" Value="{DynamicResource FcAccentBrush}" />
         </Style>
 
-        <!-- Computer page cards: defined here, next to the templates that use them,
-             so the XAML compiler and IDE resolve the classes in this file -->
-        <Style Selector="TextBlock.section-title">
-            <Setter Property="FontSize" Value="20" />
-            <Setter Property="FontWeight" Value="Medium" />
-            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
-            <Setter Property="Margin" Value="0,0,0,20" />
-        </Style>
+        <!-- Section titles and the card look: shared with the Network page -->
+        <StyleInclude Source="avares://File.Commander/Presentation/Styles/Cards.axaml" />
 
-        <Style Selector="Button.card">
-            <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="CornerRadius" Value="12" />
-            <Setter Property="Cursor" Value="Hand" />
-        </Style>
-        <Style Selector="Button.card:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource FcCardHoverBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
-        </Style>
-        <Style Selector="Button.card:pressed /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource FcCardPressedBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
-        </Style>
-
+        <!-- Computer page cards -->
         <Style Selector="Button.directory-card">
             <Setter Property="Width" Value="106" />
             <Setter Property="Height" Value="136" />
