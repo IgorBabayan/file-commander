@@ -142,7 +142,8 @@ public static partial class GioMount
 
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
         timeout.CancelAfter(MountTimeout);
-        using var kill = timeout.Token.Register(() => Kill(process));
+        // The process goes in as state, not captured: the callback can't outlive it through a closure
+        using var kill = timeout.Token.Register(static state => Kill((Process)state!), process);
 
         var errors = process.StandardError.ReadToEndAsync(CancellationToken.None);
         var isWindowsShare = uri.StartsWith("smb:", StringComparison.OrdinalIgnoreCase);
@@ -198,7 +199,6 @@ public static partial class GioMount
                     if (++logins > MaxLogins)
                     {
                         failure = "The server refused the user name or password.";
-                        answer = null;
                     }
                     else
                     {
@@ -295,7 +295,8 @@ public static partial class GioMount
 
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
         timeout.CancelAfter(CommandTimeout);
-        using var kill = timeout.Token.Register(() => Kill(process));
+        // The process goes in as state, not captured: the callback can't outlive it through a closure
+        using var kill = timeout.Token.Register(static state => Kill((Process)state!), process);
 
         var output = process.StandardOutput.ReadToEndAsync(CancellationToken.None);
         var error = process.StandardError.ReadToEndAsync(CancellationToken.None);
