@@ -20,6 +20,7 @@ global using File.Commander.PluginCatalog;
 global using File.Commander.Presentation.ViewModels.Plugin;
 global using File.Commander.Application.Keyboard;
 global using File.Commander.Application.Settings;
+global using File.Commander.Application.Updates;
 global using File.Commander.Presentation.Services;
 global using File.Commander.Presentation.ViewModels.ActionCenter;
 global using File.Commander.Presentation.Views.Settings;

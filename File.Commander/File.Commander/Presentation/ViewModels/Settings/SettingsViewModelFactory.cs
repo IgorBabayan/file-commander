@@ -13,8 +13,9 @@ internal sealed class SettingsViewModelFactory(
     IPluginCatalog plugins,
     IPluginRegistry pluginRegistry,
     IPluginUninstaller pluginUninstaller,
-    IDialogService dialogs) : ISettingsViewModelFactory
+    IDialogService dialogs,
+    IUpdateService updates) : ISettingsViewModelFactory
 {
     public SettingsViewModel Create(string? section = null)
-        => new(settings, themes, plugins, pluginRegistry, pluginUninstaller, dialogs, section);
+        => new(settings, themes, plugins, pluginRegistry, pluginUninstaller, dialogs, updates, section);
 }

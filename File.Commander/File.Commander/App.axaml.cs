@@ -8,6 +8,7 @@ namespace File.Commander;
 public partial class App : Avalonia.Application
 {
     private readonly CancellationTokenSource _pluginLifetime = new();
+    private readonly CancellationTokenSource _updateLifetime = new();
     private ServiceProvider? _provider;
     private MainViewModel? _mainViewModel;
     private ISettingsService? _settings;
@@ -47,6 +48,9 @@ public partial class App : Avalonia.Application
             };
             
             StartPluginServices(provider);
+
+            // Settings → Advanced → Updates; returns at once when the option is off
+            _ = provider.GetRequiredService<AutoUpdater>().RunOnStartupAsync(_updateLifetime.Token);
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -59,6 +63,7 @@ public partial class App : Avalonia.Application
 
         // Stop plugin background work first: it may still be reading journals or writing to the DB
         _pluginLifetime.Cancel();
+        _updateLifetime.Cancel();
 
         if (_settings is not null)
             _settings.Changed -= OnSettingsChanged;

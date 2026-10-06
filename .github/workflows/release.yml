@@ -1,0 +1,72 @@
+# Builds the Linux AppImage and publishes it as the latest GitHub release
+# every time a pull request is merged into master.
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [master]
+  # Re-publish by hand (Actions → Release → Run workflow) from master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# One release at a time: run numbers, and so versions, stay in order
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  # Bump for a new major/minor; the third part is the workflow's run number
+  VERSION_PREFIX: "1.0"
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+
+jobs:
+  release:
+    name: Build AppImage and publish release
+    # A closed but not merged pull request publishes nothing
+    if: >-
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the merged commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Set the version
+        id: version
+        run: |
+          version="${VERSION_PREFIX}.${GITHUB_RUN_NUMBER}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Version: $version"
+
+      - name: Build the AppImage
+        run: bash build/appimage/build-appimage.sh "${{ steps.version.outputs.version }}" artifacts
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TARGET: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          notes_flag=(--generate-notes)
+          if [ -n "${PR_TITLE}" ]; then
+            notes_flag+=(--notes "Merged: ${PR_TITLE}")
+          fi
+          gh release create "v${VERSION}" artifacts/*.AppImage \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${TARGET}" \
+            --title "File Commander ${VERSION}" \
+            --latest \
+            "${notes_flag[@]}"

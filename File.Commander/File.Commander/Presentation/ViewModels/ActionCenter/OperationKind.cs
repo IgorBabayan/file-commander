@@ -9,6 +9,10 @@ public enum OperationKind
     /// <summary>Deleted without the trash (Shift+Delete).</summary>
     DeletePermanently,
     EmptyTrash,
+    /// <summary>A new version of File Commander being downloaded.</summary>
+    Download,
+    /// <summary>A downloaded version of File Commander replacing the running one.</summary>
+    Install,
     Other,
 }
 

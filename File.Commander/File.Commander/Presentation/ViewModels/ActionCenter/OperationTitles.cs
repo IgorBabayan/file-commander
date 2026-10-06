@@ -72,6 +72,22 @@ public sealed record OperationTitles(
             ? "1 item couldn't be extracted. The archive may be damaged, or you may not be allowed to write to this folder."
             : $"{failed:N0} items couldn't be extracted. The archive may be damaged, or you may not be allowed to write to this folder.");
 
+    /// <param name="version">The version being downloaded, e.g. "1.0.42".</param>
+    public static OperationTitles DownloadUpdate(string version) => new(
+        $"Downloading File Commander {version}",
+        $"Downloaded File Commander {version}",
+        "The update wasn't downloaded",
+        "Stopped downloading the update",
+        _ => "The update couldn't be downloaded. Check your internet connection.");
+
+    /// <param name="version">The version being installed, e.g. "1.0.42".</param>
+    public static OperationTitles InstallUpdate(string version) => new(
+        $"Installing File Commander {version}",
+        $"Installed File Commander {version}",
+        "The update wasn't installed",
+        "Stopped installing the update",
+        _ => "The update couldn't be installed. Check that you're allowed to replace the AppImage.");
+
     public string For(OperationState state) => state switch
     {
         OperationState.Succeeded => Succeeded,

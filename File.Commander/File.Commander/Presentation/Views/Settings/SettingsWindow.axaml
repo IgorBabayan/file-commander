@@ -708,6 +708,20 @@
                                 </Border>
                             </StackPanel>
 
+                            <TextBlock Classes="section-title" Text="Updates" Tag="updates" />
+                            <StackPanel Classes="section">
+                                <TextBlock Classes="keymap-notice"
+                                           Text="Updates are installed only when File Commander runs from its AppImage."
+                                           IsVisible="{Binding !CanInstallUpdates}" />
+                                <Border Classes="setting-row">
+                                    <CheckBox Classes="setting" Content="Automatically install updates on startup"
+                                              IsChecked="{Binding AutoUpdate}" />
+                                </Border>
+                                <Border Classes="setting-row">
+                                    <TextBlock Classes="setting-label" Text="{Binding AppVersionText}" />
+                                </Border>
+                            </StackPanel>
+
                             <!-- ===== Plugins ===== -->
                             <TextBlock Classes="group-title" Text="Plugins" Tag="plugins" />
 

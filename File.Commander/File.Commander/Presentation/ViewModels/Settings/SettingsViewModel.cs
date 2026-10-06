@@ -63,6 +63,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     /// <summary>Navigation keys the window can be opened at, e.g. from the sidebar's context menu.</summary>
     public const string FileHistorySection = "file-history";
     public const string TrashSection = "trash";
+    public const string UpdatesSection = "updates";
     public const string PluginsGroup = "plugins";
     public const string PluginsSection = "plugins-list";
 
@@ -86,6 +87,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         new SettingsNavSection("dialog", "Dialog"),
         new SettingsNavSection(FileHistorySection, "File history"),
         new SettingsNavSection(TrashSection, "Trash"),
+        new SettingsNavSection(UpdatesSection, "Updates"),
         new SettingsNavGroup(PluginsGroup, "Plugins"),
         new SettingsNavSection(PluginsSection, "Plugins list"),
     ];
@@ -96,6 +98,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     private readonly ISettingsService _settings;
     private readonly IThemeCatalog _themes;
+    private readonly IUpdateService _updates;
     private readonly bool _loaded;
 
     // Selected in the Theme drop-down. Never null: a drop-down whose items are replaced writes null, which is ignored
@@ -104,10 +107,11 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     public SettingsViewModel(ISettingsService settings, IThemeCatalog themes, IPluginCatalog plugins,
         IPluginRegistry pluginRegistry, IPluginUninstaller pluginUninstaller, IDialogService dialogs,
-        string? section = null)
+        IUpdateService updates, string? section = null)
     {
         _settings = settings;
         _themes = themes;
+        _updates = updates;
         var current = settings.Current;
 
         var basic = current.Basic!;
@@ -153,6 +157,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         FileHistoryDays = Pick(FileHistoryChoices, advanced.FileHistoryDays);
         ConfirmEmptyTrash = advanced.ConfirmEmptyTrash;
         EmptyTrashOnAllDrives = advanced.EmptyTrashOnAllDrives;
+        AutoUpdate = current.AutoUpdate;
 
         // The plugins' own sections come last, under Plugins list
         NavItems = [.. BuiltInNavItems, .. Plugins.Sections.Select(s => new SettingsNavSection(s.NavKey, s.Title))];
@@ -242,6 +247,15 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] public partial bool ConfirmEmptyTrash { get; set; }
     [ObservableProperty] public partial bool EmptyTrashOnAllDrives { get; set; }
 
+    /// <summary>Settings → Advanced → Updates: look for a newer release on startup, install it and restart.</summary>
+    [ObservableProperty] public partial bool AutoUpdate { get; set; }
+
+    /// <summary>"Installed version: 1.0.42".</summary>
+    public string AppVersionText => $"Installed version: {_updates.CurrentVersionText}";
+
+    /// <summary>False when not run from the AppImage: the option is kept, but nothing gets installed.</summary>
+    public bool CanInstallUpdates => _updates.CanInstall;
+
     // ===== Plugins =====
     /// <summary>Saves through <see cref="SaveAsync"/> itself, like <see cref="Keymap"/>.</summary>
     public PluginsSettingsViewModel Plugins { get; }
@@ -327,6 +341,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private AppSettings Snapshot() => _settings.Current with
     {
         Addons = Plugins.ToAddons(_settings.Current.Addons),
+        AutoUpdate = AutoUpdate,
         // Copied, not rebuilt: Basic also holds the sort menu's order, which this window doesn't edit
         Basic = _settings.Current.Basic! with
         {
