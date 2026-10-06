@@ -63,7 +63,7 @@ public static class DesktopIcons
     {
         foreach (var themeName in ThemeChain.Value)
         {
-            if (Theme(themeName)?.Find(name, size) is { } path)
+            if (Theme(themeName)?.LookupIcon(name, size) is { } path)
                 return path;
         }
 
@@ -234,7 +234,7 @@ public static class DesktopIcons
         }
 
         /// <summary>A PNG of the size, else the closest one (spec: LookupIcon). Scale 1 folders only.</summary>
-        public string? Find(string name, int size)
+        public string? LookupIcon(string name, int size)
         {
             string? closest = null;
             var closestDistance = int.MaxValue;

@@ -19,8 +19,6 @@ public sealed partial class PluginsSettingsViewModel : ObservableObject, IDispos
     // Deleted (or deleted on the next start) in this opening: dropped from settings.json's Addons
     private readonly HashSet<string> _removedKeys = new(StringComparer.Ordinal);
 
-    /// <param name="addonsChanged">A plugin was turned on or off, or deleted: save <see cref="ToAddons"/>.</param>
-    /// <param name="pluginSettingsSaved">A plugin settings page saved: what plugins offer (themes…) may have changed.</param>
     public PluginsSettingsViewModel(IPluginCatalog catalog, IPluginRegistry registry, IPluginUninstaller uninstaller,
         IDialogService dialogs, AppSettings current, Action addonsChanged, Action pluginSettingsSaved)
     {

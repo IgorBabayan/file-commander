@@ -55,4 +55,4 @@ public interface IPluginContext
     IPluginSettings<T> GetSettings<T>() where T : class, new();
 }
 
-public sealed record PluginJournalSnapshot();
+public sealed record PluginJournalSnapshot;
