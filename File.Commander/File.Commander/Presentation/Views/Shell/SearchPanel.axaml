@@ -1,0 +1,284 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="clr-namespace:File.Commander.Presentation.ViewModels.Shell"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             x:Class="File.Commander.Presentation.Views.Shell.SearchPanel"
+             x:DataType="shell:SearchViewModel"
+             Width="440">
+    <!-- The search bar and its options: under the Search button (SearchButton) or in a dialog (SearchWindow).
+         Fc* brushes follow the theme: DynamicResource -->
+    <UserControl.Styles>
+        <!-- ===== Text boxes: like the keymap search of Settings ===== -->
+        <Style Selector="TextBox.search-box">
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource FcContentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="PlaceholderForeground" Value="{DynamicResource FcHeaderTextBrush}" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="SelectionForegroundBrush" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="TextBox.search-box /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource FcContentBrush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="TextBox.search-box:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource FcContentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcHoverBrush}" />
+        </Style>
+        <Style Selector="TextBox.search-box:focus /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource FcContentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="TextBox.search-box:pointerover, TextBox.search-box:focus">
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="TextBox.search-box.small">
+            <Setter Property="MinHeight" Value="30" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="CornerRadius" Value="6" />
+        </Style>
+        <Style Selector="TextBox.search-box avalonia|MaterialIcon.search-icon">
+            <Setter Property="Width" Value="18" />
+            <Setter Property="Height" Value="18" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource FcHeaderTextBrush}" />
+        </Style>
+        <Style Selector="Button.search-clear">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,5,0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcHeaderTextBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Button.search-clear:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+
+        <!-- ===== Options ===== -->
+        <Style Selector="TextBlock.option-label">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,12,0" />
+        </Style>
+        <Style Selector="TextBlock.hint">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource FcHeaderTextBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style Selector="CheckBox.option">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="ComboBox.option">
+            <Setter Property="MinWidth" Value="160" />
+            <Setter Property="MinHeight" Value="30" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="{DynamicResource FcContentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="CalendarDatePicker.option">
+            <Setter Property="Width" Value="130" />
+            <Setter Property="MinHeight" Value="30" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="{DynamicResource FcContentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Border.search-divider">
+            <Setter Property="Height" Value="1" />
+            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+        </Style>
+
+        <!-- Where to look: the folder, and quick picks under it -->
+        <Style Selector="Border.folder-box">
+            <Setter Property="MinHeight" Value="30" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="{DynamicResource FcContentBrush}" />
+        </Style>
+        <Style Selector="Button.chip">
+            <Setter Property="MinHeight" Value="26" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="CornerRadius" Value="13" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Background" Value="{DynamicResource FcContentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,6,6" />
+        </Style>
+        <Style Selector="Button.chip:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.chip:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+
+        <!-- ===== Buttons at the bottom ===== -->
+        <Style Selector="Button.search-action">
+            <Setter Property="MinWidth" Value="88" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource FcContentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.search-action:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.search-action.primary">
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="Button.search-action.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="Button.search-action.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <Style Selector="Button.search-action.primary:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcDisabledTextBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <StackPanel Spacing="10">
+        <!-- ===== The bar: Enter searches, Esc closes (SearchPanel.axaml.cs) ===== -->
+        <TextBox x:Name="QueryBox"
+                 Classes="search-box"
+                 PlaceholderText="Search files and folders"
+                 Text="{Binding Text}">
+            <TextBox.InnerLeftContent>
+                <avalonia:MaterialIcon Classes="search-icon" Kind="Magnify" />
+            </TextBox.InnerLeftContent>
+            <TextBox.InnerRightContent>
+                <Button Classes="search-clear"
+                        Focusable="False"
+                        ToolTip.Tip="Clear"
+                        Click="OnClearClick"
+                        IsVisible="{Binding Text, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <avalonia:MaterialIcon Kind="Close" Width="14" Height="14" />
+                </Button>
+            </TextBox.InnerRightContent>
+        </TextBox>
+
+        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,8,Auto,8,Auto,8,Auto,8,Auto">
+            <!-- By name and by file content -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Classes="option-label" Text="Match text in" />
+            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="16">
+                <CheckBox Classes="option" Content="Names" IsChecked="{Binding InNames}"
+                          ToolTip.Tip="Part of the name, or a pattern with * and ? (e.g. *.txt)" />
+                <CheckBox Classes="option" Content="File contents" IsChecked="{Binding InContents}"
+                          ToolTip.Tip="Reads text files to find the text inside them: slower" />
+            </StackPanel>
+
+            <!-- By file extensions -->
+            <TextBlock Grid.Row="2" Grid.Column="0" Classes="option-label" Text="Extensions" />
+            <TextBox x:Name="ExtensionsBox"
+                     Grid.Row="2" Grid.Column="1"
+                     Classes="search-box small"
+                     PlaceholderText="Any (e.g. pdf, docx, jpg)"
+                     Text="{Binding Extensions}" />
+
+            <!-- By date of creation -->
+            <TextBlock Grid.Row="4" Grid.Column="0" Classes="option-label" Text="Created" />
+            <StackPanel Grid.Row="4" Grid.Column="1" Spacing="6">
+                <ComboBox Classes="option"
+                          HorizontalAlignment="Left"
+                          ItemsSource="{Binding Created.Options}"
+                          SelectedItem="{Binding Created.Range}" />
+                <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding Created.IsCustom}">
+                    <CalendarDatePicker Classes="option" PlaceholderText="From" SelectedDate="{Binding Created.From}" />
+                    <CalendarDatePicker Classes="option" PlaceholderText="To" SelectedDate="{Binding Created.To}" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- By date of modification -->
+            <TextBlock Grid.Row="6" Grid.Column="0" Classes="option-label" Text="Modified" />
+            <StackPanel Grid.Row="6" Grid.Column="1" Spacing="6">
+                <ComboBox Classes="option"
+                          HorizontalAlignment="Left"
+                          ItemsSource="{Binding Modified.Options}"
+                          SelectedItem="{Binding Modified.Range}" />
+                <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding Modified.IsCustom}">
+                    <CalendarDatePicker Classes="option" PlaceholderText="From" SelectedDate="{Binding Modified.From}" />
+                    <CalendarDatePicker Classes="option" PlaceholderText="To" SelectedDate="{Binding Modified.To}" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Search in place: the active view's folder by default -->
+            <TextBlock Grid.Row="8" Grid.Column="0" Classes="option-label" Text="Search in"
+                       VerticalAlignment="Top" Margin="0,6,12,0" />
+            <StackPanel Grid.Row="8" Grid.Column="1" Spacing="6">
+                <Border Classes="folder-box" ToolTip.Tip="{Binding Folder}">
+                    <DockPanel>
+                        <avalonia:MaterialIcon DockPanel.Dock="Left"
+                                               Kind="FolderSearchOutline"
+                                               Width="16" Height="16"
+                                               Margin="0,0,8,0"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource FcAccentBrush}" />
+                        <TextBlock Text="{Binding Folder}"
+                                   FontSize="13"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="PathSegmentEllipsis"
+                                   Foreground="{DynamicResource FcTextBrush}" />
+                    </DockPanel>
+                </Border>
+                <WrapPanel>
+                    <Button Classes="chip" Content="Current folder" Command="{Binding UseCurrentFolderCommand}" />
+                    <Button Classes="chip" Content="Home" Command="{Binding UseHomeCommand}" />
+                    <Button Classes="chip" Content="Computer" Command="{Binding UseComputerCommand}"
+                            ToolTip.Tip="Everywhere, from /" />
+                    <Button Classes="chip" Content="Browse…" Command="{Binding BrowseFolderCommand}" />
+                </WrapPanel>
+                <CheckBox Classes="option" Content="Include subfolders" IsChecked="{Binding IncludeSubfolders}" />
+            </StackPanel>
+        </Grid>
+
+        <Border Classes="search-divider" />
+
+        <DockPanel>
+            <Button DockPanel.Dock="Left"
+                    Classes="search-action"
+                    Content="Reset options"
+                    Command="{Binding ResetOptionsCommand}" />
+            <Button DockPanel.Dock="Right"
+                    Classes="search-action primary"
+                    Content="Search"
+                    Command="{Binding SearchCommand}" />
+            <TextBlock Classes="hint"
+                       Text="Enter to search · Esc to close"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Margin="8,0" />
+        </DockPanel>
+    </StackPanel>
+</UserControl>

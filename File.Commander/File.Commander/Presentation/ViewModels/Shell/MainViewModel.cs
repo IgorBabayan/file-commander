@@ -37,6 +37,9 @@ public partial class MainViewModel : ViewModelBase, INavigator
     /// <summary>The title bar's items and Customize Toolbar….</summary>
     public ToolbarViewModel Toolbar { get; }
 
+    /// <summary>The search bar (Ctrl+F) under the Search button, or in a dialog (MainViewModel.Search.cs).</summary>
+    public SearchViewModel Search { get; }
+
     /// <summary>The tabs of the window (Ctrl+T). Each has its own views, split view and info panel.</summary>
     public ObservableCollection<TabViewModel> Tabs { get; } = [];
 
@@ -197,6 +200,8 @@ public partial class MainViewModel : ViewModelBase, INavigator
         AddressBar = new AddressBarViewModel(this);
         AddressBar.ConnectRequested += (_, address) => ConnectToServer(address);
         Toolbar = new ToolbarViewModel(settings);
+        Search = new SearchViewModel(() => CurrentPage, () => _appliedSettings.Advanced!.FullTextSearch);
+        Search.SearchRequested += OnSearchRequested;
 
         // Before the first page: it is created with this order
         SortMode = ToSortMode(basic.SortOrder);
@@ -428,6 +433,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
         KeymapActions.Refresh => (RefreshCommand, null),
         KeymapActions.OpenSettings => (SettingsCommand, null),
         KeymapActions.ToggleInfoPanel => (ToggleInfoPanelCommand, null),
+        KeymapActions.Search => (OpenSearchCommand, null),
         KeymapActions.Cut => (CutSelectionCommand, null),
         KeymapActions.Copy => (CopySelectionCommand, null),
         KeymapActions.Paste => (PasteCommand, null),
@@ -682,6 +688,8 @@ public partial class MainViewModel : ViewModelBase, INavigator
         _settings.Changed -= OnSettingsChanged;
         _columns.PropertyChanged -= OnColumnsChanged;
         Toolbar.Dispose();
+        Search.SearchRequested -= OnSearchRequested;
+        Search.Dispose();
 
         // The window closes right after a change: store it now
         if (_pendingColumnsSave is not null)
@@ -832,6 +840,15 @@ public partial class MainViewModel : ViewModelBase, INavigator
             case Locations.Network:
                 // Read on every visit: what is mounted now, and a new search of the network
                 return new NetworkViewModel(pane, _dialogService);
+        }
+
+        // Run again on every visit, like Recent: Back to a search shows what matches now
+        if (SearchQuery.TryParse(location) is { } query)
+        {
+            var search = Watch(DirectoryViewModel.ForSearch(location, query, pane.ViewMode, FileSort.Of(SortMode),
+                CurrentFolderOptions(), _columns, pane, SearchSkippedFolders(query)));
+            _ = search.LoadAsync(); // never throws, reports errors through Error
+            return search;
         }
 
         var directory = Watch(new DirectoryViewModel(location, pane.ViewMode, FileSort.Of(SortMode), CurrentFolderOptions(), _columns, pane));

@@ -21,6 +21,7 @@ class DialogService : IDialogService
             PasteConflictViewModel => _serviceProvider.GetRequiredService<PasteConflictWindow>(),
             PropertiesViewModel => _serviceProvider.GetRequiredService<PropertiesWindow>(),
             NetworkLoginViewModel => _serviceProvider.GetRequiredService<NetworkLoginWindow>(),
+            SearchViewModel => _serviceProvider.GetRequiredService<SearchWindow>(),
             
             _ => throw new InvalidOperationException($"No dialog registered for {typeof(TViewModel).Name}")
         };

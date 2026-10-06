@@ -646,11 +646,11 @@
                             <TextBlock Classes="section-title" Text="Search" Tag="search" />
                             <StackPanel Classes="section">
                                 <Border Classes="setting-row">
-                                    <CheckBox Classes="setting" Content="Full-text search (indexes file contents)"
+                                    <CheckBox Classes="setting" Content="Search in file contents by default (slower)"
                                               IsChecked="{Binding FullTextSearch}" />
                                 </Border>
                                 <Border Classes="setting-row">
-                                    <CheckBox Classes="setting" Content="Index external drives"
+                                    <CheckBox Classes="setting" Content="Include external drives in searches"
                                               IsChecked="{Binding IndexExternalDrives}" />
                                 </Border>
                             </StackPanel>

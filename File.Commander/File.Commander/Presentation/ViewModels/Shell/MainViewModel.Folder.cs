@@ -36,6 +36,7 @@ public partial class MainViewModel
         {
             Locations.Trash => MaterialIconKind.TrashCanOutline,
             Locations.Recent => MaterialIconKind.ClockOutline,
+            _ when page.IsSearch => MaterialIconKind.Magnify,
             _ => MaterialIconKind.FolderOutline,
         };
 
@@ -79,7 +80,10 @@ public partial class MainViewModel
             return;
 
         var name = prompt.InputText.Trim();
-        var problem = folder ? FileOperations.CreateFolder(location, name) : FileOperations.CreateFile(location, name);
+        // Asks for administrator rights in the system's dialog when the user isn't allowed to write there
+        var problem = folder
+            ? await FileOperations.CreateFolderAsync(location, name)
+            : await FileOperations.CreateFileAsync(location, name);
         if (problem is not null)
         {
             await ShowNoticeAsync(folder ? "Can't create the folder" : "Can't create the text document", problem);

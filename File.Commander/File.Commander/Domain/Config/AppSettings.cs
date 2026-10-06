@@ -145,7 +145,10 @@ public sealed record WorkspaceSettings
 /// <summary>Settings → Advanced.</summary>
 public sealed record AdvancedSettings
 {
+    /// <summary>Settings → Search: the search bar's "File contents" option starts checked.</summary>
     public bool FullTextSearch { get; init; }
+
+    /// <summary>Settings → Search: a search goes into removable and optical drives mounted below the folder searched.</summary>
     public bool IndexExternalDrives { get; init; }
 
     public bool AutoMount { get; init; } = true;

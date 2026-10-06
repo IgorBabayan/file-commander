@@ -428,9 +428,8 @@
 
                         <shellViews:ActionCenterButton Tag="action-center" DataContext="{Binding ActionCenter}" />
 
-                        <Button Tag="search" Classes="window-button" ToolTip.Tip="Search">
-                            <avalonia:MaterialIcon Kind="Magnify" />
-                        </Button>
+                        <!-- Ctrl+F opens its bar; while it isn't on the toolbar, a dialog (MainWindow.axaml.cs) -->
+                        <shellViews:SearchButton Tag="search" DataContext="{Binding Search}" />
 
                         <!-- In the palette only, until the user drags them onto the toolbar -->
                         <Button Tag="refresh"

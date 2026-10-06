@@ -58,12 +58,26 @@ public partial class MainWindow
             single is { IsDirectory: false } ? MaterialIconKind.OpenInApp : MaterialIconKind.FolderOpenOutline,
             () => vm.OpenEntries(page, entries),
             isEnabled: single is not null || hasFiles);
+
+        // The system's "Open with" dialog: one file at a time, as the portal takes one
+        yield return EntryMenuItem("Open with…", MaterialIconKind.OpenInNew,
+            () => _ = vm.OpenWithAsync(single!),
+            isEnabled: single is { IsDirectory: false });
         yield return EntryMenuItem("Open in a view", MaterialIconKind.ViewSplitVertical,
             () => vm.OpenEntryInSplitView(single!),
             isEnabled: single is { IsDirectory: true });
         yield return EntryMenuItem("Open in a new tab", MaterialIconKind.TabPlus,
             () => vm.OpenEntriesInNewTabs(entries),
             isEnabled: hasFolders);
+
+        // Search results come from all over: the folder an item is in
+        if (page.IsSearch)
+        {
+            yield return EntryMenuItem("Open item location", MaterialIconKind.FolderOutline,
+                () => vm.Navigate(FileOperations.ParentOf(single!.FullPath)),
+                isEnabled: single is not null);
+        }
+
         yield return new Separator();
 
         yield return ShortcutEntry(vm, "Cut", MaterialIconKind.ContentCut, KeymapActions.Cut,

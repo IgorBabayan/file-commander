@@ -30,6 +30,7 @@ public static class KeymapActions
     public const string Refresh = "actions.refresh";
     public const string OpenSettings = "actions.open-settings";
     public const string ToggleInfoPanel = "actions.toggle-info-panel";
+    public const string Search = "actions.search";
 
     public const string Cut = "files.cut";
     public const string Copy = "files.copy";
@@ -80,6 +81,8 @@ public static class KeymapActions
         new(OpenSettings, ActionsGroup, "Open settings", [new(Key.OemComma, KeyModifiers.Control)]),
         // Like Finder's Quick Look. Never while typing: Space belongs to the text box there.
         new(ToggleInfoPanel, ActionsGroup, "Show info panel", [new(Key.Space)], WorksWhileTyping: false),
+        // The search bar under the Search button, or the search dialog while the button isn't on the toolbar
+        new(Search, ActionsGroup, "Search", [new(Key.F, KeyModifiers.Control)]),
 
         // What the context menu of files and folders offers, on the selection of the active view.
         // Never while typing: a text box has its own Cut, Copy, Paste and Delete.

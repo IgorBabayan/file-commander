@@ -54,13 +54,16 @@ public sealed partial class TabViewModel : ViewModelBase
     /// <summary>The active view's page title, shown on the tab.</summary>
     public string Title => ActivePane.CurrentPage.Title;
 
-    /// <summary>The active view's location, shown as the tab's tooltip.</summary>
-    public string Location => ActivePane.Location;
+    /// <summary>The active view's location, shown as the tab's tooltip. For search results, where it searches.</summary>
+    public string Location => ActivePane.CurrentPage is DirectoryViewModel { Search: { } search }
+        ? search.Description
+        : ActivePane.Location;
 
     public MaterialIconKind Icon => ActivePane.CurrentPage switch
     {
         ComputerViewModel => MaterialIconKind.Monitor,
         NetworkViewModel => MaterialIconKind.LanConnect,
+        DirectoryViewModel { IsSearch: true } => MaterialIconKind.Magnify,
         PlaceholderPageViewModel placeholder => placeholder.Icon,
         _ => MaterialIconKind.Folder,
     };
