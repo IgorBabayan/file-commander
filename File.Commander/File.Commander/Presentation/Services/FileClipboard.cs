@@ -27,6 +27,19 @@ public static class FileClipboard
     private static DataTransfer? _placed;
     private static ClipboardFiles? _placedFiles;
 
+    // What this app cut last, normalized: drawn lighter in the views until pasted, replaced or canceled (Esc)
+    private static readonly HashSet<string> CutPaths = new(StringComparer.Ordinal);
+
+    /// <summary>The cut files changed: cut, pasted, replaced on the clipboard, or canceled. Raised on the UI thread.</summary>
+    public static event EventHandler? CutChanged;
+
+    /// <summary>Files cut here are waiting to be pasted.</summary>
+    public static bool HasCut => CutPaths.Count > 0;
+
+    /// <summary>The item at <paramref name="path"/> was cut here and isn't pasted yet.</summary>
+    public static bool IsCut(string? path)
+        => path is not null && CutPaths.Count > 0 && CutPaths.Contains(Locations.Normalize(path));
+
     /// <returns>False when there is no clipboard or it refused the data.</returns>
     public static async Task<bool> SetAsync(IReadOnlyList<string> paths, bool cut)
     {
@@ -50,6 +63,9 @@ public static class FileClipboard
             await clipboard.SetDataAsync(data);
             _placed = data;
             _placedFiles = new ClipboardFiles(paths.ToList(), cut);
+
+            // Copy replaces a Cut on the clipboard: those files stay where they are
+            SetCut(cut ? paths : []);
             return true;
         }
         catch (Exception ex)
@@ -107,6 +123,87 @@ public static class FileClipboard
 
         _placed = null;
         _placedFiles = null;
+        SetCut([]);
+    }
+
+    /// <summary>
+    /// Esc after Cut: the files are drawn as before and the clipboard is emptied, so Paste does nothing.
+    /// The clipboard is left alone when another app has put something else there since.
+    /// </summary>
+    /// <returns>False: nothing cut here was waiting to be pasted.</returns>
+    public static bool CancelCut()
+    {
+        if (!HasCut)
+            return false;
+
+        var placed = _placed;
+        _placed = null;
+        _placedFiles = null;
+        SetCut([]);
+        _ = ClearIfStillPlacedAsync(placed);
+        return true;
+    }
+
+    /// <summary>
+    /// The window is active again: if another app replaced what was cut here, the files aren't cut anymore.
+    /// </summary>
+    public static async Task ForgetReplacedCutAsync()
+    {
+        if (!HasCut || Clipboard() is not { } clipboard)
+            return;
+
+        var placed = _placed;
+        try
+        {
+            if (ReferenceEquals(await clipboard.TryGetInProcessDataAsync(), placed))
+                return;
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"Can't read the clipboard: {ex.Message}");
+            return;
+        }
+
+        // Cut or copied again while reading: that is the current state
+        if (!ReferenceEquals(_placed, placed))
+            return;
+
+        _placed = null;
+        _placedFiles = null;
+        SetCut([]);
+    }
+
+    private static async Task ClearIfStillPlacedAsync(DataTransfer? placed)
+    {
+        if (placed is null || Clipboard() is not { } clipboard)
+            return;
+
+        try
+        {
+            if (!ReferenceEquals(await clipboard.TryGetInProcessDataAsync(), placed))
+                return;
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"Can't read the clipboard: {ex.Message}");
+            return;
+        }
+
+        // Cut or copied again in the meantime: keep that
+        if (_placed is null)
+            await ClearAsync();
+    }
+
+    private static void SetCut(IReadOnlyList<string> paths)
+    {
+        if (CutPaths.Count == 0 && paths.Count == 0)
+            return;
+
+        CutPaths.Clear();
+        foreach (var path in paths)
+            CutPaths.Add(Locations.Normalize(path));
+
+        CutChanged?.Invoke(null, EventArgs.Empty);
     }
 
     private static IClipboard? Clipboard()

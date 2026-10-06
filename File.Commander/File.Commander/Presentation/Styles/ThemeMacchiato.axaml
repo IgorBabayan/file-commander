@@ -110,6 +110,8 @@
     <SolidColorBrush x:Key="FcNavGroupBrush" Color="{StaticResource Surface0}" />
     <SolidColorBrush x:Key="FcHoverBrush" Color="{StaticResource Surface1}" />
     <SolidColorBrush x:Key="FcPressedBrush" Color="{StaticResource Surface2}" />
+    <!-- Items cut (Ctrl+X) and not pasted yet: a lighter accent than the selection -->
+    <SolidColorBrush x:Key="FcCutBrush" Color="{StaticResource Blue}" Opacity="0.35" />
     <!-- Translucent overlays for controls that sit on both plain and accent backgrounds -->
     <SolidColorBrush x:Key="FcOverlayHoverBrush" Color="#26000000" />
     <SolidColorBrush x:Key="FcOverlayPressedBrush" Color="#40000000" />

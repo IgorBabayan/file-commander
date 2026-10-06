@@ -7,6 +7,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using File.Commander.Application.Path;
+using File.Commander.Presentation.Services;
 using File.Commander.Presentation.Views.Browser;
 
 namespace File.Commander.Presentation.Views.Shell;
@@ -71,6 +72,9 @@ public partial class MainWindow : Window
 
         // Right click on a view's empty space, or the menu key with nothing selected (MainWindow.FolderMenu.cs)
         InitializeFolderMenu();
+
+        // Back from another app: files cut here are drawn as cut only while the clipboard still holds them
+        Activated += (_, _) => _ = FileClipboard.ForgetReplacedCutAsync();
     }
 
     private MainViewModel? ViewModel => DataContext as MainViewModel;

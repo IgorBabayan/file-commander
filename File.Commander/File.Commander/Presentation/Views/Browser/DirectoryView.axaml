@@ -30,6 +30,10 @@
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
         </Style>
+        <!-- Cut (Ctrl+X) until pasted or Esc: the container gets the "cut" class (CutMark.cs) -->
+        <Style Selector="ListBox.files ListBoxItem" x:DataType="browser:FileEntryViewModel">
+            <Setter Property="views:CutMark.Path" Value="{Binding FullPath}" />
+        </Style>
         <Style Selector="ListBox.files ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
@@ -41,6 +45,11 @@
         <Style Selector="ListBox.files ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <!-- Cut: a lighter accent, selected or not. After hover and selection, so it wins over both -->
+        <Style Selector="ListBox.files ListBoxItem.cut /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcCutBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
         </Style>
 
         <!-- ===== List ===== -->
@@ -76,6 +85,7 @@
         </Style>
         <Style Selector="TreeView.file-tree TreeViewItem" x:DataType="browser:FileTreeNodeViewModel">
             <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+            <Setter Property="views:CutMark.Path" Value="{Binding FullPath}" />
             <Setter Property="IsEnabled" Value="{Binding !IsPlaceholder}" />
             <Setter Property="MinHeight" Value="34" />
             <Setter Property="CornerRadius" Value="6" />
@@ -89,6 +99,9 @@
         </Style>
         <Style Selector="TreeView.file-tree TreeViewItem:selected:pointerover /template/ Border#PART_LayoutRoot">
             <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+        </Style>
+        <Style Selector="TreeView.file-tree TreeViewItem.cut /template/ Border#PART_LayoutRoot">
+            <Setter Property="Background" Value="{DynamicResource FcCutBrush}" />
         </Style>
 
         <!-- ===== Glyphs and secondary text. Order matters: later styles win, so :selected comes last ===== -->
@@ -115,6 +128,16 @@
         </Style>
         <Style Selector="ListBox.files ListBoxItem:selected TextBlock.meta">
             <Setter Property="Foreground" Value="{DynamicResource FcOnAccentBrush}" />
+        </Style>
+        <!-- Cut: the lighter background keeps the usual glyph and text colors, selected or not -->
+        <Style Selector="ListBox.files ListBoxItem.cut avalonia|MaterialIcon.entry-icon">
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.files ListBoxItem.cut avalonia|MaterialIcon.entry-icon.folder">
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+        <Style Selector="ListBox.files ListBoxItem.cut TextBlock.meta">
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
         </Style>
 
         <!-- ===== Column headers (list and tree) ===== -->

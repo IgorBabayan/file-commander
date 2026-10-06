@@ -99,7 +99,7 @@ public static class KeymapActions
         new(NewTextDocument, FilesGroup, "New text document", [], WorksWhileTyping: false),
 
         // Never while typing: Ctrl+A selects the text of a text box there.
-        // Esc also clears the selection when it isn't bound and the info panel is closed.
+        // Esc, when it isn't bound and the info panel is closed, cancels a Cut, else clears the selection.
         new(SelectAll, SelectionGroup, "Select all", [new(Key.A, KeyModifiers.Control)], WorksWhileTyping: false),
         new(SelectNone, SelectionGroup, "Select none",
             [new(Key.A, KeyModifiers.Control | KeyModifiers.Shift)], WorksWhileTyping: false),

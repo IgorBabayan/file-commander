@@ -389,8 +389,9 @@ public partial class MainViewModel : ViewModelBase, INavigator
     }
 
     /// <summary>
-    /// Esc, unless it is bound to something else or a text box has it: closes the info panel,
-    /// or, while that is closed, clears the active view's selection.
+    /// Esc, unless it is bound to something else or a text box has it: closes the info panel; else cancels a Cut
+    /// (the cut items are drawn as before, the clipboard is emptied, the selection stays); else clears the active
+    /// view's selection.
     /// </summary>
     private bool TryHandleEscape(KeyChord chord, bool isTyping)
     {
@@ -402,6 +403,9 @@ public partial class MainViewModel : ViewModelBase, INavigator
             InfoPanel.IsOpen = false;
             return true;
         }
+
+        if (FileClipboard.CancelCut())
+            return true;
 
         if (CurrentPage is DirectoryViewModel { HasSelection: true } page)
         {
