@@ -13,6 +13,9 @@
         Icon="/Assets/logo.png"
         Title="{Binding CurrentPage.Title, StringFormat='{}{0} — File Commander'}">
     <Window.Styles>
+        <!-- The view mode and file buttons of the title bar -->
+        <StyleInclude Source="avares://File.Commander/Presentation/Styles/TitleBar.axaml" />
+
         <!-- ===== Title bar: back / forward pill ===== -->
         <Style Selector="Border.nav-group">
             <Setter Property="Background" Value="{DynamicResource FcNavGroupBrush}" />
@@ -351,6 +354,10 @@
                             <Style Selector="shellViews|ToolbarPanel.customizing > Border.toolbar-item:not(.nav-group):pointerover">
                                 <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
                             </Style>
+                            <!-- A segment of a pill: shows which one would be dragged -->
+                            <Style Selector="shellViews|ToolbarPanel.customizing > Border.toolbar-item.nav-group:pointerover">
+                                <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+                            </Style>
                             <Style Selector="shellViews|ToolbarPanel.customizing > Border.toolbar-item.spring">
                                 <Setter Property="MinWidth" Value="48" />
                                 <Setter Property="Background" Value="{DynamicResource FcNavGroupBrush}" />
@@ -379,8 +386,82 @@
                         </Button>
 
                         <!-- New, Select all, Copy, Paste: they act on the active view's folder and selection,
-                             like their shortcuts. A pill of its own (Border.nav-group inside) -->
-                        <shellViews:FileActionsBar Tag="file-actions" />
+                             like their shortcuts. Side by side they share one pill, like back / forward / up -->
+                        <Button x:Name="NewButton"
+                                Tag="new"
+                                Classes="nav dropdown file-action"
+                                ToolTip.Tip="New"
+                                IsEnabled="{Binding CanCreateInActiveFolder}">
+                            <Button.Flyout>
+                                <Flyout Placement="BottomEdgeAlignedLeft" FlyoutPresenterClasses="file-menu">
+                                    <StackPanel>
+                                        <Button Classes="menu-row" Command="{Binding NewFolderCommand}" Click="OnFileMenuRowClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <avalonia:MaterialIcon Kind="FolderPlusOutline" Width="16" Height="16" />
+                                                <TextBlock Text="New folder" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Classes="menu-row" Command="{Binding NewTextDocumentCommand}" Click="OnFileMenuRowClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <avalonia:MaterialIcon Kind="FilePlusOutline" Width="16" Height="16" />
+                                                <TextBlock Text="New text document" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                            <StackPanel Orientation="Horizontal" Spacing="2">
+                                <avalonia:MaterialIcon Kind="PlusBoxOutline" Width="18" Height="18" />
+                                <avalonia:MaterialIcon Classes="chevron" Kind="ChevronDown" Width="14" Height="14" />
+                            </StackPanel>
+                        </Button>
+                        <Button Tag="select-all"
+                                Classes="nav file-action"
+                                ToolTip.Tip="Select all"
+                                Command="{Binding SelectAllCommand}">
+                            <avalonia:MaterialIcon Kind="SelectAll" Width="18" Height="18" />
+                        </Button>
+                        <Button Tag="copy"
+                                Classes="nav file-action"
+                                ToolTip.Tip="Copy"
+                                Command="{Binding CopySelectionCommand}">
+                            <avalonia:MaterialIcon Kind="ContentCopy" Width="17" Height="17" />
+                        </Button>
+                        <!-- Paste ▸ Paste (asks about taken names), Paste without replace, Paste with replace -->
+                        <Button x:Name="PasteButton"
+                                Tag="paste"
+                                Classes="nav dropdown file-action"
+                                ToolTip.Tip="Paste"
+                                IsEnabled="{Binding CanPasteInActiveFolder}">
+                            <Button.Flyout>
+                                <Flyout Placement="BottomEdgeAlignedLeft" FlyoutPresenterClasses="file-menu">
+                                    <StackPanel>
+                                        <Button Classes="menu-row" Command="{Binding PasteCommand}" Click="OnFileMenuRowClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <avalonia:MaterialIcon Kind="ContentPaste" Width="16" Height="16" />
+                                                <TextBlock Text="Paste" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Classes="menu-row" Command="{Binding PasteWithoutReplaceCommand}" Click="OnFileMenuRowClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <avalonia:MaterialIcon Kind="ContentDuplicate" Width="16" Height="16" />
+                                                <TextBlock Text="Paste without replace" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Classes="menu-row" Command="{Binding PasteWithReplaceCommand}" Click="OnFileMenuRowClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <avalonia:MaterialIcon Kind="FileReplaceOutline" Width="16" Height="16" />
+                                                <TextBlock Text="Paste with replace" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                            <StackPanel Orientation="Horizontal" Spacing="2">
+                                <avalonia:MaterialIcon Kind="ContentPaste" Width="18" Height="18" />
+                                <avalonia:MaterialIcon Classes="chevron" Kind="ChevronDown" Width="14" Height="14" />
+                            </StackPanel>
+                        </Button>
 
                         <Button Tag="computer"
                                 Classes="view-toggle"
@@ -393,7 +474,38 @@
                              Can be moved but not removed, like Firefox's -->
                         <shellViews:AddressBar Tag="address" DataContext="{Binding AddressBar}" />
                         <shellViews:SortButton Tag="sort" />
-                        <shellViews:ViewModeSwitcher Tag="view-mode" />
+
+                        <!-- Grid / list / tree: side by side they stay 2 px apart, as before -->
+                        <Button Tag="view-grid"
+                                Classes="view-mode"
+                                Classes.selected="{Binding IsGridView}"
+                                Command="{Binding ShowGridViewCommand}"
+                                ToolTip.Tip="Grid (Ctrl+1)">
+                            <avalonia:MaterialIcon Kind="ViewGridOutline" Width="18" Height="18" />
+                        </Button>
+                        <Button Tag="view-list"
+                                Classes="view-mode"
+                                Classes.selected="{Binding IsListView}"
+                                Command="{Binding ShowListViewCommand}"
+                                ToolTip.Tip="List (Ctrl+2)">
+                            <avalonia:MaterialIcon Kind="FormatListBulleted" Width="18" Height="18" />
+                        </Button>
+                        <Button Tag="view-tree"
+                                Classes="view-mode"
+                                Classes.selected="{Binding IsTreeView}"
+                                Command="{Binding ShowTreeViewCommand}"
+                                ToolTip.Tip="Tree (Ctrl+3)">
+                            <avalonia:MaterialIcon Kind="FileTreeOutline" Width="18" Height="18" />
+                        </Button>
+                        <!-- Split view: always available, highlighted while the window shows two views -->
+                        <Button Tag="split-view"
+                                Classes="view-mode"
+                                Classes.selected="{Binding IsSplit}"
+                                Command="{Binding ToggleSplitViewCommand}"
+                                ToolTip.Tip="Split view (F3)">
+                            <avalonia:MaterialIcon Kind="ViewSplitVertical" Width="18" Height="18" />
+                        </Button>
+
                         <shellViews:ActionCenterButton Tag="action-center" DataContext="{Binding ActionCenter}" />
 
                         <Button Tag="search" Classes="window-button" ToolTip.Tip="Search">

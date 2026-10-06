@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material.Icons;
 using Material.Icons.Avalonia;
@@ -186,6 +187,17 @@ public partial class MainWindow
         menu.Open(TitleBar);
     }
 
+    /// <summary>
+    /// A row of the New or Paste menu was picked: the menu closes. Posted, so the row's command runs first
+    /// while the menu still holds its DataContext.
+    /// </summary>
+    private void OnFileMenuRowClick(object? sender, RoutedEventArgs e)
+        => Dispatcher.UIThread.Post(() =>
+        {
+            NewButton.Flyout?.Hide();
+            PasteButton.Flyout?.Hide();
+        });
+
     // ===================== Toolbar items =====================
 
     /// <summary>Puts a host on the toolbar for every entry, in order; hosts of entries that left give their control back to the pool.</summary>
@@ -259,8 +271,9 @@ public partial class MainWindow
         if (isSpring)
             host.Classes.Add(SpringClass);
 
-        // Back, forward and up share the pill of Border.nav-group (MainWindow.axaml)
-        if (info.Group is not null)
+        // Back / forward / up and the file buttons: side by side they share the pill of Border.nav-group
+        // (MainWindow.axaml), each host drawing its part of it
+        if (info.Group is not null && info.HasGroupBackground)
             host.Classes.Add(NavGroupClass);
 
         // Springs take theirs from the styles: wider while customizing
@@ -269,6 +282,7 @@ public partial class MainWindow
 
         ToolbarPanel.SetFlex(host, info.Flex);
         ToolbarPanel.SetGroup(host, info.Group);
+        ToolbarPanel.SetGroupSpacing(host, info.GroupSpacing);
         return host;
     }
 
@@ -285,12 +299,12 @@ public partial class MainWindow
         }
     }
 
-    /// <summary>Neighbors of a group form one pill: only its outer corners are rounded.</summary>
+    /// <summary>Neighbors of a group with a background form one pill: only its outer corners are rounded.</summary>
     private static void UpdateToolbarGroups(List<Border> hosts)
     {
         for (var i = 0; i < hosts.Count; i++)
         {
-            if (ToolbarPanel.GetGroup(hosts[i]) is not { } group)
+            if (!hosts[i].Classes.Contains(NavGroupClass) || ToolbarPanel.GetGroup(hosts[i]) is not { } group)
                 continue;
 
             var joinsPrevious = i > 0 && ToolbarPanel.GetGroup(hosts[i - 1]) == group;

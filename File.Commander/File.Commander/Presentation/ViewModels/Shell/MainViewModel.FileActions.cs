@@ -4,7 +4,7 @@ using File.Commander.Presentation.ViewModels.Browser;
 namespace File.Commander.Presentation.ViewModels.Shell;
 
 /// <summary>
-/// The file buttons of the title bar (FileActionsBar): New ▸ New folder / New text document, Select all, Copy and
+/// The file buttons of the title bar (MainWindow.axaml): New ▸ New folder / New text document, Select all, Copy and
 /// Paste ▸ Paste / Paste without replace / Paste with replace. They run the same commands as the shortcuts in
 /// Settings → Keymap, on the active view, so the buttons only have to be told when those commands can run.
 /// </summary>

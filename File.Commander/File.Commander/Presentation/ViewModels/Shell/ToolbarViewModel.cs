@@ -14,7 +14,12 @@ namespace File.Commander.Presentation.ViewModels.Shell;
 /// <param name="IsRemovable">False: can be moved on the toolbar, never dragged off it (the address bar).</param>
 /// <param name="Flex">Above 0: takes a share of the width the other items leave, by weight.</param>
 /// <param name="MinWidth">Narrowest a flexible item gets.</param>
-/// <param name="Group">Neighbors of the same group touch, forming one pill (back, forward, up).</param>
+/// <param name="Group">
+/// Neighbors of the same group stay together: <paramref name="GroupSpacing"/> apart instead of the toolbar's spacing.
+/// Each item is still moved, removed and added on its own.
+/// </param>
+/// <param name="HasGroupBackground">The group shares one pill (Border.nav-group): back / forward / up, the file buttons.</param>
+/// <param name="GroupSpacing">Room between neighbors of the group.</param>
 public sealed record ToolbarItemInfo(
     string Id,
     string Label,
@@ -22,7 +27,9 @@ public sealed record ToolbarItemInfo(
     bool IsRemovable = true,
     double Flex = 0,
     double MinWidth = 0,
-    string? Group = null);
+    string? Group = null,
+    bool HasGroupBackground = false,
+    double GroupSpacing = 0);
 
 /// <summary>One item on the toolbar. Compared by reference: the toolbar can show several flexible spaces.</summary>
 public sealed class ToolbarEntry(ToolbarItemInfo info)
@@ -43,18 +50,33 @@ public sealed partial class ToolbarViewModel : ObservableObject, IDisposable
     public const string FlexibleSpaceId = "flexible-space";
 
     private const string NavigationGroup = "navigation";
+    private const string FileGroup = "file";
+    private const string ViewGroup = "view";
+
+    // Ids stored before these groups were split into their buttons
+    private static readonly IReadOnlyDictionary<string, string[]> Replaced = new Dictionary<string, string[]>
+    {
+        ["file-actions"] = ["new", "select-all", "copy", "paste"],
+        ["view-mode"] = ["view-grid", "view-list", "view-tree", "split-view"],
+    };
 
     /// <summary>Every item, in palette order. Flexible Space is always in the palette: there can be any number.</summary>
     public static IReadOnlyList<ToolbarItemInfo> Catalog { get; } =
     [
-        new("back", "Back", MaterialIconKind.ChevronLeft, Group: NavigationGroup),
-        new("forward", "Forward", MaterialIconKind.ChevronRight, Group: NavigationGroup),
-        new("up", "Up", MaterialIconKind.ArrowUp, Group: NavigationGroup),
-        new("file-actions", "File actions", MaterialIconKind.ContentCopy),
+        new("back", "Back", MaterialIconKind.ChevronLeft, Group: NavigationGroup, HasGroupBackground: true),
+        new("forward", "Forward", MaterialIconKind.ChevronRight, Group: NavigationGroup, HasGroupBackground: true),
+        new("up", "Up", MaterialIconKind.ArrowUp, Group: NavigationGroup, HasGroupBackground: true),
+        new("new", "New", MaterialIconKind.PlusBoxOutline, Group: FileGroup, HasGroupBackground: true),
+        new("select-all", "Select all", MaterialIconKind.SelectAll, Group: FileGroup, HasGroupBackground: true),
+        new("copy", "Copy", MaterialIconKind.ContentCopy, Group: FileGroup, HasGroupBackground: true),
+        new("paste", "Paste", MaterialIconKind.ContentPaste, Group: FileGroup, HasGroupBackground: true),
         new("computer", "Computer", MaterialIconKind.Monitor),
         new("address", "Address bar", MaterialIconKind.FormTextbox, IsRemovable: false, Flex: 3, MinWidth: 200),
         new("sort", "Sort", MaterialIconKind.Sort),
-        new("view-mode", "View mode", MaterialIconKind.ViewGridOutline),
+        new("view-grid", "Grid view", MaterialIconKind.ViewGridOutline, Group: ViewGroup, GroupSpacing: 2),
+        new("view-list", "List view", MaterialIconKind.FormatListBulleted, Group: ViewGroup, GroupSpacing: 2),
+        new("view-tree", "Tree view", MaterialIconKind.FileTreeOutline, Group: ViewGroup, GroupSpacing: 2),
+        new("split-view", "Split view", MaterialIconKind.ViewSplitVertical),
         new("action-center", "Action center", MaterialIconKind.ProgressClock),
         new("search", "Search", MaterialIconKind.Magnify),
         new("refresh", "Refresh", MaterialIconKind.Refresh),
@@ -66,7 +88,10 @@ public sealed partial class ToolbarViewModel : ObservableObject, IDisposable
 
     /// <summary>The built-in layout: the title bar as it was before it could be customized.</summary>
     public static IReadOnlyList<string> DefaultItems { get; } =
-        ["back", "forward", "up", "file-actions", "computer", "address", "sort", "view-mode", "action-center", "search"];
+        [
+            "back", "forward", "up", "new", "select-all", "copy", "paste", "computer", "address", "sort",
+            "view-grid", "view-list", "view-tree", "split-view", "action-center", "search",
+        ];
 
     private readonly ISettingsService _settings;
 
@@ -235,15 +260,15 @@ public sealed partial class ToolbarViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// The stored ids as entries: unknown ids and repeats (other than flexible spaces) are dropped, and an item
-    /// that can't be removed is put back at its default place.
+    /// The stored ids as entries: unknown ids and repeats (other than flexible spaces) are dropped, an item
+    /// that can't be removed is put back at its default place, and an old group id becomes its buttons.
     /// </summary>
     private static List<ToolbarEntry> Parse(IReadOnlyList<string>? items)
     {
         var result = new List<ToolbarEntry>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
 
-        foreach (var id in items ?? DefaultItems)
+        foreach (var id in (items ?? DefaultItems).SelectMany(id => Replaced.GetValueOrDefault(id) ?? [id]))
         {
             if (Find(id) is not { } info || (id != FlexibleSpaceId && !seen.Add(id)))
                 continue;

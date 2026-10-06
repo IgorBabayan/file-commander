@@ -6,8 +6,9 @@ namespace File.Commander.Presentation.Views.Shell;
 /// <summary>
 /// Lays out the title bar's toolbar items left to right, like Firefox's navigation toolbar. Items with a
 /// <see cref="FlexProperty"/> (the address bar, flexible spaces) share the width the others leave, by weight,
-/// and never get narrower than their MinWidth. Neighbors of the same <see cref="GroupProperty"/> (back, forward,
-/// up) touch, forming one pill; other items are <see cref="Spacing"/> apart.
+/// and never get narrower than their MinWidth. Neighbors of the same <see cref="GroupProperty"/> are
+/// <see cref="GroupSpacingProperty"/> apart (0: back, forward and up touch, forming one pill); other items are
+/// <see cref="Spacing"/> apart.
 /// </summary>
 public sealed class ToolbarPanel : Panel
 {
@@ -17,12 +18,16 @@ public sealed class ToolbarPanel : Panel
     public static readonly AttachedProperty<string?> GroupProperty =
         AvaloniaProperty.RegisterAttached<ToolbarPanel, Control, string?>("Group");
 
+    /// <summary>Room between an item and its right neighbor when both are in the same group.</summary>
+    public static readonly AttachedProperty<double> GroupSpacingProperty =
+        AvaloniaProperty.RegisterAttached<ToolbarPanel, Control, double>("GroupSpacing");
+
     public static readonly StyledProperty<double> SpacingProperty =
         AvaloniaProperty.Register<ToolbarPanel, double>(nameof(Spacing), 8);
 
     static ToolbarPanel()
     {
-        AffectsParentMeasure<ToolbarPanel>(FlexProperty, GroupProperty);
+        AffectsParentMeasure<ToolbarPanel>(FlexProperty, GroupProperty, GroupSpacingProperty);
         AffectsMeasure<ToolbarPanel>(SpacingProperty);
     }
 
@@ -39,6 +44,10 @@ public sealed class ToolbarPanel : Panel
     public static string? GetGroup(Control control) => control.GetValue(GroupProperty);
 
     public static void SetGroup(Control control, string? value) => control.SetValue(GroupProperty, value);
+
+    public static double GetGroupSpacing(Control control) => control.GetValue(GroupSpacingProperty);
+
+    public static void SetGroupSpacing(Control control, double value) => control.SetValue(GroupSpacingProperty, value);
 
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -132,5 +141,5 @@ public sealed class ToolbarPanel : Panel
     }
 
     private double SpacingBetween(Control left, Control right)
-        => GetGroup(left) is { } group && group == GetGroup(right) ? 0 : Spacing;
+        => GetGroup(left) is { } group && group == GetGroup(right) ? GetGroupSpacing(left) : Spacing;
 }
