@@ -1,0 +1,139 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="clr-namespace:File.Commander.Presentation.ViewModels.Shell"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             x:Class="File.Commander.Presentation.Views.Shell.FileActionsBar"
+             x:DataType="shell:MainViewModel">
+    <!-- New, Select all, Copy, Paste in the title bar, between navigation and Computer.
+         Same pill as the navigation buttons: Border.nav-group and Button.nav come from MainWindow.
+         Fc* brushes follow the theme: DynamicResource -->
+    <UserControl.Styles>
+        <!-- The file view keeps the focus, so the arrow keys and shortcuts go on working there after a click -->
+        <Style Selector="Border.file-actions Button.nav">
+            <Setter Property="Focusable" Value="False" />
+        </Style>
+
+        <!-- New and Paste: an icon and a chevron, so wider than the other buttons -->
+        <Style Selector="Button.nav.dropdown">
+            <Setter Property="Width" Value="NaN" />
+            <Setter Property="Padding" Value="9,0,6,0" />
+        </Style>
+        <Style Selector="Button.nav.dropdown avalonia|MaterialIcon.chevron">
+            <Setter Property="Foreground" Value="{DynamicResource FcSubtleTextBrush}" />
+        </Style>
+        <!-- While the menu is open -->
+        <Style Selector="Button.nav:flyout-open /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcAccentBrush}" />
+        </Style>
+
+        <!-- ===== Drop-down, like the sort menu ===== -->
+        <Style Selector="FlyoutPresenter.file-menu">
+            <Setter Property="Background" Value="{DynamicResource FcCardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="4" />
+            <Setter Property="MinWidth" Value="200" />
+        </Style>
+        <Style Selector="Button.menu-row">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.menu-row:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.menu-row:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FcTextBrush}" />
+        </Style>
+        <Style Selector="Button.menu-row:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource FcDisabledTextBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Border Classes="nav-group file-actions">
+        <StackPanel Orientation="Horizontal">
+            <!-- New ▸ New folder, New text document -->
+            <Button x:Name="NewButton"
+                    Classes="nav dropdown"
+                    ToolTip.Tip="New"
+                    IsEnabled="{Binding CanCreateInActiveFolder}">
+                <Button.Flyout>
+                    <Flyout Placement="BottomEdgeAlignedLeft" FlyoutPresenterClasses="file-menu">
+                        <StackPanel>
+                            <Button Classes="menu-row" Command="{Binding NewFolderCommand}" Click="OnMenuRowClick">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <avalonia:MaterialIcon Kind="FolderPlusOutline" Width="16" Height="16" />
+                                    <TextBlock Text="New folder" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="menu-row" Command="{Binding NewTextDocumentCommand}" Click="OnMenuRowClick">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <avalonia:MaterialIcon Kind="FilePlusOutline" Width="16" Height="16" />
+                                    <TextBlock Text="New text document" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+                <StackPanel Orientation="Horizontal" Spacing="2">
+                    <avalonia:MaterialIcon Kind="PlusBoxOutline" Width="18" Height="18" />
+                    <avalonia:MaterialIcon Classes="chevron" Kind="ChevronDown" Width="14" Height="14" />
+                </StackPanel>
+            </Button>
+
+            <Button Classes="nav" ToolTip.Tip="Select all" Command="{Binding SelectAllCommand}">
+                <avalonia:MaterialIcon Kind="SelectAll" Width="18" Height="18" />
+            </Button>
+
+            <Button Classes="nav" ToolTip.Tip="Copy" Command="{Binding CopySelectionCommand}">
+                <avalonia:MaterialIcon Kind="ContentCopy" Width="17" Height="17" />
+            </Button>
+
+            <!-- Paste ▸ Paste (asks about taken names), Paste without replace, Paste with replace -->
+            <Button x:Name="PasteButton"
+                    Classes="nav dropdown"
+                    ToolTip.Tip="Paste"
+                    IsEnabled="{Binding CanPasteInActiveFolder}">
+                <Button.Flyout>
+                    <Flyout Placement="BottomEdgeAlignedLeft" FlyoutPresenterClasses="file-menu">
+                        <StackPanel>
+                            <Button Classes="menu-row" Command="{Binding PasteCommand}" Click="OnMenuRowClick">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <avalonia:MaterialIcon Kind="ContentPaste" Width="16" Height="16" />
+                                    <TextBlock Text="Paste" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="menu-row" Command="{Binding PasteWithoutReplaceCommand}" Click="OnMenuRowClick">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <avalonia:MaterialIcon Kind="ContentDuplicate" Width="16" Height="16" />
+                                    <TextBlock Text="Paste without replace" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="menu-row" Command="{Binding PasteWithReplaceCommand}" Click="OnMenuRowClick">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <avalonia:MaterialIcon Kind="FileReplaceOutline" Width="16" Height="16" />
+                                    <TextBlock Text="Paste with replace" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+                <StackPanel Orientation="Horizontal" Spacing="2">
+                    <avalonia:MaterialIcon Kind="ContentPaste" Width="18" Height="18" />
+                    <avalonia:MaterialIcon Classes="chevron" Kind="ChevronDown" Width="14" Height="14" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </Border>
+</UserControl>

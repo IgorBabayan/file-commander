@@ -756,6 +756,9 @@ public partial class MainViewModel : ViewModelBase, INavigator
         SelectAllCommand.NotifyCanExecuteChanged();
         SelectNoneCommand.NotifyCanExecuteChanged();
         InvertSelectionCommand.NotifyCanExecuteChanged();
+
+        // The file buttons of the title bar follow the active view and its selection (MainViewModel.FileActions.cs)
+        UpdateFileActions();
     }
 
     private void NotifyViewModeChanged()

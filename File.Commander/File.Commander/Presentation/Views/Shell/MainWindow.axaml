@@ -310,7 +310,7 @@
             <Border Grid.Row="0"
                     Background="{DynamicResource FcTitleBarBrush}"
                     PointerPressed="OnPointerPressed">
-                <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto" Margin="12,0,10,0">
+                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto" Margin="12,0,10,0">
                     <Image Grid.Column="0"
                            Source="/Assets/logo.png"
                            Width="30" Height="30"
@@ -332,7 +332,13 @@
                         </StackPanel>
                     </Border>
 
-                    <Button Grid.Column="2"
+                    <!-- New, Select all, Copy, Paste: between navigation and Computer.
+                         They act on the active view's folder and selection, like their shortcuts. -->
+                    <shellViews:FileActionsBar Grid.Column="2"
+                                               Margin="12,0,0,0"
+                                               VerticalAlignment="Center" />
+
+                    <Button Grid.Column="3"
                             Classes="view-toggle"
                             Margin="12,0,0,0"
                             VerticalAlignment="Center"
@@ -343,7 +349,7 @@
 
                     <!-- Address bar: breadcrumbs, click the empty part (or Ctrl+L) to type a path.
                          F5 still refreshes; the view switcher took the refresh button's place. -->
-                    <Grid Grid.Column="3"
+                    <Grid Grid.Column="4"
                           ColumnDefinitions="*,Auto,Auto,Auto"
                           Margin="12,0,16,0"
                           VerticalAlignment="Center">
@@ -356,7 +362,7 @@
                                                        DataContext="{Binding ActionCenter}" />
                     </Grid>
 
-                    <StackPanel Grid.Column="4"
+                    <StackPanel Grid.Column="5"
                                 Orientation="Horizontal"
                                 VerticalAlignment="Center"
                                 Spacing="6">
