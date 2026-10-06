@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:File.Commander.Presentation.ViewModels.Settings"
+        xmlns:plugin="clr-namespace:File.Commander.Presentation.ViewModels.Plugin"
         xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
         xmlns:sys="using:System"
         mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
@@ -267,6 +268,73 @@
             <Setter Property="FontSize" Value="12" />
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="Foreground" Value="{DynamicResource Subtext1Brush}" />
+        </Style>
+
+        <!-- ===== Plugins ===== -->
+        <Style Selector="Border.plugin-row">
+            <Setter Property="Padding" Value="12,8" />
+        </Style>
+        <Style Selector="TextBlock.plugin-name">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector="TextBlock.plugin-version">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+        </Style>
+        <Style Selector="TextBlock.plugin-description">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext0Brush}" />
+        </Style>
+        <Style Selector="TextBlock.plugin-status">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+        </Style>
+        <Style Selector="TextBlock.plugin-status.attention">
+            <Setter Property="Foreground" Value="{DynamicResource PeachBrush}" />
+        </Style>
+        <Style Selector="TextBlock.plugin-error">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource RedBrush}" />
+        </Style>
+        <Style Selector="TextBlock.plugin-hint">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="2,6,0,0" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+        </Style>
+        <Style Selector="TextBlock.plugin-page-title">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext1Brush}" />
+        </Style>
+        <Style Selector="TextBlock.plugin-saved">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource GreenBrush}" />
+        </Style>
+        <Style Selector="Border.plugin-page">
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="12" />
+        </Style>
+        <Style Selector="Button.plugin-delete">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource Overlay1Brush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.plugin-delete:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Surface2Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource RedBrush}" />
         </Style>
 
         <Style Selector="TextBlock.save-error">
@@ -639,6 +707,106 @@
                                               IsChecked="{Binding EmptyTrashOnAllDrives}" />
                                 </Border>
                             </StackPanel>
+
+                            <!-- ===== Plugins ===== -->
+                            <TextBlock Classes="group-title" Text="Plugins" Tag="plugins" />
+
+                            <TextBlock Classes="section-title" Text="Plugins list" Tag="plugins-list" />
+                            <StackPanel Classes="section">
+                                <TextBlock Classes="keymap-notice"
+                                           Text="Restart File Commander to apply the changes to plugins."
+                                           IsVisible="{Binding Plugins.NeedsRestart}" />
+                                <Border Classes="setting-row" IsVisible="{Binding !Plugins.HasPlugins}">
+                                    <TextBlock Classes="setting-label" Text="No plugins are installed." />
+                                </Border>
+                                <ItemsControl ItemsSource="{Binding Plugins.Items}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Spacing="2" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="vm:PluginItemViewModel">
+                                            <Border Classes="setting-row plugin-row">
+                                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <TextBlock Classes="plugin-name" Text="{Binding Name}" />
+                                                            <TextBlock Classes="plugin-version" Text="{Binding Version}" />
+                                                        </StackPanel>
+                                                        <TextBlock Classes="plugin-description"
+                                                                   Text="{Binding Description}"
+                                                                   IsVisible="{Binding HasDescription}" />
+                                                        <TextBlock Classes="plugin-status"
+                                                                   Classes.attention="{Binding NeedsRestart}"
+                                                                   Text="{Binding StatusText}" />
+                                                        <TextBlock Classes="plugin-error"
+                                                                   Text="{Binding Error}"
+                                                                   IsVisible="{Binding HasError}" />
+                                                    </StackPanel>
+                                                    <CheckBox Grid.Column="1"
+                                                              Classes="setting"
+                                                              Margin="12,0"
+                                                              Content="Enabled"
+                                                              IsChecked="{Binding IsEnabled}"
+                                                              IsEnabled="{Binding CanToggle}" />
+                                                    <Button Grid.Column="2"
+                                                            Classes="plugin-delete"
+                                                            ToolTip.Tip="Delete plugin"
+                                                            Command="{Binding RemoveCommand}">
+                                                        <avalonia:MaterialIcon Kind="DeleteOutline" Width="18" Height="18" />
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Classes="plugin-hint" Text="{Binding Plugins.FolderHint}" />
+                            </StackPanel>
+
+                            <!-- One section per loaded plugin with settings pages; its heading's Tag is its NavKey -->
+                            <ItemsControl ItemsSource="{Binding Plugins.Sections}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:PluginSettingsSectionViewModel">
+                                        <StackPanel>
+                                            <TextBlock Classes="section-title" Text="{Binding Title}" Tag="{Binding NavKey}" />
+                                            <StackPanel Classes="section">
+                                                <ItemsControl ItemsSource="{Binding Pages}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Spacing="6" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="plugin:PluginSettingsTabViewModel">
+                                                            <Border Classes="plugin-page">
+                                                                <StackPanel Spacing="6">
+                                                                    <TextBlock Classes="plugin-page-title"
+                                                                               Text="{Binding Title}"
+                                                                               IsVisible="{Binding ShowTitle}" />
+                                                                    <ContentControl Content="{Binding View}"
+                                                                                    IsEnabled="{Binding IsLoaded}" />
+                                                                    <TextBlock Classes="plugin-error"
+                                                                               Text="{Binding Error}"
+                                                                               IsVisible="{Binding HasError}" />
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <StackPanel Orientation="Horizontal"
+                                                            HorizontalAlignment="Right"
+                                                            Spacing="10"
+                                                            Margin="0,6,0,0"
+                                                            IsVisible="{Binding HasSaveButton}">
+                                                    <TextBlock Classes="plugin-saved" Text="{Binding SavedText}" />
+                                                    <Button Content="Save" Command="{Binding SaveCommand}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
                     </ScrollViewer>
                 </Border>

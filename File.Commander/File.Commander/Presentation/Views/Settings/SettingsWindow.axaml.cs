@@ -2,7 +2,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 
@@ -204,13 +203,28 @@ public partial class SettingsWindow : Window
     /// <summary>Scroll offset that puts the heading tagged <paramref name="key"/> at the top.</summary>
     private double? TopOf(string key)
     {
-        _anchors ??= ContentHost.GetLogicalDescendants()
-            .OfType<Control>()
-            .Where(c => c.Tag is string)
-            .ToDictionary(c => (string)c.Tag!);
+        // The plugins' headings come from templates: looked up again once they exist, or after one was removed
+        if (_anchors is null || !_anchors.TryGetValue(key, out var anchor) || TopLevel.GetTopLevel(anchor) is null)
+        {
+            _anchors = FindAnchors();
+            if (!_anchors.TryGetValue(key, out anchor))
+                return null;
+        }
 
-        return _anchors.TryGetValue(key, out var anchor)
-            ? anchor.TranslatePoint(default, ContentHost)?.Y
-            : null;
+        return anchor.TranslatePoint(default, ContentHost)?.Y;
+    }
+
+    /// <summary>The group and section headings, by the Tag that is the Key of their navigation entry.</summary>
+    private Dictionary<string, Control> FindAnchors()
+    {
+        var anchors = new Dictionary<string, Control>(StringComparer.Ordinal);
+        foreach (var heading in ContentHost.GetVisualDescendants().OfType<TextBlock>())
+        {
+            if (heading.Tag is string key
+                && (heading.Classes.Contains("group-title") || heading.Classes.Contains("section-title")))
+                anchors.TryAdd(key, heading);
+        }
+
+        return anchors;
     }
 }

@@ -669,6 +669,36 @@ public static class FileOperations
         }
     }
 
+    /// <summary>
+    /// Deletes <paramref name="paths"/> for good, without the trash (Shift+Delete). Folders go with everything in
+    /// them; symlinks are deleted, never followed. Never throws for one item: it is reported to
+    /// <paramref name="progress"/>, and Cancel stops before the next item.
+    /// </summary>
+    public static void DeletePermanently(IReadOnlyList<string> paths, IOperationProgress progress)
+    {
+        progress.SetTotal(paths.Count);
+
+        foreach (var path in paths)
+        {
+            if (progress.CancellationToken.IsCancellationRequested)
+                break;
+
+            var name = IOPath.GetFileName(path);
+            progress.Begin(name);
+
+            try
+            {
+                DeleteTree(path);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                progress.Fail(name, ex.Message);
+            }
+
+            progress.Advance();
+        }
+    }
+
     /// <summary>Symlinks are deleted, never followed.</summary>
     internal static void DeleteTree(string path)
     {

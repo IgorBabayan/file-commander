@@ -17,6 +17,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
     private readonly ISettingsService _settings;
     private readonly IDesktopService _desktopService;
     private readonly IKeymapService _keymap;
+    private readonly ISettingsViewModelFactory _settingsFactory;
 
     // What the shell currently runs with; compared on every save to apply only what changed
     private AppSettings _appliedSettings;
@@ -175,8 +176,9 @@ public partial class MainViewModel : ViewModelBase, INavigator
     }
 
     public MainViewModel(IDialogService dialogService, ISettingsService settings, IDesktopService desktopService,
-        IKeymapService keymap, ActionCenterViewModel actionCenter)
+        IKeymapService keymap, ActionCenterViewModel actionCenter, ISettingsViewModelFactory settingsFactory)
     {
+        _settingsFactory = settingsFactory;
         _dialogService = dialogService;
         ActionCenter = actionCenter;
         _settings = settings;
@@ -356,14 +358,17 @@ public partial class MainViewModel : ViewModelBase, INavigator
     [RelayCommand]
     private void ToggleHiddenFiles() => ShowHiddenFiles = !ShowHiddenFiles;
 
-    /// <summary>Ctrl+Alt+1…4 by default. Saved like a pick in Settings; App applies the stored theme.</summary>
+    /// <summary>
+    /// Ctrl+Alt+1…4 by default. Saved like a pick in Settings; App applies the stored theme.
+    /// A built-in theme replaces a plugin theme too.
+    /// </summary>
     [RelayCommand]
     private void SelectTheme(AppTheme theme)
     {
         var current = _settings.Current;
         var basic = current.Basic!;
-        if (basic.Theme != theme)
-            _ = SaveSettingsAsync(current with { Basic = basic with { Theme = theme } });
+        if (basic.Theme != theme || basic.PluginThemeKey is not null)
+            _ = SaveSettingsAsync(current with { Basic = basic with { Theme = theme, PluginThemeKey = null } });
     }
 
     /// <summary>
@@ -430,6 +435,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
         KeymapActions.PasteWithReplace => (PasteWithReplaceCommand, null),
         KeymapActions.Rename => (RenameSelectionCommand, null),
         KeymapActions.MoveToTrash => (TrashSelectionCommand, null),
+        KeymapActions.DeletePermanently => (DeleteSelectionPermanentlyCommand, null),
         KeymapActions.Properties => (ShowSelectionPropertiesCommand, null),
         KeymapActions.NewFolder => (NewFolderCommand, null),
         KeymapActions.NewTextDocument => (NewTextDocumentCommand, null),
@@ -478,7 +484,7 @@ public partial class MainViewModel : ViewModelBase, INavigator
     private async Task Settings()
     {
         // A fresh one per opening: it reads the stored settings when created
-        using var settings = new SettingsViewModel(_settings);
+        using var settings = _settingsFactory.Create();
         await _dialogService.ShowDialogAsync<SettingsViewModel, bool>(settings);
     }
 

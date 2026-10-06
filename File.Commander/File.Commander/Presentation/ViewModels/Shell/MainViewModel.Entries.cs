@@ -328,6 +328,35 @@ public partial class MainViewModel
         RefreshFolders(paths.Select(FileOperations.ParentOf), entriesMoved: true, trashChanged: true);
     }
 
+    /// <summary>
+    /// Delete permanently (Shift+Delete): skips the trash, so it can't be undone. Asks first while
+    /// Settings → Advanced → Dialog → "Ask before deleting files permanently" is on.
+    /// </summary>
+    public async Task DeletePermanentlyAsync(IReadOnlyList<FileEntryViewModel> entries)
+    {
+        if (entries.Count == 0)
+            return;
+
+        var paths = PathsOf(entries);
+        if (_appliedSettings.Advanced!.ConfirmPermanentDelete)
+        {
+            var message = paths.Count == 1
+                ? "It won't go to the trash. This can't be undone."
+                : "They won't go to the trash. This can't be undone.";
+
+            using var confirm = PromptViewModel.ForConfirmation(
+                $"Delete {ItemsText(paths)} permanently?", message, "Delete", destructive: true);
+
+            if (!await _dialogService.ShowDialogAsync<PromptViewModel, bool>(confirm))
+                return;
+        }
+
+        await ActionCenter.RunAsync(OperationKind.DeletePermanently, OperationTitles.DeletePermanently,
+            ItemsText(paths), progress => FileOperations.DeletePermanently(paths, progress));
+
+        RefreshFolders(paths.Select(FileOperations.ParentOf), entriesMoved: true);
+    }
+
     /// <summary>Properties (Alt+Enter): what the entries are, where they are and how much they hold.</summary>
     public async Task ShowEntryPropertiesAsync(IReadOnlyList<FileEntryViewModel> entries)
     {
@@ -371,6 +400,9 @@ public partial class MainViewModel
 
     [RelayCommand(CanExecute = nameof(CanModifySelection))]
     private Task TrashSelection() => MoveToTrashAsync(SelectedEntries);
+
+    [RelayCommand(CanExecute = nameof(CanModifySelection))]
+    private Task DeleteSelectionPermanently() => DeletePermanentlyAsync(SelectedEntries);
 
     [RelayCommand(CanExecute = nameof(HasSelectedEntries))]
     private Task ShowSelectionProperties() => ShowEntryPropertiesAsync(SelectedEntries);

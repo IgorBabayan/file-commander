@@ -4,6 +4,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "File.Commander", "File.Comm
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "File.Commander.Plugins", "File.Commander.Plugins\File.Commander.Plugins.csproj", "{0EED57B6-D421-4EDF-8647-68C2D3EC986F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{6EC7CCE4-4953-4BB6-9E2C-2C2610E60CBC}"
+	ProjectSection(SolutionItems) = preProject
+		Plugins\Directory.Build.props = Plugins\Directory.Build.props
+		Plugins\Directory.Build.targets = Plugins\Directory.Build.targets
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "File.Commander.Themes", "Plugins\File.Commander.Themes\File.Commander.Themes.csproj", "{6E8629CD-7ECD-4694-8FDC-D196E328E9E5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +26,12 @@ Global
 		{0EED57B6-D421-4EDF-8647-68C2D3EC986F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0EED57B6-D421-4EDF-8647-68C2D3EC986F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0EED57B6-D421-4EDF-8647-68C2D3EC986F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E8629CD-7ECD-4694-8FDC-D196E328E9E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E8629CD-7ECD-4694-8FDC-D196E328E9E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E8629CD-7ECD-4694-8FDC-D196E328E9E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E8629CD-7ECD-4694-8FDC-D196E328E9E5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6E8629CD-7ECD-4694-8FDC-D196E328E9E5} = {6EC7CCE4-4953-4BB6-9E2C-2C2610E60CBC}
 	EndGlobalSection
 EndGlobal

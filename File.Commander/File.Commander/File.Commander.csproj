@@ -36,8 +36,8 @@
         <ProjectReference Include="..\File.Commander.Plugins\File.Commander.Plugins.csproj" />
     </ItemGroup>
 
-    <!-- Debug: building/running the host also builds the plugins, whose DeployPluginLocally
-     target copies them into <AppData>/ed-assistant/plugins. The host never references them. -->
+    <!-- Debug: building/running the host also builds the plugins, whose DeployPluginLocally target
+     (Plugins/Directory.Build.targets) copies them into ~/.config/file-commander/plugins. The host never references them. -->
     <ItemGroup Condition="'$(Configuration)' == 'Debug'">
         <ProjectReference Include="..\Plugins\*\*.csproj"
                           ReferenceOutputAssembly="false"

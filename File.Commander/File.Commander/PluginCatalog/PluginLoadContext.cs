@@ -6,20 +6,23 @@ namespace File.Commander.PluginCatalog;
 sealed class PluginLoadContext(string mainAssemblyPath)
     : AssemblyLoadContext(isCollectible: false)
 {
-    // Shared with the host (resolved from the Default context). EF Core and SQLite are shared
-    // so plugins use the host's provider and native e_sqlite3 instead of loading a second copy.
+    // Shared with the host (resolved from the Default context): a plugin that loaded its own copy of the SDK
+    // would see another IPlugin type, and PluginLoader would find no plugin in it. Matched by exact name, as a
+    // plugin's own assembly may well be called "File.Commander.Plugins.Something".
+    private static readonly HashSet<string> SharedNames = new(StringComparer.Ordinal) { "File.Commander.Plugins" };
+
     private static readonly string[] SharedPrefixes =
     [
-        "ED.Assistant.Plugins.Abstractions", "Avalonia", "CommunityToolkit.Mvvm",
-        "Material.Icons", "Microsoft.Extensions.", "System.",
-        "Microsoft.EntityFrameworkCore", "Microsoft.Data.Sqlite", "SQLitePCLRaw"
+        "Avalonia", "CommunityToolkit.Mvvm", "Material.Icons", "Microsoft.Extensions.", "System.",
     ];
 
     private readonly AssemblyDependencyResolver _resolver = new(mainAssemblyPath);
 
     protected override Assembly? Load(AssemblyName name)
     {
-        if (SharedPrefixes.Any(p => name.Name!.StartsWith(p, StringComparison.Ordinal)))
+        if (name.Name is not { } assemblyName
+            || SharedNames.Contains(assemblyName)
+            || SharedPrefixes.Any(p => assemblyName.StartsWith(p, StringComparison.Ordinal)))
             return null;
 
         var path = _resolver.ResolveAssemblyToPath(name);

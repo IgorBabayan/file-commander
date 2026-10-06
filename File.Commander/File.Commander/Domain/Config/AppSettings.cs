@@ -50,8 +50,17 @@ public record AppSettings
 /// <summary>Settings → Basic.</summary>
 public sealed record BasicSettings
 {
-    /// <summary>The color theme. Applied to every window as soon as it changes.</summary>
+    /// <summary>
+    /// The built-in color theme. Applied to every window as soon as it changes. Also the fallback while
+    /// <see cref="PluginThemeKey"/> is set but its plugin is off or gone.
+    /// </summary>
     public AppTheme Theme { get; init; } = AppTheme.Mocha;
+
+    /// <summary>
+    /// A theme added by a plugin, as "&lt;plugin id&gt;/&lt;theme id&gt;". Wins over <see cref="Theme"/> while that plugin
+    /// is loaded and still offers it. Null: the built-in <see cref="Theme"/>.
+    /// </summary>
+    public string? PluginThemeKey { get; init; }
 
     public bool AlwaysOpenFolderInNewWindow { get; init; }
     public OpenFileMode OpenFile { get; init; } = OpenFileMode.DoubleClick;

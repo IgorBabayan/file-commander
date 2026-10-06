@@ -62,6 +62,7 @@ public partial class MainViewModel
         CutSelectionCommand.NotifyCanExecuteChanged();
         RenameSelectionCommand.NotifyCanExecuteChanged();
         TrashSelectionCommand.NotifyCanExecuteChanged();
+        DeleteSelectionPermanentlyCommand.NotifyCanExecuteChanged();
         ShowSelectionPropertiesCommand.NotifyCanExecuteChanged();
     }
 }

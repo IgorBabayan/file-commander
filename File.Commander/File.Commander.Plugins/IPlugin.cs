@@ -19,6 +19,13 @@ public interface IPlugin
     /// A default member, so plugins built against an older Abstractions still load.
     /// </summary>
     IEnumerable<PluginSettingsPage> GetSettingsPages() => [];
+
+    /// <summary>
+    /// Color themes this plugin adds to Settings → Basic → Appearance → Theme. Default: none.
+    /// Asked again every time Settings opens and when a theme is applied, so the list may depend on the
+    /// plugin's own settings. A default member, so plugins built against an older SDK still load.
+    /// </summary>
+    IEnumerable<PluginTheme> GetThemes() => [];
 }
 
 public sealed record PluginPage(

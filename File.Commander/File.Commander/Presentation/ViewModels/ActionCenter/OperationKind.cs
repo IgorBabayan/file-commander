@@ -6,6 +6,8 @@ public enum OperationKind
     Copy,
     Move,
     Delete,
+    /// <summary>Deleted without the trash (Shift+Delete).</summary>
+    DeletePermanently,
     EmptyTrash,
     Other,
 }

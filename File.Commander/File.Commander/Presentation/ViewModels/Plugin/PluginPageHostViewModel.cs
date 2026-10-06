@@ -26,8 +26,8 @@ public interface IPluginRegistry
     bool HasSettings(string pluginDirectory);
 
     /// <summary>
-    /// Fresh settings tabs of the plugin loaded from <paramref name="pluginDirectory"/>, for one
-    /// opening of its settings dialog. Dispose the session when the dialog closes.
+    /// Fresh settings pages of the plugin loaded from <paramref name="pluginDirectory"/>, for one
+    /// opening of the Settings window. Dispose the session when the window closes.
     /// Never throws: a broken page is skipped.
     /// </summary>
     PluginSettingsSession CreateSettingsSession(string pluginDirectory);

@@ -1,0 +1,14 @@
+<Project>
+    <!-- Shared by every plugin under Plugins/. Each plugin is one folder: <AssemblyName>/<AssemblyName>.dll -->
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- The SDK (and Avalonia, Material.Icons…) comes from the host at run time: never copied with the plugin -->
+        <ProjectReference Include="$(MSBuildThisFileDirectory)..\File.Commander.Plugins\File.Commander.Plugins.csproj"
+                          Private="false" />
+    </ItemGroup>
+</Project>

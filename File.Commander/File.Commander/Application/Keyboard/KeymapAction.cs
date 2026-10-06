@@ -38,6 +38,7 @@ public static class KeymapActions
     public const string PasteWithReplace = "files.paste-with-replace";
     public const string Rename = "files.rename";
     public const string MoveToTrash = "files.move-to-trash";
+    public const string DeletePermanently = "files.delete-permanently";
     public const string Properties = "files.properties";
     public const string NewFolder = "files.new-folder";
     public const string NewTextDocument = "files.new-text-document";
@@ -92,6 +93,9 @@ public static class KeymapActions
             [new(Key.V, KeyModifiers.Control | KeyModifiers.Shift)], WorksWhileTyping: false),
         new(Rename, FilesGroup, "Rename", [new(Key.F2)], WorksWhileTyping: false),
         new(MoveToTrash, FilesGroup, "Move to Trash", [new(Key.Delete)], WorksWhileTyping: false),
+        // Skips the trash: asks first unless Settings → Dialog says not to
+        new(DeletePermanently, FilesGroup, "Delete permanently",
+            [new(Key.Delete, KeyModifiers.Shift)], WorksWhileTyping: false),
         new(Properties, FilesGroup, "Properties", [new(Key.Enter, KeyModifiers.Alt)], WorksWhileTyping: false),
         // What the context menu of a folder's empty space offers, in the active view's folder
         new(NewFolder, FilesGroup, "New folder",

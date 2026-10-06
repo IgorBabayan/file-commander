@@ -11,6 +11,7 @@ public partial class App : Avalonia.Application
     private ServiceProvider? _provider;
     private MainViewModel? _mainViewModel;
     private ISettingsService? _settings;
+    private IThemeCatalog? _themes;
     
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
@@ -25,7 +26,8 @@ public partial class App : Avalonia.Application
 
         // Before the first window, so it opens in the stored theme
         _settings = provider.GetRequiredService<ISettingsService>();
-        ApplyTheme(_settings.Current.Basic!.Theme);
+        _themes = provider.GetRequiredService<IThemeCatalog>();
+        ApplyTheme(_settings.Current.Basic!);
         _settings.Changed += OnSettingsChanged;
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -70,22 +72,30 @@ public partial class App : Avalonia.Application
     
     private void OnSettingsChanged(object? sender, AppSettings settings)
     {
-        var theme = settings.Basic!.Theme;
+        var basic = settings.Basic!;
         if (Dispatcher.UIThread.CheckAccess())
-            ApplyTheme(theme);
+            ApplyTheme(basic);
         else
-            Dispatcher.UIThread.Post(() => ApplyTheme(theme));
+            Dispatcher.UIThread.Post(() => ApplyTheme(basic));
     }
 
     /// <summary>
     /// Windows don't set a variant of their own, so they all follow this one. The Theme*.axaml
-    /// palettes are the app's ThemeDictionaries; every DynamicResource updates at once.
+    /// palettes (and the plugin themes, added as they are picked) are the app's ThemeDictionaries;
+    /// every DynamicResource updates at once.
     /// </summary>
-    private void ApplyTheme(AppTheme theme)
+    private void ApplyTheme(BasicSettings basic)
     {
-        var variant = CatppuccinThemes.For(theme);
-        if (RequestedThemeVariant != variant)
-            RequestedThemeVariant = variant;
+        try
+        {
+            _themes!.Apply(this, basic);
+        }
+        catch (Exception ex)
+        {
+            // A plugin palette Avalonia can't take must not take the app down: back to the built-in theme
+            Trace.WriteLine($"Can't apply the theme: {ex}");
+            RequestedThemeVariant = CatppuccinThemes.For(basic.Theme);
+        }
     }
 
     private void StartPluginServices(IServiceProvider provider)

@@ -150,6 +150,7 @@ public sealed partial class OperationViewModel : ViewModelBase, IOperationProgre
             OperationKind.Copy => MaterialIconKind.ContentCopy,
             OperationKind.Move => MaterialIconKind.FileMoveOutline,
             OperationKind.Delete => MaterialIconKind.DeleteOutline,
+            OperationKind.DeletePermanently => MaterialIconKind.DeleteForeverOutline,
             OperationKind.EmptyTrash => MaterialIconKind.DeleteSweepOutline,
             _ => MaterialIconKind.FileCogOutline,
         },

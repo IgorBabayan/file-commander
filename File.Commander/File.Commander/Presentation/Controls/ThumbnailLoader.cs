@@ -20,8 +20,12 @@ internal static class ThumbnailLoader
 
     private static readonly SemaphoreSlim Gate = new(Math.Clamp(Environment.ProcessorCount / 2, 1, 4));
 
-    /// <summary>By extension only: cheap enough to call for every row.</summary>
-    public static bool CanLoad(string path) => Extensions.Contains(IOPath.GetExtension(path));
+    /// <summary>
+    /// By extension only: cheap enough to call for every row. A .desktop file counts too: it shows the picture of
+    /// its Icon= key when one can be found.
+    /// </summary>
+    public static bool CanLoad(string path)
+        => Extensions.Contains(IOPath.GetExtension(path)) || DesktopIcons.IsDesktopFile(path);
 
     /// <summary>
     /// Null when cancelled or when the file isn't a decodable picture. Never throws.
@@ -52,6 +56,15 @@ internal static class ThumbnailLoader
     {
         try
         {
+            // Launchers show their app's icon instead of a generic file
+            if (DesktopIcons.IsDesktopFile(path))
+            {
+                if (DesktopIcons.IconOf(path, pixelWidth) is not { } icon)
+                    return null;
+
+                path = icon;
+            }
+
             var info = new FileInfo(path);
             if (!info.Exists || info.Length == 0 || info.Length > MaxBytes)
                 return null;

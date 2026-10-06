@@ -87,6 +87,8 @@ public partial class MainWindow
             () => _ = vm.EmailAsync(entries), isEnabled: !hasFolders);
         yield return ShortcutEntry(vm, "Move to Trash", MaterialIconKind.DeleteOutline, KeymapActions.MoveToTrash,
             () => _ = vm.MoveToTrashAsync(entries), isEnabled: canModify);
+        yield return ShortcutEntry(vm, "Delete permanently", MaterialIconKind.DeleteForeverOutline,
+            KeymapActions.DeletePermanently, () => _ = vm.DeletePermanentlyAsync(entries), isEnabled: canModify);
         yield return new Separator();
 
         yield return ShortcutEntry(vm, "Properties", MaterialIconKind.InformationOutline, KeymapActions.Properties,

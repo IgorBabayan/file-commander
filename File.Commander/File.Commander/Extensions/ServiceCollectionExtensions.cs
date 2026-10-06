@@ -57,6 +57,8 @@ static class ServiceCollectionExtensions
                 .AddSingleton<IDialogService, DialogService>()
                 .AddSingleton<ISettingsService>(_ => new SettingsService(SettingsService.DefaultPath))
                 .AddSingleton<IKeymapService, KeymapService>()
+                .AddSingleton<IThemeCatalog, ThemeCatalog>()
+                .AddSingleton<ISettingsViewModelFactory, SettingsViewModelFactory>()
                 .AddTransient<SettingsWindow>()
                 .AddTransient<PromptWindow>()
                 .AddTransient<PasteConflictWindow>()

@@ -12,6 +12,9 @@ public sealed partial class PluginSettingsTabViewModel(
     public IPluginSettingsViewModel Inner { get; } = inner;
     public Control View { get; } = view;
 
+    /// <summary>The page's title is shown above it when its plugin has more than one page.</summary>
+    public bool ShowTitle { get; internal set; }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasError))]
     public partial string? Error { get; set; }

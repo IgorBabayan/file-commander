@@ -1,0 +1,28 @@
+<Project>
+    <!--
+        DeployPluginLocally: after a Debug build, copies the plugin into the folder File Commander loads plugins from,
+        ~/.config/file-commander/plugins/<AssemblyName>/ (Environment.SpecialFolder.ApplicationData, as the host).
+        Copied: the plugin's assembly, its .pdb and .deps.json, and addon.json (the id its data folder is deleted by).
+        A plugin with dependencies of its own adds them as PluginDeployFile items.
+        Set PluginsRoot to deploy elsewhere, or DeployPlugin=false to skip it.
+    -->
+    <PropertyGroup>
+        <PluginsRoot Condition="'$(PluginsRoot)' == ''">$([System.Environment]::GetFolderPath(SpecialFolder.ApplicationData))/file-commander/plugins</PluginsRoot>
+    </PropertyGroup>
+
+    <Target Name="DeployPluginLocally"
+            AfterTargets="Build"
+            Condition="'$(Configuration)' == 'Debug' and '$(DeployPlugin)' != 'false'">
+        <ItemGroup>
+            <PluginDeployFile Include="$(TargetPath)" />
+            <PluginDeployFile Include="$(TargetDir)$(TargetName).pdb" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
+            <PluginDeployFile Include="$(TargetDir)$(TargetName).deps.json" Condition="Exists('$(TargetDir)$(TargetName).deps.json')" />
+            <PluginDeployFile Include="$(MSBuildProjectDirectory)/addon.json" Condition="Exists('$(MSBuildProjectDirectory)/addon.json')" />
+        </ItemGroup>
+
+        <Copy SourceFiles="@(PluginDeployFile)"
+              DestinationFolder="$(PluginsRoot)/$(AssemblyName)"
+              SkipUnchangedFiles="true" />
+        <Message Importance="high" Text="$(AssemblyName) -> $(PluginsRoot)/$(AssemblyName)" />
+    </Target>
+</Project>

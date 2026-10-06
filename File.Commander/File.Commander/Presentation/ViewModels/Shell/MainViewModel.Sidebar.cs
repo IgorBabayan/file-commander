@@ -89,7 +89,7 @@ public partial class MainViewModel
     private async Task OpenSettingsAtAsync(string section)
     {
         // A fresh one per opening, like the Settings command: it reads the stored settings when created
-        using var settings = new SettingsViewModel(_settings, section);
+        using var settings = _settingsFactory.Create(section);
         await _dialogService.ShowDialogAsync<SettingsViewModel, bool>(settings);
     }
 }

@@ -45,6 +45,15 @@ public sealed record OperationTitles(
             ? "1 item couldn't be moved to the trash. Check that you're allowed to delete it."
             : $"{failed:N0} items couldn't be moved to the trash. Check that you're allowed to delete them.");
 
+    public static OperationTitles DeletePermanently { get; } = new(
+        "Deleting",
+        "Deleted",
+        "Not everything was deleted",
+        "Stopped deleting",
+        failed => failed == 1
+            ? "1 item couldn't be deleted. Check that you're allowed to delete it."
+            : $"{failed:N0} items couldn't be deleted. Check that you're allowed to delete them.");
+
     public static OperationTitles Compress { get; } = new(
         "Compressing",
         "Compressed",
