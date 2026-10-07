@@ -6,7 +6,8 @@ namespace File.Commander.Presentation.Services;
 /// <summary>
 /// The MIME type of a file, from the freedesktop.org shared-mime-info database ($XDG_DATA_HOME/mime and
 /// $XDG_DATA_DIRS/mime): its name patterns (globs2), aliases and subclasses. Files the patterns don't know
-/// are told apart by their first bytes, so a README or a .conf file is text/plain. Read once, thread-safe.
+/// are told apart by their first bytes, so a README or a .conf file is text/plain. Also the generic icon of each
+/// type (generic-icons), which tells its family: archive, document, spreadsheet... Read once, thread-safe.
 /// </summary>
 public sealed class MimeDatabase
 {
@@ -20,12 +21,15 @@ public sealed class MimeDatabase
     private readonly List<Glob> _globs;
     private readonly Dictionary<string, string> _aliases;
     private readonly Dictionary<string, List<string>> _parents;
+    private readonly Dictionary<string, string> _genericIcons;
 
-    private MimeDatabase(List<Glob> globs, Dictionary<string, string> aliases, Dictionary<string, List<string>> parents)
+    private MimeDatabase(List<Glob> globs, Dictionary<string, string> aliases, Dictionary<string, List<string>> parents,
+        Dictionary<string, string> genericIcons)
     {
         _globs = globs;
         _aliases = aliases;
         _parents = parents;
+        _genericIcons = genericIcons;
     }
 
     /// <summary>The database of this system. Empty (everything is sniffed) when shared-mime-info isn't installed.</summary>
@@ -40,6 +44,7 @@ public sealed class MimeDatabase
         var globs = new List<Glob>();
         var aliases = new Dictionary<string, string>(StringComparer.Ordinal);
         var parents = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var genericIcons = new Dictionary<string, string>(StringComparer.Ordinal);
 
         // Lower precedence first, so a user's own patterns and hierarchy override the system's
         foreach (var directory in dataDirectories.Reverse())
@@ -57,18 +62,43 @@ public sealed class MimeDatabase
                 if (!list.Contains(parent))
                     list.Add(parent);
             }
+
+            foreach (var (type, icon) in ReadPairs(IOPath.Combine(mime, "generic-icons"), ':'))
+                genericIcons[type] = icon;
         }
 
         globs.Sort((a, b) => b.Weight != a.Weight
             ? b.Weight.CompareTo(a.Weight)
             : b.Pattern.Length.CompareTo(a.Pattern.Length));
 
-        return new MimeDatabase(globs, aliases, parents);
+        return new MimeDatabase(globs, aliases, parents, genericIcons);
     }
 
     /// <summary>The type of the file at <paramref name="path"/>: by name, else by content.</summary>
     public string TypeOf(string path)
         => TypeOfName(IOPath.GetFileName(path)) ?? TypeOfContent(path);
+
+    /// <summary>
+    /// The type of the file at <paramref name="path"/> listed as <paramref name="name"/> (the trash keeps files under
+    /// other names): by name, else by content.
+    /// </summary>
+    public string TypeOf(string path, string name)
+        => TypeOfName(name) ?? TypeOfContent(path);
+
+    /// <summary>
+    /// The icon that stands for the type's family, as GIO's g_content_type_get_generic_icon_name gives it: from
+    /// generic-icons ("package-x-generic" for application/zip, "x-office-spreadsheet" for .xlsx), else
+    /// "&lt;media&gt;-x-generic" ("text-x-generic" for any text/*).
+    /// </summary>
+    public string GenericIconName(string type)
+    {
+        type = Canonical(type);
+        if (_genericIcons.TryGetValue(type, out var icon))
+            return icon;
+
+        var slash = type.IndexOf('/');
+        return (slash < 0 ? type : type[..slash]) + "-x-generic";
+    }
 
     /// <summary>The type the name patterns give <paramref name="name"/>, or null when none matches.</summary>
     public string? TypeOfName(string name)
@@ -196,14 +226,17 @@ public sealed class MimeDatabase
         }
     }
 
-    /// <summary>aliases and subclasses: two types per line, separated by a space.</summary>
-    private static IEnumerable<(string, string)> ReadPairs(string file)
+    /// <summary>
+    /// aliases and subclasses: two types per line, separated by a space. generic-icons: a type and an icon name,
+    /// separated by a colon.
+    /// </summary>
+    private static IEnumerable<(string, string)> ReadPairs(string file, char separator = ' ')
     {
         foreach (var line in ReadLines(file))
         {
-            var space = line.IndexOf(' ');
-            if (space > 0)
-                yield return (line[..space], line[(space + 1)..].Trim());
+            var split = line.IndexOf(separator);
+            if (split > 0)
+                yield return (line[..split], line[(split + 1)..].Trim());
         }
     }
 

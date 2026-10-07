@@ -363,6 +363,7 @@ public sealed partial class DirectoryViewModel : PageViewModel
         var found = new ConcurrentQueue<FileEntryViewModel>();
         var options = _options;
         var skipped = _searchSkipped;
+        var bySize = Sort.Column == FileSortColumn.Size;
 
         // True when it stopped at MaxSearchResults
         var search = Task.Run(() =>
@@ -370,7 +371,13 @@ public sealed partial class DirectoryViewModel : PageViewModel
             var count = 0;
             foreach (var item in FileSearch.Find(query, options.ShowHidden, skipped, token))
             {
-                found.Enqueue(FileEntryViewModel.From(item, options.ShowExtensions));
+                var entry = FileEntryViewModel.From(item, options.ShowExtensions, countHidden: options.ShowHidden);
+
+                // Here, not on the UI thread when the results are sorted
+                if (bySize)
+                    _ = entry.ItemCount;
+
+                found.Enqueue(entry);
                 if (++count >= MaxSearchResults)
                     return true;
             }
@@ -513,6 +520,52 @@ public sealed partial class DirectoryViewModel : PageViewModel
 
     partial void OnSortChanged(FileSort value)
     {
+        // Folders sort by how many entries they hold: count them off the UI thread first
+        if (value.Column == FileSortColumn.Size)
+        {
+            var uncounted = Entries.Concat(TreeEntries(TreeRoots)).Where(e => e.NeedsItemCount).ToList();
+            if (uncounted.Count > 0)
+            {
+                _ = SortWhenCountedAsync(value, uncounted);
+                return;
+            }
+        }
+
+        ApplySort(value);
+    }
+
+    private async Task SortWhenCountedAsync(FileSort sort, IReadOnlyList<FileEntryViewModel> uncounted)
+    {
+        var token = _cts.Token;
+        try
+        {
+            await Task.Run(() =>
+            {
+                foreach (var entry in uncounted)
+                {
+                    token.ThrowIfCancellationRequested();
+                    _ = entry.ItemCount;
+                }
+            }, token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        // Another order may have been picked meanwhile; it was applied then
+        if (Sort == sort)
+            ApplySort(sort);
+    }
+
+    /// <summary>The entries of the tree's folders already read, at every depth.</summary>
+    private static IEnumerable<FileEntryViewModel> TreeEntries(IReadOnlyList<FileTreeNodeViewModel> nodes)
+        => nodes.SelectMany(node => node.Entry is { } entry
+            ? TreeEntries(node.Children).Prepend(entry)
+            : []);
+
+    private void ApplySort(FileSort value)
+    {
         var comparer = FileSorting.For(value, _options.MixFilesAndFolders);
         var sorted = Entries.Order(comparer).ToList();
 
@@ -556,7 +609,7 @@ public sealed partial class DirectoryViewModel : PageViewModel
         foreach (var info in directory.EnumerateFileSystemInfos("*", options.ShowHidden ? WithHidden : WithoutHidden))
         {
             token.ThrowIfCancellationRequested();
-            result.Add(FileEntryViewModel.From(info, options.ShowExtensions));
+            result.Add(FileEntryViewModel.From(info, options.ShowExtensions, countHidden: options.ShowHidden));
         }
 
         result.Sort(comparer);
@@ -578,7 +631,7 @@ public sealed partial class DirectoryViewModel : PageViewModel
             if (!options.ShowHidden && item.Name.StartsWith('.'))
                 continue;
 
-            result.Add(FileEntryViewModel.From(item.Info, options.ShowExtensions, item.Name));
+            result.Add(FileEntryViewModel.From(item.Info, options.ShowExtensions, item.Name, options.ShowHidden));
         }
 
         result.Sort(comparer);
@@ -602,7 +655,7 @@ public sealed partial class DirectoryViewModel : PageViewModel
             if (!options.ShowHidden && info.Name.StartsWith('.'))
                 continue;
 
-            result.Add(FileEntryViewModel.From(info, options.ShowExtensions));
+            result.Add(FileEntryViewModel.From(info, options.ShowExtensions, countHidden: options.ShowHidden));
         }
 
         result.Sort(comparer);
