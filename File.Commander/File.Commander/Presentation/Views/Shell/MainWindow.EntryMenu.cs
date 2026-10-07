@@ -59,7 +59,7 @@ public partial class MainWindow
             () => vm.OpenEntries(page, entries),
             isEnabled: single is not null || hasFiles);
 
-        // The system's "Open with" dialog: one file at a time, as the portal takes one
+        // Pick the app for one file, this time or from now on
         yield return EntryMenuItem("Open with…", MaterialIconKind.OpenInNew,
             () => _ = vm.OpenWithAsync(single!),
             isEnabled: single is { IsDirectory: false });

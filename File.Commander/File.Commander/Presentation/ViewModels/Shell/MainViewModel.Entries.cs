@@ -60,16 +60,28 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Open with…: the system's "Open with" dialog (xdg-desktop-portal), to pick the app that opens
-    /// <paramref name="entry"/> this time, or from now on.
+    /// Open with…: pick the app that opens <paramref name="entry"/>, this time or ("Always use for this file type")
+    /// from now on. The choice is saved in the user's mimeapps.list, so other apps follow it too.
     /// </summary>
     public async Task OpenWithAsync(FileEntryViewModel entry)
     {
         if (entry.IsDirectory)
             return;
 
-        if (await OpenWithDialog.ShowAsync(entry.FullPath) is { } problem)
-            await ShowNoticeAsync($"Can't open “{entry.Name}” with another app", problem);
+        var path = entry.FullPath;
+        var choices = await Task.Run(() => OpenWithApps.For(path));
+
+        using var dialog = new OpenWithViewModel(entry.Name, choices);
+        if (!await _dialogService.ShowDialogAsync<OpenWithViewModel, bool>(dialog) || dialog.SelectedApp is not { } app)
+            return;
+
+        // Saved first: a file the app can't open still leaves the choice made
+        var makeDefault = dialog.AlwaysUse;
+        if (await Task.Run(() => OpenWithApps.Remember(choices.Type, app, makeDefault)) is { } saveProblem && makeDefault)
+            await ShowNoticeAsync($"Can't make “{app.Name}” the default app", saveProblem);
+
+        if (await Task.Run(() => FileLauncher.Launch(app, path)) is { } problem)
+            await ShowNoticeAsync($"Can't open “{entry.Name}” in {app.Name}", problem);
     }
 
     /// <summary>Open in a new tab: one tab per folder, in their order, the last one selected. Files are skipped.</summary>
