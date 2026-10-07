@@ -1,22 +1,80 @@
 using System.Globalization;
+using File.Commander.Presentation.Services;
 using Material.Icons;
 
 namespace File.Commander.Presentation.ViewModels.Browser;
 
 public sealed class FileEntryViewModel
 {
-    private FileEntryViewModel(FileSystemInfo info, Details details, bool showExtension, string? name)
+    private const string DirectoryType = "inode/directory";
+    private const string UnknownType = "application/octet-stream";
+    private const string EmptyType = "application/x-zerosize";
+
+    // EnumerationOptions skip hidden (dot) files unless told otherwise
+    private static readonly EnumerationOptions CountWithoutHidden = new() { IgnoreInaccessible = false };
+    private static readonly EnumerationOptions CountWithHidden = new() { IgnoreInaccessible = false, AttributesToSkip = 0 };
+
+    // Nautilus' basic types (nautilus-file.c, mime_type_map): the type's generic icon tells its family
+    private static readonly Dictionary<string, string> BasicTypes = new(StringComparer.Ordinal)
+    {
+        ["application-x-executable"] = "Program",
+        ["audio-x-generic"] = "Audio",
+        ["font-x-generic"] = "Font",
+        ["image-x-generic"] = "Image",
+        ["package-x-generic"] = "Archive",
+        ["text-html"] = "Markup",
+        ["text-x-generic"] = "Text",
+        ["text-x-generic-template"] = "Text",
+        ["text-x-script"] = "Program",
+        ["video-x-generic"] = "Video",
+        ["x-office-address-book"] = "Contacts",
+        ["x-office-calendar"] = "Calendar",
+        ["x-office-document"] = "Document",
+        ["x-office-presentation"] = "Presentation",
+        ["x-office-spreadsheet"] = "Spreadsheet",
+    };
+
+    // The Material glyph of a type's family, for types neither the icon theme nor the extension has an icon for
+    private static readonly Dictionary<string, MaterialIconKind> FamilyIcons = new(StringComparer.Ordinal)
+    {
+        ["application-x-executable"] = MaterialIconKind.FileCogOutline,
+        ["audio-x-generic"] = MaterialIconKind.FileMusicOutline,
+        ["font-x-generic"] = MaterialIconKind.FormatFont,
+        ["image-x-generic"] = MaterialIconKind.FileImageOutline,
+        ["package-x-generic"] = MaterialIconKind.FolderZipOutline,
+        ["text-html"] = MaterialIconKind.FileCodeOutline,
+        ["text-x-generic"] = MaterialIconKind.FileDocumentOutline,
+        ["text-x-generic-template"] = MaterialIconKind.FileDocumentOutline,
+        ["text-x-script"] = MaterialIconKind.FileCodeOutline,
+        ["video-x-generic"] = MaterialIconKind.FileVideoOutline,
+        ["x-office-address-book"] = MaterialIconKind.CardAccountDetailsOutline,
+        ["x-office-calendar"] = MaterialIconKind.CalendarOutline,
+        ["x-office-document"] = MaterialIconKind.FileDocumentOutline,
+        ["x-office-presentation"] = MaterialIconKind.FilePresentationBox,
+        ["x-office-spreadsheet"] = MaterialIconKind.FileTableOutline,
+    };
+
+    private readonly Lazy<int?>? _itemCount;
+
+    private FileEntryViewModel(FileSystemInfo info, Details details, bool showExtension, string? name, bool countHidden)
     {
         Name = name ?? info.Name;
+        NameKey = new FileNameKey(Name);
         FullPath = info.FullName;
+        ParentPath = IOPath.GetDirectoryName(FullPath) ?? string.Empty;
         IsDirectory = info is DirectoryInfo;
         IsSymlink = details.LinkTarget is not null;
         IsHidden = Name.StartsWith('.');
         DisplayName = showExtension || info is DirectoryInfo ? Name : WithoutExtension(Name);
 
+        (MimeType, BasicType) = Classify(info.FullName, Name, IsDirectory, details.Size, details.Mode);
         var (icon, kind) = Describe(Name, IsDirectory);
-        Icon = icon;
+        Icon = icon == MaterialIconKind.FileOutline ? FamilyIcon(MimeType) : icon;
         TypeText = IsSymlink ? $"{kind} (link)" : kind;
+
+        // Counted when first asked for: only sorting by size needs it, and it reads the folder
+        var path = FullPath;
+        _itemCount = IsDirectory ? new Lazy<int?>(() => CountItems(path, countHidden)) : null;
 
         Size = details.Size;
         Modified = details.Modified;
@@ -33,6 +91,30 @@ public sealed class FileEntryViewModel
     /// <summary>The name on disk; for an item in the trash, the name it had before. Used for sorting.</summary>
     public string Name { get; }
 
+    /// <summary>How <see cref="Name"/> sorts: as in GNOME Files, "file2" before "file10".</summary>
+    public FileNameKey NameKey { get; }
+
+    /// <summary>The folder the entry is in. Search results come from many; sorting keeps them together.</summary>
+    public string ParentPath { get; }
+
+    /// <summary>"inode/directory" for folders, else the shared-mime-info type. Used for sorting by type.</summary>
+    public string MimeType { get; }
+
+    /// <summary>
+    /// The family of the type as GNOME Files names it: "Folder", "Archive", "Document", "Text", ..., "Other" for a
+    /// known type of no family, "Binary" or "Program" for an unknown one. What sorting by type groups by.
+    /// </summary>
+    public string BasicType { get; }
+
+    /// <summary>
+    /// Folders: the entries in them (dot files only while hidden files are shown), null when they can't be read.
+    /// Files: null. Reads the folder the first time: ask off the UI thread.
+    /// </summary>
+    public int? ItemCount => _itemCount?.Value;
+
+    /// <summary>A folder whose <see cref="ItemCount"/> hasn't been read yet.</summary>
+    internal bool NeedsItemCount => _itemCount is { IsValueCreated: false };
+
     /// <summary>What the views show: <see cref="Name"/>, without the extension when extensions are hidden.</summary>
     public string DisplayName { get; }
 
@@ -45,6 +127,10 @@ public sealed class FileEntryViewModel
     /// <summary>A dot file. Only listed when hidden files are shown, and then drawn dimmed.</summary>
     public bool IsHidden { get; }
 
+    /// <summary>
+    /// The Material glyph, shown where the icon theme has no icon for <see cref="MimeType"/>: by the extension, else by
+    /// the type's family (any spreadsheet, any font...), else an empty file.
+    /// </summary>
     public MaterialIconKind Icon { get; }
 
     /// <summary>"Folder", "PNG image", "JSON source", ... plus " (link)" for symlinks.</summary>
@@ -78,8 +164,46 @@ public sealed class FileEntryViewModel
     /// <summary>ls-style mode, e.g. "drwxr-xr-x". Empty where the mode can't be read.</summary>
     public string PermissionsText { get; }
 
-    public static FileEntryViewModel From(FileSystemInfo info, bool showExtension = true, string? name = null)
-        => new(info, Details.Read(info), showExtension, name);
+    /// <param name="countHidden">Whether a folder's <see cref="ItemCount"/> includes its dot files.</param>
+    public static FileEntryViewModel From(FileSystemInfo info, bool showExtension = true, string? name = null,
+        bool countHidden = false)
+        => new(info, Details.Read(info), showExtension, name, countHidden);
+
+    /// <summary>
+    /// The MIME type and its basic type (<see cref="BasicType"/>). An empty file is never read: it may be a pipe or
+    /// a device, which would block, and holds nothing to tell its type by anyway.
+    /// </summary>
+    private static (string MimeType, string BasicType) Classify(string path, string name, bool isDirectory,
+        long? size, UnixFileMode? mode)
+    {
+        if (isDirectory)
+            return (DirectoryType, "Folder");
+
+        var mime = MimeDatabase.Default;
+        var type = size is > 0 ? mime.TypeOf(path, name) : mime.TypeOfName(name) ?? EmptyType;
+
+        if (type == UnknownType)
+            return (type, mode is { } bits && bits.HasFlag(UnixFileMode.UserExecute) ? "Program" : "Binary");
+
+        return (type, BasicTypes.GetValueOrDefault(mime.GenericIconName(type), "Other"));
+    }
+
+    /// <summary>The glyph of the type's family (see <see cref="FamilyIcons"/>), else an empty file.</summary>
+    private static MaterialIconKind FamilyIcon(string mimeType)
+        => FamilyIcons.GetValueOrDefault(MimeDatabase.Default.GenericIconName(mimeType), MaterialIconKind.FileOutline);
+
+    private static int? CountItems(string path, bool countHidden)
+    {
+        try
+        {
+            return Directory.EnumerateFileSystemEntries(path, "*", countHidden ? CountWithHidden : CountWithoutHidden)
+                .Count();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
 
     private static string WithoutExtension(string name)
     {

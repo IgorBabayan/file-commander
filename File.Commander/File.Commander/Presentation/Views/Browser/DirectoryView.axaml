@@ -403,6 +403,7 @@
                             <controls:EntryIcon views:DetailRowPanel.IsLeading="True"
                                                 FilePath="{Binding FullPath}"
                                                 IsFolder="{Binding IsDirectory}"
+                                                MimeType="{Binding MimeType}"
                                                 Kind="{Binding Icon}"
                                                 Width="20" Height="20"
                                                 Margin="0,0,8,0"
@@ -439,6 +440,7 @@
                         <StackPanel Spacing="8" Classes.hidden="{Binding IsHidden}" ToolTip.Tip="{Binding FullPath}">
                             <controls:EntryIcon FilePath="{Binding FullPath}"
                                                 IsFolder="{Binding IsDirectory}"
+                                                MimeType="{Binding MimeType}"
                                                 Kind="{Binding Icon}"
                                                 Width="48" Height="48"
                                                 HorizontalAlignment="Center" />
@@ -468,6 +470,7 @@
                             <Panel views:DetailRowPanel.IsLeading="True" Width="28">
                                 <controls:EntryIcon FilePath="{Binding FullPath}"
                                                     IsFolder="{Binding IsDirectory}"
+                                                    MimeType="{Binding MimeType}"
                                                     Kind="{Binding Icon}"
                                                     IsVisible="{Binding !IsPlaceholder}"
                                                     Width="20" Height="20"

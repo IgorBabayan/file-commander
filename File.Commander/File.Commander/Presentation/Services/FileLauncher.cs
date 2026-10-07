@@ -5,6 +5,7 @@ namespace File.Commander.Presentation.Services;
 
 /// <summary>An installed application, from its .desktop file.</summary>
 /// <param name="Id">The desktop file ID, e.g. "org.gnome.TextEditor.desktop".</param>
+/// <param name="NoDisplay">NoDisplay=true: a handler not meant to be listed among the apps (e.g. a URL opener).</param>
 public sealed record DesktopApp(
     string Id,
     string Path,
@@ -13,7 +14,8 @@ public sealed record DesktopApp(
     string? Icon,
     string? WorkingDirectory,
     bool Terminal,
-    IReadOnlyList<string> Categories);
+    IReadOnlyList<string> Categories,
+    bool NoDisplay = false);
 
 /// <summary>
 /// Opens files in the application registered for their type, as file managers do, following the freedesktop.org
@@ -257,6 +259,9 @@ public sealed class Applications
         return app;
     }
 
+    /// <summary>Every installed app that can be launched, NoDisplay ones included.</summary>
+    public IEnumerable<DesktopApp> All() => _paths.Keys.Select(Find).OfType<DesktopApp>();
+
     /// <summary>The IDs of the apps whose MimeType= lists <paramref name="type"/>.</summary>
     public IReadOnlyList<string> Declaring(string type)
         => _byType.TryGetValue(type, out var ids) ? ids : [];
@@ -283,7 +288,8 @@ public sealed class Applications
             entry.GetValueOrDefault("Icon"),
             entry.GetValueOrDefault("Path"),
             entry.GetValueOrDefault("Terminal") == "true",
-            IniFile.SplitList(entry.GetValueOrDefault("Categories") ?? string.Empty));
+            IniFile.SplitList(entry.GetValueOrDefault("Categories") ?? string.Empty),
+            entry.GetValueOrDefault("NoDisplay") == "true");
     }
 
     private static IEnumerable<string> DesktopFiles(string root)
@@ -334,7 +340,7 @@ public sealed class MimeAppsLists
     /// <summary>The defaults set for <paramref name="type"/>, best first. Each is tried until one is installed.</summary>
     public IEnumerable<string> Defaults(string type) => Values("Default Applications", type);
 
-    /// <summary>Apps the user added for <paramref name="type"/> (Open With… → Always).</summary>
+    /// <summary>Apps the user added for <paramref name="type"/>: picked in Open With…, the last one first.</summary>
     public IEnumerable<string> Added(string type) => Values("Added Associations", type);
 
     /// <summary>Apps the user removed from <paramref name="type"/>: never picked for it.</summary>

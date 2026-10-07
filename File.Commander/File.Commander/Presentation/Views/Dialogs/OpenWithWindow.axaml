@@ -1,0 +1,225 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:File.Commander.Presentation.ViewModels.Dialogs"
+        xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="700"
+        x:Class="File.Commander.Presentation.Views.Dialogs.OpenWithWindow"
+        x:DataType="vm:OpenWithViewModel"
+        Title="Open with"
+        WindowDecorations="None"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent">
+    <!-- DialogService sizes this window to cover the owner; the card is centered on a dimmed backdrop -->
+
+    <Window.Styles>
+        <Style Selector="Border.dialog-card">
+            <Setter Property="Background" Value="{DynamicResource BaseBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BoxShadow" Value="0 12 40 0 #66000000" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="32" />
+        </Style>
+
+        <Style Selector="TextBlock.dialog-title">
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector="TextBlock.dialog-message">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext1Brush}" />
+        </Style>
+        <Style Selector="TextBlock.dialog-hint">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext0Brush}" />
+        </Style>
+
+        <!-- ===== App list: the highlight is drawn on the row, below its section title ===== -->
+        <Style Selector="ListBox.open-with">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="6" />
+        </Style>
+        <Style Selector="ListBox.open-with ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="ListBox.open-with ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.open-with ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.open-with ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.open-with ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.open-with ListBoxItem:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource Subtext0Brush}" />
+            <Setter Property="Margin" Value="10,12,0,6" />
+        </Style>
+        <Style Selector="Border.app-row">
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="10,7" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBoxItem:pointerover Border.app-row">
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+        </Style>
+        <Style Selector="ListBoxItem:selected Border.app-row">
+            <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+        </Style>
+        <Style Selector="TextBlock.app-name">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+
+        <!-- ===== Buttons ===== -->
+        <Style Selector="Button.dialog-button">
+            <Setter Property="MinWidth" Value="88" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource Surface0Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button.primary">
+            <Setter Property="Background" Value="{DynamicResource FcAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BaseBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentHoverBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BaseBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource FcAccentPressedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource BaseBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-button:disabled">
+            <Setter Property="Opacity" Value="0.5" />
+        </Style>
+
+        <Style Selector="CheckBox.always-use">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+    </Window.Styles>
+
+    <Panel>
+        <!-- Clicking the dimmed area cancels -->
+        <Border Background="{DynamicResource FcBackdropBrush}" PointerPressed="OnBackdropPressed" />
+
+        <Border Classes="dialog-card" Width="480" Height="600">
+            <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto" Margin="24,20,24,20">
+                <TextBlock Grid.Row="0" Classes="dialog-title" Text="Open with" />
+                <TextBlock Grid.Row="1" Classes="dialog-message" Margin="0,6,0,0"
+                           Text="{Binding Message}" ToolTip.Tip="{Binding Message}" />
+
+                <TextBox x:Name="SearchBox"
+                         Grid.Row="2"
+                         Margin="0,14,0,10"
+                         FontSize="14"
+                         PlaceholderText="Search apps"
+                         Text="{Binding SearchText}" />
+
+                <Border Grid.Row="3"
+                        Background="{DynamicResource MantleBrush}"
+                        CornerRadius="10"
+                        ClipToBounds="True">
+                    <Panel>
+                        <ListBox x:Name="AppList"
+                                 Classes="open-with"
+                                 ItemsSource="{Binding Rows}"
+                                 SelectedItem="{Binding SelectedRow}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:OpenWithRow">
+                                    <StackPanel>
+                                        <TextBlock Classes="section-title"
+                                                   Text="{Binding Section}"
+                                                   IsVisible="{Binding HasSection}" />
+                                        <Border Classes="app-row">
+                                            <Grid ColumnDefinitions="Auto,*">
+                                                <Panel Grid.Column="0" Width="28" Height="28">
+                                                    <Image Source="{Binding App.Icon}"
+                                                           IsVisible="{Binding App.HasIcon}"
+                                                           Width="28" Height="28" />
+                                                    <avalonia:MaterialIcon Kind="OpenInApp"
+                                                                           IsVisible="{Binding !App.HasIcon}"
+                                                                           Width="22" Height="22"
+                                                                           Foreground="{DynamicResource Overlay2Brush}" />
+                                                </Panel>
+                                                <TextBlock Grid.Column="1"
+                                                           Margin="12,0,0,0"
+                                                           Classes="app-name"
+                                                           Text="{Binding App.Name}" />
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <TextBlock Classes="dialog-hint"
+                                   FontSize="14"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Text="No apps match your search"
+                                   IsVisible="{Binding HasNoMatches}" />
+                    </Panel>
+                </Border>
+
+                <StackPanel Grid.Row="4" Margin="0,14,0,0" Spacing="2">
+                    <CheckBox Classes="always-use"
+                              Content="Always use for this file type"
+                              IsChecked="{Binding AlwaysUse}" />
+                    <TextBlock Classes="dialog-hint" Margin="28,0,0,0" Text="{Binding TypeDescription}" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="5"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="8"
+                            Margin="0,16,0,0">
+                    <Button Classes="dialog-button"
+                            Content="Cancel"
+                            Command="{Binding CancelCommand}" />
+                    <Button Classes="dialog-button primary"
+                            Content="Open"
+                            Command="{Binding OpenCommand}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Panel>
+</Window>

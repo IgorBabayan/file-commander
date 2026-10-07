@@ -48,6 +48,9 @@ public sealed partial class FileTreeNodeViewModel : ObservableObject
 
     public MaterialIconKind Icon => Entry?.Icon ?? MaterialIconKind.FileOutline;
 
+    /// <summary>Null for placeholders: they show no icon.</summary>
+    public string? MimeType => Entry?.MimeType;
+
     /// <summary>Tooltip. Null for placeholders, so they get none.</summary>
     public string? FullPath => Entry?.FullPath;
 

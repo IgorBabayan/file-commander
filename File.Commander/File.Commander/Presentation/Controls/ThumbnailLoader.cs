@@ -3,8 +3,8 @@ using Avalonia.Media.Imaging;
 namespace File.Commander.Presentation.Controls;
 
 /// <summary>
-/// Decodes small thumbnails for <see cref="EntryIcon"/>, a few at a time so a folder full of photos
-/// doesn't take every core. Skia decodes straight to the requested width, so a 50 MP photo never
+/// Decodes small thumbnails and the icon theme's type icons for <see cref="EntryIcon"/>, a few at a time so a folder
+/// full of photos doesn't take every core. Skia decodes straight to the requested width, so a 50 MP photo never
 /// becomes a full-size bitmap in memory.
 /// </summary>
 internal static class ThumbnailLoader
@@ -25,7 +25,7 @@ internal static class ThumbnailLoader
     /// its Icon= key when one can be found.
     /// </summary>
     public static bool CanLoad(string path)
-        => Extensions.Contains(IOPath.GetExtension(path)) || DesktopIcons.IsDesktopFile(path);
+        => Extensions.Contains(IOPath.GetExtension(path)) || ThemeIcons.IsDesktopFile(path);
 
     /// <summary>
     /// Null when cancelled or when the file isn't a decodable picture. Never throws.
@@ -52,17 +52,41 @@ internal static class ThumbnailLoader
         }
     }
 
+    /// <summary>
+    /// The icon theme's icon for <paramref name="mimeType"/> (see <see cref="IconBitmaps.TypeIcon"/>), or null when
+    /// cancelled or the theme has none. Never throws. The bitmap is shared: the caller must not dispose it.
+    /// </summary>
+    public static async Task<Bitmap?> LoadTypeIconAsync(string mimeType, int pixelWidth, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(SettleDelay, cancellationToken);
+            await Gate.WaitAsync(cancellationToken);
+            try
+            {
+                return await Task.Run(() => IconBitmaps.TypeIcon(mimeType, pixelWidth), cancellationToken);
+            }
+            finally
+            {
+                Gate.Release();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
+        }
+    }
+
     private static Bitmap? Decode(string path, int pixelWidth)
     {
         try
         {
-            // Launchers show their app's icon instead of a generic file
-            if (DesktopIcons.IsDesktopFile(path))
+            // Launchers show their app's icon instead of a generic file. It may be an SVG.
+            if (ThemeIcons.IsDesktopFile(path))
             {
-                if (DesktopIcons.IconOf(path, pixelWidth) is not { } icon)
-                    return null;
-
-                path = icon;
+                return ThemeIcons.IconOf(path, pixelWidth) is { } icon
+                    ? IconBitmaps.Decode(icon, pixelWidth)
+                    : null;
             }
 
             var info = new FileInfo(path);
