@@ -15,7 +15,7 @@ public sealed partial class OpenWithAppViewModel : ObservableObject
 
     public string Name => App.Name;
 
-    /// <summary>The app's own icon, when its theme has it as a PNG; else <see cref="HasIcon"/> is false.</summary>
+    /// <summary>The app's own icon, when its theme has it as a PNG or SVG; else <see cref="HasIcon"/> is false.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasIcon))]
     public partial Bitmap? Icon { get; set; }
@@ -153,23 +153,9 @@ public sealed partial class OpenWithViewModel : ViewModelBase
         }, token);
     }
 
+    // PNG or SVG; a broken file in an icon theme gives null and the app keeps the default icon
     private static Bitmap? Decode(string icon)
-    {
-        if (DesktopIcons.Find(icon, IconPixels) is not { } path)
-            return null;
-
-        try
-        {
-            using var stream = IOFile.OpenRead(path);
-            return Bitmap.DecodeToWidth(stream, IconPixels, BitmapInterpolationMode.MediumQuality);
-        }
-        catch (Exception ex)
-        {
-            // A broken PNG in an icon theme is no reason to fail: the app keeps the default icon
-            Trace.WriteLine($"Can't decode the icon '{path}': {ex.Message}");
-            return null;
-        }
-    }
+        => ThemeIcons.Find(icon, IconPixels) is { } path ? IconBitmaps.Decode(path, IconPixels) : null;
 
     private bool CanOpen() => SelectedRow is not null;
 

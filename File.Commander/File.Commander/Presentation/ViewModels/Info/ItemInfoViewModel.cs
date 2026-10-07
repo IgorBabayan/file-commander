@@ -24,11 +24,15 @@ public sealed partial class ItemInfoViewModel : ObservableObject, IDisposable
     private const long MaxPreviewBytes = 64L * 1024 * 1024;
     private const int MaxPreviewWidth = 600;
 
+    // The icon is drawn at 96 px: twice that stays sharp on HiDPI screens
+    private const int TypeIconPixels = 192;
+
     // Holding an arrow key selects many items in a row: don't start reading for each of them
     private static readonly TimeSpan SettleDelay = TimeSpan.FromMilliseconds(120);
 
     private readonly CancellationTokenSource _cts = new();
     private bool _disposed;
+    private bool _typeIconLoaded;
 
     public ItemInfoViewModel(FileEntryViewModel entry)
     {
@@ -69,6 +73,13 @@ public sealed partial class ItemInfoViewModel : ObservableObject, IDisposable
         {
             SizeText = $"{SizeFormatter.Format(bytes)} ({bytes.ToString("N0", CultureInfo.CurrentCulture)} bytes)";
             HeaderSizeText = SizeFormatter.Format(bytes);
+        }
+
+        // Already looked up for another item of the type: shown at once, without a flash of the glyph
+        if (IconBitmaps.TryGetTypeIcon(entry.MimeType, TypeIconPixels, out var typeIcon))
+        {
+            TypeIcon = typeIcon;
+            _typeIconLoaded = true;
         }
 
         _ = LoadAsync(_cts.Token); // never throws
@@ -124,12 +135,23 @@ public sealed partial class ItemInfoViewModel : ObservableObject, IDisposable
 
     /// <summary>Shown instead of the icon once decoded. Images only.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasPreview), nameof(HasIcon))]
+    [NotifyPropertyChangedFor(nameof(HasPreview), nameof(HasTypeIcon), nameof(HasIcon))]
     public partial Bitmap? Preview { get; set; }
+
+    /// <summary>
+    /// The icon theme's icon for the item's MIME type; null while loading or when the theme has none. Shared with the
+    /// file views (<see cref="IconBitmaps"/>): never disposed here.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasTypeIcon), nameof(HasIcon))]
+    public partial Bitmap? TypeIcon { get; set; }
 
     public bool HasPreview => Preview is not null;
 
-    public bool HasIcon => Preview is null;
+    public bool HasTypeIcon => Preview is null && TypeIcon is not null;
+
+    /// <summary>The Material glyph: neither a preview nor a theme icon.</summary>
+    public bool HasIcon => Preview is null && TypeIcon is null;
 
     /// <summary>"1920 × 1080". Images only.</summary>
     [ObservableProperty]
@@ -156,6 +178,12 @@ public sealed partial class ItemInfoViewModel : ObservableObject, IDisposable
         try
         {
             await Task.Delay(SettleDelay, token);
+
+            if (!_typeIconLoaded)
+            {
+                var type = Entry.MimeType;
+                TypeIcon = await Task.Run(() => IconBitmaps.TypeIcon(type, TypeIconPixels), token);
+            }
 
             var path = FullPath;
             var mode = Entry.Permissions;

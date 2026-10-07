@@ -53,6 +53,7 @@ File Commander brings tabbed browsing, split panes, flexible file views, and a c
 - Track background operations in the **Action center**, with progress and cancellation.
 - View file properties, ownership, and permissions, with image previews in the info panel.
 - Open files with desktop applications and display application icons for `.desktop` launchers.
+- Show file and folder icons from your desktop's icon theme by MIME type (PNG and SVG themes), with Material icons as a fallback.
 
 ### Connect and customize
 

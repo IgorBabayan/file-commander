@@ -4,17 +4,22 @@ using System.Globalization;
 namespace File.Commander.Presentation.Services;
 
 /// <summary>
-/// The picture of a .desktop file's Icon= key, found like the desktop does (freedesktop.org Icon Theme spec): an
-/// absolute path as is; a name in the user's icon theme, the themes it inherits, then hicolor, then /usr/share/pixmaps.
-/// Only PNG files are returned: they are what Avalonia decodes. An icon that only exists as SVG or XPM gives null,
-/// and the entry keeps its default icon.
+/// Icons of the user's icon theme, found like the desktop does (freedesktop.org Icon Theme spec): a name in the
+/// user's theme, the themes it inherits, then hicolor, then /usr/share/pixmaps. Used for a .desktop file's Icon= key
+/// and for the icon of a MIME type. PNG and SVG files are returned (<see cref="IconBitmaps"/> decodes both); an icon
+/// that only exists as XPM gives null, and the caller keeps its default icon.
 /// </summary>
-public static class DesktopIcons
+public static class ThemeIcons
 {
     private const string Fallback = "hicolor";
 
+    // Spec order: PNG before SVG. XPM is left out: nothing here decodes it.
+    private static readonly string[] Extensions = [".png", ".svg"];
+
     // By name and size: a folder of .desktop files mostly shares a few sizes. Null results are kept too.
     private static readonly ConcurrentDictionary<(string Name, int Size), string?> Found = new();
+    // By MIME type and size: a folder holds few types. Null results are kept too.
+    private static readonly ConcurrentDictionary<(string Type, int Size), string?> FoundForType = new();
     private static readonly ConcurrentDictionary<string, IconTheme?> Themes = new(StringComparer.Ordinal);
     private static readonly Lazy<IReadOnlyList<string>> BaseDirectories = new(FindBaseDirectories);
     private static readonly Lazy<IReadOnlyList<string>> ThemeChain = new(BuildThemeChain);
@@ -23,8 +28,8 @@ public static class DesktopIcons
     public static bool IsDesktopFile(string path) => path.EndsWith(".desktop", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The PNG to show for <paramref name="desktopFile"/> at about <paramref name="size"/> pixels, or null when it has
-    /// no Icon= or the icon can't be found as a PNG. Reads files: call it off the UI thread. Never throws.
+    /// The picture to show for <paramref name="desktopFile"/> at about <paramref name="size"/> pixels, or null when it
+    /// has no Icon= or the icon can't be found. Reads files: call it off the UI thread. Never throws.
     /// </summary>
     public static string? IconOf(string desktopFile, int size)
     {
@@ -46,7 +51,7 @@ public static class DesktopIcons
     public static string? Find(string icon, int size)
     {
         if (IOPath.IsPathRooted(icon))
-            return IsPng(icon) && IOFile.Exists(icon) ? icon : null;
+            return IsSupported(icon) && IOFile.Exists(icon) ? icon : null;
 
         // A name may not be a path; "firefox.png" is still found as "firefox"
         if (icon.Contains('/'))
@@ -59,25 +64,65 @@ public static class DesktopIcons
         return Found.GetOrAdd((name, Math.Max(1, size)), key => Lookup(key.Name, key.Size));
     }
 
-    private static string? Lookup(string name, int size)
+    /// <summary>
+    /// The theme's icon for a MIME type at about <paramref name="size"/> pixels: the names
+    /// <see cref="MimeDatabase.IconNames"/> lists, most specific first ("application-vnd.ms-excel", then
+    /// "x-office-spreadsheet"...). Null when the theme has none of them. Reads files: call it off the UI thread.
+    /// Never throws.
+    /// </summary>
+    public static string? ForType(string mimeType, int size)
+    {
+        try
+        {
+            return FoundForType.GetOrAdd((mimeType, Math.Max(1, size)),
+                key => Lookup(MimeDatabase.Default.IconNames(key.Type), key.Size));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            Trace.WriteLine($"Can't find the icon of '{mimeType}': {ex.Message}");
+            return null;
+        }
+    }
+
+    private static string? Lookup(string name, int size) => Lookup([name], size);
+
+    /// <summary>
+    /// Spec: FindBestIcon. Every theme of the chain is asked for each name before moving on to the next theme, so a
+    /// specific icon of the user's theme beats a generic one, and a generic one of the user's theme beats hicolor's
+    /// specific one. Then the unthemed folders.
+    /// </summary>
+    private static string? Lookup(IReadOnlyList<string> names, int size)
     {
         foreach (var themeName in ThemeChain.Value)
         {
-            if (Theme(themeName)?.LookupIcon(name, size) is { } path)
-                return path;
+            if (Theme(themeName) is not { } theme)
+                continue;
+
+            foreach (var name in names)
+            {
+                if (theme.LookupIcon(name, size) is { } path)
+                    return path;
+            }
         }
 
-        foreach (var directory in BaseDirectories.Value.Append("/usr/share/pixmaps"))
+        foreach (var name in names)
         {
-            var path = IOPath.Combine(directory, name + ".png");
-            if (IOFile.Exists(path))
-                return path;
+            foreach (var directory in BaseDirectories.Value.Append("/usr/share/pixmaps"))
+            {
+                foreach (var extension in Extensions)
+                {
+                    var path = IOPath.Combine(directory, name + extension);
+                    if (IOFile.Exists(path))
+                        return path;
+                }
+            }
         }
 
         return null;
     }
 
-    private static bool IsPng(string path) => path.EndsWith(".png", StringComparison.OrdinalIgnoreCase);
+    private static bool IsSupported(string path)
+        => Extensions.Any(extension => path.EndsWith(extension, StringComparison.OrdinalIgnoreCase));
 
     private static IconTheme? Theme(string name) => Themes.GetOrAdd(name, n => IconTheme.Load(n, BaseDirectories.Value));
 
@@ -233,7 +278,7 @@ public static class DesktopIcons
             return new IconTheme(roots, directories, inherits);
         }
 
-        /// <summary>A PNG of the size, else the closest one (spec: LookupIcon). Scale 1 folders only.</summary>
+        /// <summary>A PNG or SVG of the size, else the closest one (spec: LookupIcon). Scale 1 folders only.</summary>
         public string? LookupIcon(string name, int size)
         {
             string? closest = null;
@@ -246,18 +291,21 @@ public static class DesktopIcons
 
                 foreach (var root in _roots)
                 {
-                    var path = IOPath.Combine(root, directory.Name, name + ".png");
-                    if (!IOFile.Exists(path))
-                        continue;
-
-                    if (directory.Matches(size))
-                        return path;
-
-                    var distance = directory.Distance(size);
-                    if (distance < closestDistance)
+                    foreach (var extension in Extensions)
                     {
-                        closest = path;
-                        closestDistance = distance;
+                        var path = IOPath.Combine(root, directory.Name, name + extension);
+                        if (!IOFile.Exists(path))
+                            continue;
+
+                        if (directory.Matches(size))
+                            return path;
+
+                        var distance = directory.Distance(size);
+                        if (distance < closestDistance)
+                        {
+                            closest = path;
+                            closestDistance = distance;
+                        }
                     }
                 }
             }

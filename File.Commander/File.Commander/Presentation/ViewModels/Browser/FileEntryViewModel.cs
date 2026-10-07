@@ -34,6 +34,26 @@ public sealed class FileEntryViewModel
         ["x-office-spreadsheet"] = "Spreadsheet",
     };
 
+    // The Material glyph of a type's family, for types neither the icon theme nor the extension has an icon for
+    private static readonly Dictionary<string, MaterialIconKind> FamilyIcons = new(StringComparer.Ordinal)
+    {
+        ["application-x-executable"] = MaterialIconKind.FileCogOutline,
+        ["audio-x-generic"] = MaterialIconKind.FileMusicOutline,
+        ["font-x-generic"] = MaterialIconKind.FormatFont,
+        ["image-x-generic"] = MaterialIconKind.FileImageOutline,
+        ["package-x-generic"] = MaterialIconKind.FolderZipOutline,
+        ["text-html"] = MaterialIconKind.FileCodeOutline,
+        ["text-x-generic"] = MaterialIconKind.FileDocumentOutline,
+        ["text-x-generic-template"] = MaterialIconKind.FileDocumentOutline,
+        ["text-x-script"] = MaterialIconKind.FileCodeOutline,
+        ["video-x-generic"] = MaterialIconKind.FileVideoOutline,
+        ["x-office-address-book"] = MaterialIconKind.CardAccountDetailsOutline,
+        ["x-office-calendar"] = MaterialIconKind.CalendarOutline,
+        ["x-office-document"] = MaterialIconKind.FileDocumentOutline,
+        ["x-office-presentation"] = MaterialIconKind.FilePresentationBox,
+        ["x-office-spreadsheet"] = MaterialIconKind.FileTableOutline,
+    };
+
     private readonly Lazy<int?>? _itemCount;
 
     private FileEntryViewModel(FileSystemInfo info, Details details, bool showExtension, string? name, bool countHidden)
@@ -47,10 +67,10 @@ public sealed class FileEntryViewModel
         IsHidden = Name.StartsWith('.');
         DisplayName = showExtension || info is DirectoryInfo ? Name : WithoutExtension(Name);
 
-        var (icon, kind) = Describe(Name, IsDirectory);
-        Icon = icon;
-        TypeText = IsSymlink ? $"{kind} (link)" : kind;
         (MimeType, BasicType) = Classify(info.FullName, Name, IsDirectory, details.Size, details.Mode);
+        var (icon, kind) = Describe(Name, IsDirectory);
+        Icon = icon == MaterialIconKind.FileOutline ? FamilyIcon(MimeType) : icon;
+        TypeText = IsSymlink ? $"{kind} (link)" : kind;
 
         // Counted when first asked for: only sorting by size needs it, and it reads the folder
         var path = FullPath;
@@ -107,6 +127,10 @@ public sealed class FileEntryViewModel
     /// <summary>A dot file. Only listed when hidden files are shown, and then drawn dimmed.</summary>
     public bool IsHidden { get; }
 
+    /// <summary>
+    /// The Material glyph, shown where the icon theme has no icon for <see cref="MimeType"/>: by the extension, else by
+    /// the type's family (any spreadsheet, any font...), else an empty file.
+    /// </summary>
     public MaterialIconKind Icon { get; }
 
     /// <summary>"Folder", "PNG image", "JSON source", ... plus " (link)" for symlinks.</summary>
@@ -163,6 +187,10 @@ public sealed class FileEntryViewModel
 
         return (type, BasicTypes.GetValueOrDefault(mime.GenericIconName(type), "Other"));
     }
+
+    /// <summary>The glyph of the type's family (see <see cref="FamilyIcons"/>), else an empty file.</summary>
+    private static MaterialIconKind FamilyIcon(string mimeType)
+        => FamilyIcons.GetValueOrDefault(MimeDatabase.Default.GenericIconName(mimeType), MaterialIconKind.FileOutline);
 
     private static int? CountItems(string path, bool countHidden)
     {

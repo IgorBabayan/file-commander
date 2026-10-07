@@ -6,13 +6,15 @@ namespace File.Commander.Presentation.Services;
 /// <summary>
 /// The MIME type of a file, from the freedesktop.org shared-mime-info database ($XDG_DATA_HOME/mime and
 /// $XDG_DATA_DIRS/mime): its name patterns (globs2), aliases and subclasses. Files the patterns don't know
-/// are told apart by their first bytes, so a README or a .conf file is text/plain. Also the generic icon of each
-/// type (generic-icons), which tells its family: archive, document, spreadsheet... Read once, thread-safe.
+/// are told apart by their first bytes, so a README or a .conf file is text/plain. Also the icon of each type (icons)
+/// and its generic icon (generic-icons), which tells its family: archive, document, spreadsheet... Read once,
+/// thread-safe.
 /// </summary>
 public sealed class MimeDatabase
 {
     private const string TextPlain = "text/plain";
     private const string OctetStream = "application/octet-stream";
+    private const string DirectoryType = "inode/directory";
     private const int SniffLength = 4096;
 
     private static readonly Lazy<MimeDatabase> Shared = new(() => Load(XdgDirectories.DataDirectories()));
@@ -22,14 +24,16 @@ public sealed class MimeDatabase
     private readonly Dictionary<string, string> _aliases;
     private readonly Dictionary<string, List<string>> _parents;
     private readonly Dictionary<string, string> _genericIcons;
+    private readonly Dictionary<string, string> _icons;
 
     private MimeDatabase(List<Glob> globs, Dictionary<string, string> aliases, Dictionary<string, List<string>> parents,
-        Dictionary<string, string> genericIcons)
+        Dictionary<string, string> genericIcons, Dictionary<string, string> icons)
     {
         _globs = globs;
         _aliases = aliases;
         _parents = parents;
         _genericIcons = genericIcons;
+        _icons = icons;
     }
 
     /// <summary>The database of this system. Empty (everything is sniffed) when shared-mime-info isn't installed.</summary>
@@ -45,6 +49,7 @@ public sealed class MimeDatabase
         var aliases = new Dictionary<string, string>(StringComparer.Ordinal);
         var parents = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         var genericIcons = new Dictionary<string, string>(StringComparer.Ordinal);
+        var icons = new Dictionary<string, string>(StringComparer.Ordinal);
 
         // Lower precedence first, so a user's own patterns and hierarchy override the system's
         foreach (var directory in dataDirectories.Reverse())
@@ -65,13 +70,16 @@ public sealed class MimeDatabase
 
             foreach (var (type, icon) in ReadPairs(IOPath.Combine(mime, "generic-icons"), ':'))
                 genericIcons[type] = icon;
+
+            foreach (var (type, icon) in ReadPairs(IOPath.Combine(mime, "icons"), ':'))
+                icons[type] = icon;
         }
 
         globs.Sort((a, b) => b.Weight != a.Weight
             ? b.Weight.CompareTo(a.Weight)
             : b.Pattern.Length.CompareTo(a.Pattern.Length));
 
-        return new MimeDatabase(globs, aliases, parents, genericIcons);
+        return new MimeDatabase(globs, aliases, parents, genericIcons, icons);
     }
 
     /// <summary>The type of the file at <paramref name="path"/>: by name, else by content.</summary>
@@ -98,6 +106,32 @@ public sealed class MimeDatabase
 
         var slash = type.IndexOf('/');
         return (slash < 0 ? type : type[..slash]) + "-x-generic";
+    }
+
+    /// <summary>
+    /// The icon-theme names that stand for <paramref name="type"/>, most specific first, as GIO's
+    /// g_content_type_get_icon lists them: the type's own icon (icons), the type with '-' for '/'
+    /// ("application-vnd.ms-excel"), then <see cref="GenericIconName"/> ("x-office-spreadsheet"). Folders also
+    /// try "folder", the name every theme has.
+    /// </summary>
+    public IReadOnlyList<string> IconNames(string type)
+    {
+        type = Canonical(type);
+        var names = new List<string>(4);
+
+        if (_icons.TryGetValue(type, out var own))
+            names.Add(own);
+
+        names.Add(type.Replace('/', '-'));
+
+        if (type == DirectoryType)
+            names.Add("folder");
+
+        var generic = GenericIconName(type);
+        if (!names.Contains(generic))
+            names.Add(generic);
+
+        return names;
     }
 
     /// <summary>The type the name patterns give <paramref name="name"/>, or null when none matches.</summary>
